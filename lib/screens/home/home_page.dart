@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
+import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/main.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? mesa;
   String? comanda;
+  List<Categoria> categorias = [];
 
   Future<void> _pedirMesaEComanda() async {
     final mesaController = TextEditingController();
@@ -77,80 +83,315 @@ class _HomePageState extends State<HomePage> {
           mesa = mesaResult;
           comanda = comandaResult;
         });
+        _carregarCategorias();
       }
+    }
+  }
+
+  Future<void> _carregarCategorias() async {
+    const url =
+        'https://webapi-sisfiscal-cqf7dxb8dkfye7ap.brazilsouth-01.azurewebsites.net/api/Categorias/categoria-by-filial/8urs76lF1QwjcNpi3CwD';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          categorias = data.map((e) => Categoria.fromJson(e)).toList();
+        });
+      } else {
+        print('Erro ao carregar categorias: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final languageController = Provider.of<LanguageController>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemWidth = screenWidth / 3 - 24;
 
     return SafeArea(
       child: Scaffold(
-        body: Column(
-          children: [
-            // TOPO: Logo à esquerda, bandeiras à direita
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.asset('images/logodd.png', height: 48),
-                  Row(
-                    children: [
-                      _buildFlag('images/br.png', 'pt', languageController),
-                      const SizedBox(width: 8),
-                      _buildFlag('images/en.png', 'en', languageController),
-                      const SizedBox(width: 8),
-                      _buildFlag('images/es.png', 'es', languageController),
-                    ],
+        body: ConexaoWrapper(
+          child: LayoutBuilder(
+            builder:
+                (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Image.asset('images/logodd.png', height: 48),
+                                Row(
+                                  children: [
+                                    _buildFlag(
+                                      'images/br.png',
+                                      'pt',
+                                      languageController,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildFlag(
+                                      'images/en.png',
+                                      'en',
+                                      languageController,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildFlag(
+                                      'images/es.png',
+                                      'es',
+                                      languageController,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: _pedirMesaEComanda,
+                              child: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!.placeYourOrder.toUpperCase(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          if (mesa != null && comanda != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    '${AppLocalizations.of(context)!.table}: $mesa',
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                  Text(
+                                    '${AppLocalizations.of(context)!.order}: $comanda',
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children:
+                                        categorias.map((categoria) {
+                                          return SizedBox(
+                                            width: itemWidth.clamp(100, 200),
+                                            child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                backgroundColor: Colors.white,
+                                                foregroundColor: Colors.black,
+                                              ),
+                                              onPressed: () {},
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    child: Image.network(
+                                                      categoria.imagem,
+                                                      height: 80,
+                                                      width: 80,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder:
+                                                          (
+                                                            context,
+                                                            error,
+                                                            stackTrace,
+                                                          ) => const Icon(
+                                                            Icons.broken_image,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          8.0,
+                                                        ),
+                                                    child: Text(
+                                                      categoria.desCategoria,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const Spacer(),
+                          const Divider(height: 1, thickness: 1),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12.0),
+                            child: Text(
+                              '© 2025 BakeryFood. Todos os direitos reservados.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // BOTÃO central
-            Center(
-              child: ElevatedButton(
-                onPressed: _pedirMesaEComanda,
-                child: Text(
-                  AppLocalizations.of(context)!.placeYourOrder.toUpperCase(),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Exibe mesa e comanda
-            if (mesa != null && comanda != null)
-              Column(
-                children: [
-                  Text(
-                    '${AppLocalizations.of(context)!.table}: $mesa',
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  Text(
-                    '${AppLocalizations.of(context)!.order}: $comanda',
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            const Spacer(),
-
-            const Divider(height: 1, thickness: 1),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0),
-              child: Text(
-                '© 2025 BakeryFood. Todos os direitos reservados.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
+
+    // return SafeArea(
+    //   child: Scaffold(
+    //     body: ConexaoWrapper(
+    //       child: Column(
+    //         children: [
+    //           // TOPO: Logo à esquerda, bandeiras à direita
+    //           Padding(
+    //             padding: const EdgeInsets.symmetric(
+    //               horizontal: 16,
+    //               vertical: 12,
+    //             ),
+    //             child: Row(
+    //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //               children: [
+    //                 Image.asset('images/logodd.png', height: 48),
+    //                 Row(
+    //                   children: [
+    //                     _buildFlag('images/br.png', 'pt', languageController),
+    //                     const SizedBox(width: 8),
+    //                     _buildFlag('images/en.png', 'en', languageController),
+    //                     const SizedBox(width: 8),
+    //                     _buildFlag('images/es.png', 'es', languageController),
+    //                   ],
+    //                 ),
+    //               ],
+    //             ),
+    //           ),
+
+    //           const SizedBox(height: 40),
+
+    //           // BOTÃO central
+    //           Center(
+    //             child: ElevatedButton(
+    //               onPressed: _pedirMesaEComanda,
+    //               child: Text(
+    //                 AppLocalizations.of(context)!.placeYourOrder.toUpperCase(),
+    //               ),
+    //             ),
+    //           ),
+
+    //           const SizedBox(height: 40),
+
+    //           // Exibe mesa e comanda
+    //           if (mesa != null && comanda != null)
+    //             Column(
+    //               children: [
+    //                 Text(
+    //                   '${AppLocalizations.of(context)!.table}: $mesa',
+    //                   style: const TextStyle(fontSize: 18),
+    //                 ),
+    //                 Text(
+    //                   '${AppLocalizations.of(context)!.order}: $comanda',
+    //                   style: const TextStyle(fontSize: 18),
+    //                 ),
+    //                 Wrap(
+    //                   spacing: 12,
+    //                   runSpacing: 12,
+    //                   children:
+    //                       categorias.map((categoria) {
+    //                         return ElevatedButton(
+    //                           style: ElevatedButton.styleFrom(
+    //                             padding: const EdgeInsets.all(12),
+    //                             backgroundColor: Colors.white,
+    //                             foregroundColor: Colors.black,
+    //                           ),
+    //                           onPressed: () {},
+    //                           child: Column(
+    //                             mainAxisSize: MainAxisSize.min,
+    //                             children: [
+    //                               ClipRRect(
+    //                                 borderRadius: BorderRadius.circular(8),
+    //                                 child: FadeInImage.assetNetwork(
+    //                                   placeholder: 'images/placeholder.png',
+    //                                   image: categoria.imagem,
+    //                                   height: 80,
+    //                                   width: 80,
+    //                                   fit: BoxFit.cover,
+    //                                   imageErrorBuilder:
+    //                                       (context, error, stackTrace) =>
+    //                                           const Icon(Icons.broken_image),
+    //                                 ),
+    //                               ),
+    //                               // Image.network(
+    //                               //   categoria.imagem,
+    //                               //   height: 80,
+    //                               //   width: 80,
+    //                               //   fit: BoxFit.cover,
+    //                               // ),
+    //                               const SizedBox(height: 8),
+    //                               Text(
+    //                                 categoria.desCategoria,
+    //                                 textAlign: TextAlign.center,
+    //                                 maxLines: 2,
+    //                                 overflow: TextOverflow.ellipsis,
+    //                                 style: const TextStyle(fontSize: 14),
+    //                               ),
+    //                             ],
+    //                           ),
+    //                         );
+    //                       }).toList(),
+    //                 ),
+    //               ],
+    //             ),
+    //           const Spacer(),
+
+    //           const Divider(height: 1, thickness: 1),
+    //           const Padding(
+    //             padding: EdgeInsets.symmetric(vertical: 12.0),
+    //             child: Text(
+    //               '© 2025 BakeryFood. Todos os direitos reservados.',
+    //               style: TextStyle(fontSize: 12, color: Colors.grey),
+    //             ),
+    //           ),
+    //         ],
+    //       ),
+    //     ),
+    //   ),
+    // );
   }
 
   Widget _buildFlag(String path, String lang, LanguageController controller) {
