@@ -1,0 +1,1 @@
+{"hosting":{"site":"deola-pedido-mesa","public":"build/web","ignore":["firebase.json","**/.*","**/node_modules/**"]},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"foodautomation-1a2f8","configurations":{"web":"1:441133021852:web:0b5f00905c1a824783cb59"}}}}}}
