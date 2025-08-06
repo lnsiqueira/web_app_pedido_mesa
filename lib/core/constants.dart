@@ -6,6 +6,7 @@ class GlobalKeys {
   static const ambienteNfe = 'H';
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
+  static String tokenBratter = '';
 }
 
 class CustomColor {
@@ -18,7 +19,8 @@ class CustomColor {
 class Urls {
   static const String urlApiAzure =
       'https://webapi-sisfiscal-cqf7dxb8dkfye7ap.brazilsouth-01.azurewebsites.net/api/';
-  static const String urlApiBratter = 'http://192.168.0.99:19974/DeolaApi/api/';
+  static const String urlApiBratter =
+      'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
   static String urlApimEmissaoNFe =
       GlobalKeys.ambienteNfe == "H"
           ? 'http://helpmachine.ddns.com.br:9006/nfe'

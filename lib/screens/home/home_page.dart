@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/main.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   String? mesa;
   String? comanda;
   List<Categoria> categorias = [];
+  bool isLoading = false;
 
   Future<void> _pedirMesaEComanda() async {
     final mesaController = TextEditingController();
@@ -89,8 +92,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _carregarCategorias() async {
+    setState(() {
+      isLoading = true;
+    });
+
     const url =
-        'https://webapi-sisfiscal-cqf7dxb8dkfye7ap.brazilsouth-01.azurewebsites.net/api/Categorias/categoria-by-filial/8urs76lF1QwjcNpi3CwD';
+        '${Urls.urlApiAzure}/Categorias/categoria-by-filial/8urs76lF1QwjcNpi3CwD';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -103,6 +110,10 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       print('Erro: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -169,6 +180,13 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
+                          isLoading
+                              ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: const CircularProgressIndicator(),
+                              )
+                              : SizedBox(),
+
                           const SizedBox(height: 40),
                           if (mesa != null && comanda != null)
                             Padding(
@@ -201,7 +219,18 @@ class _HomePageState extends State<HomePage> {
                                                 backgroundColor: Colors.white,
                                                 foregroundColor: Colors.black,
                                               ),
-                                              onPressed: () {},
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) => ItensPage(
+                                                          idCategoria:
+                                                              categoria.id,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [

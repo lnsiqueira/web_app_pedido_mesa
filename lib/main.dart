@@ -1,18 +1,50 @@
+import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
+import 'package:webapp_pedido_mesa/core/model/token_response.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
 import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:http/http.dart' as http;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await tokenApiBratter();
 
   runApp(const MyApp());
+}
+
+Future<void> tokenApiBratter() async {
+  try {
+    var url = Urls.urlApiBratter;
+    String username = GlobalKeys.userApiBratter;
+    String password = GlobalKeys.passwordApiBratter;
+    String basicAuth =
+        'Basic ' + base64.encode(utf8.encode('$username:$password'));
+
+    final response = await http.get(
+      Uri.parse('${url}User'),
+      headers: {"Authorization": "$basicAuth"},
+    );
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> jsonMap = json.decode(response.body);
+      TokenResponse tokenResponse = TokenResponse.fromJson(jsonMap);
+
+      GlobalKeys.tokenBratter = tokenResponse.tokenDao;
+    } else {
+      print(response.reasonPhrase);
+    }
+  } catch (e) {
+    print('Erro ao obter token: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
