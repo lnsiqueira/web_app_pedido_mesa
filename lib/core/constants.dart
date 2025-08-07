@@ -7,6 +7,7 @@ class GlobalKeys {
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
   static String tokenBratter = '';
+  static const String serieNfe = '1';
 }
 
 class CustomColor {

@@ -1,12 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
+import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
-import 'package:webapp_pedido_mesa/main.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
+import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
@@ -19,8 +20,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String? mesa;
-  String? comanda;
+  String? _mesa;
+  String? _comanda;
   List<Categoria> categorias = [];
   bool isLoading = false;
 
@@ -83,9 +84,16 @@ class _HomePageState extends State<HomePage> {
 
       if (comandaResult != null && comandaResult.isNotEmpty) {
         setState(() {
-          mesa = mesaResult;
-          comanda = comandaResult;
+          _mesa = mesaResult;
+          _comanda = comandaResult;
         });
+        final mesaComanda = Provider.of<MesaComandaModel>(
+          context,
+          listen: false,
+        );
+
+        mesaComanda.setMesa(_mesa!);
+        mesaComanda.setComanda(_comanda!);
         _carregarCategorias();
       }
     }
@@ -122,9 +130,87 @@ class _HomePageState extends State<HomePage> {
     final languageController = Provider.of<LanguageController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = screenWidth / 3 - 24;
+    final mesa = context.watch<MesaComandaModel>().mesa;
+    final comanda = context.watch<MesaComandaModel>().comanda;
 
     return SafeArea(
       child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: AppBar(
+            automaticallyImplyLeading: false, // Oculta botão "voltar"
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // LOGO
+                Image.asset('images/logodd.png', height: 40),
+
+                // TÍTULO
+                // const Expanded(
+                //   child: Center(
+                //     child: Text(
+                //       'Escolha seus produtos',
+                //       style: TextStyle(fontSize: 18),
+                //     ),
+                //   ),
+                // ),
+
+                // FLAGS + CARRINHO
+                Row(
+                  children: [
+                    _buildFlag('images/br.png', 'pt', languageController),
+                    const SizedBox(width: 6),
+                    _buildFlag('images/en.png', 'en', languageController),
+                    const SizedBox(width: 6),
+                    _buildFlag('images/es.png', 'es', languageController),
+                    const SizedBox(width: 12),
+
+                    // Carrinho com badge
+                    Consumer<CarrinhoModel>(
+                      builder:
+                          (context, carrinho, _) => Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.shopping_cart),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CarrinhoPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (carrinho.totalItens > 0)
+                                Positioned(
+                                  right: 4,
+                                  top: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      carrinho.totalItens.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+
         body: ConexaoWrapper(
           child: LayoutBuilder(
             builder:
@@ -142,29 +228,11 @@ class _HomePageState extends State<HomePage> {
                               vertical: 12,
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image.asset('images/logodd.png', height: 48),
-                                Row(
-                                  children: [
-                                    _buildFlag(
-                                      'images/br.png',
-                                      'pt',
-                                      languageController,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildFlag(
-                                      'images/en.png',
-                                      'en',
-                                      languageController,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildFlag(
-                                      'images/es.png',
-                                      'es',
-                                      languageController,
-                                    ),
-                                  ],
+                                Text(
+                                  'Escolha seus produtos',
+                                  style: TextStyle(fontSize: 18),
                                 ),
                               ],
                             ),
@@ -302,125 +370,6 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-
-    // return SafeArea(
-    //   child: Scaffold(
-    //     body: ConexaoWrapper(
-    //       child: Column(
-    //         children: [
-    //           // TOPO: Logo à esquerda, bandeiras à direita
-    //           Padding(
-    //             padding: const EdgeInsets.symmetric(
-    //               horizontal: 16,
-    //               vertical: 12,
-    //             ),
-    //             child: Row(
-    //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    //               children: [
-    //                 Image.asset('images/logodd.png', height: 48),
-    //                 Row(
-    //                   children: [
-    //                     _buildFlag('images/br.png', 'pt', languageController),
-    //                     const SizedBox(width: 8),
-    //                     _buildFlag('images/en.png', 'en', languageController),
-    //                     const SizedBox(width: 8),
-    //                     _buildFlag('images/es.png', 'es', languageController),
-    //                   ],
-    //                 ),
-    //               ],
-    //             ),
-    //           ),
-
-    //           const SizedBox(height: 40),
-
-    //           // BOTÃO central
-    //           Center(
-    //             child: ElevatedButton(
-    //               onPressed: _pedirMesaEComanda,
-    //               child: Text(
-    //                 AppLocalizations.of(context)!.placeYourOrder.toUpperCase(),
-    //               ),
-    //             ),
-    //           ),
-
-    //           const SizedBox(height: 40),
-
-    //           // Exibe mesa e comanda
-    //           if (mesa != null && comanda != null)
-    //             Column(
-    //               children: [
-    //                 Text(
-    //                   '${AppLocalizations.of(context)!.table}: $mesa',
-    //                   style: const TextStyle(fontSize: 18),
-    //                 ),
-    //                 Text(
-    //                   '${AppLocalizations.of(context)!.order}: $comanda',
-    //                   style: const TextStyle(fontSize: 18),
-    //                 ),
-    //                 Wrap(
-    //                   spacing: 12,
-    //                   runSpacing: 12,
-    //                   children:
-    //                       categorias.map((categoria) {
-    //                         return ElevatedButton(
-    //                           style: ElevatedButton.styleFrom(
-    //                             padding: const EdgeInsets.all(12),
-    //                             backgroundColor: Colors.white,
-    //                             foregroundColor: Colors.black,
-    //                           ),
-    //                           onPressed: () {},
-    //                           child: Column(
-    //                             mainAxisSize: MainAxisSize.min,
-    //                             children: [
-    //                               ClipRRect(
-    //                                 borderRadius: BorderRadius.circular(8),
-    //                                 child: FadeInImage.assetNetwork(
-    //                                   placeholder: 'images/placeholder.png',
-    //                                   image: categoria.imagem,
-    //                                   height: 80,
-    //                                   width: 80,
-    //                                   fit: BoxFit.cover,
-    //                                   imageErrorBuilder:
-    //                                       (context, error, stackTrace) =>
-    //                                           const Icon(Icons.broken_image),
-    //                                 ),
-    //                               ),
-    //                               // Image.network(
-    //                               //   categoria.imagem,
-    //                               //   height: 80,
-    //                               //   width: 80,
-    //                               //   fit: BoxFit.cover,
-    //                               // ),
-    //                               const SizedBox(height: 8),
-    //                               Text(
-    //                                 categoria.desCategoria,
-    //                                 textAlign: TextAlign.center,
-    //                                 maxLines: 2,
-    //                                 overflow: TextOverflow.ellipsis,
-    //                                 style: const TextStyle(fontSize: 14),
-    //                               ),
-    //                             ],
-    //                           ),
-    //                         );
-    //                       }).toList(),
-    //                 ),
-    //               ],
-    //             ),
-    //           const Spacer(),
-
-    //           const Divider(height: 1, thickness: 1),
-    //           const Padding(
-    //             padding: EdgeInsets.symmetric(vertical: 12.0),
-    //             child: Text(
-    //               '© 2025 BakeryFood. Todos os direitos reservados.',
-    //               style: TextStyle(fontSize: 12, color: Colors.grey),
-    //             ),
-    //           ),
-    //         ],
-    //       ),
-    //     ),
-    //   ),
-    // );
   }
 
   Widget _buildFlag(String path, String lang, LanguageController controller) {
@@ -428,59 +377,7 @@ class _HomePageState extends State<HomePage> {
       onTap: () {
         controller.changeLanguage(lang);
       },
-      child: Image.asset(path, width: 44),
+      child: Image.asset(path, width: 34),
     );
   }
 }
-  //   return SafeArea(
-  //     child: Scaffold(
-  //       appBar: AppBar(title: Text(AppLocalizations.of(context)!.helloWorld)),
-  //       body: Row(
-  //         mainAxisAlignment:
-  //             MainAxisAlignment.spaceBetween, // Alinha os extremos
-  //         children: [
-  //           // Text(AppLocalizations.of(context)!.helloWorld),
-  //           Row(
-  //             children: [
-  //               InkWell(
-  //                 onTap: () {
-  //                   languageController.isPortuguese = true;
-  //                   languageController.isEnglish = false;
-  //                   languageController.isSpain = false;
-  //                   idioma = 'pt';
-  //                   languageController.toggleLanguage();
-  //                   setState(() {});
-  //                 }, // Português
-  //                 child: Image.asset('images/br.png', width: 44),
-  //               ),
-  //               SizedBox(width: 8),
-  //               InkWell(
-  //                 onTap: () {
-  //                   languageController.isSpain = false;
-  //                   languageController.isEnglish = true;
-  //                   languageController.isPortuguese = false;
-  //                   idioma = 'en';
-  //                   languageController.toggleLanguage();
-  //                   setState(() {});
-  //                 }, // Inglês
-  //                 child: Image.asset('images/en.png', width: 44),
-  //               ),
-  //               SizedBox(width: 8),
-  //               InkWell(
-  //                 onTap: () {
-  //                   languageController.isSpain = true;
-  //                   languageController.isEnglish = false;
-  //                   languageController.isPortuguese = false;
-  //                   idioma = 'es';
-  //                   languageController.toggleLanguage();
-  //                 }, // Espanhol
-  //                 child: Image.asset('images/es.png', width: 44),
-  //               ),
-  //             ],
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
