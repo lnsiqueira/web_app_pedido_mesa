@@ -6,9 +6,11 @@ import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
+import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
 
@@ -105,7 +107,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     const url =
-        '${Urls.urlApiAzure}/Categorias/categoria-by-filial/8urs76lF1QwjcNpi3CwD';
+        '${Urls.urlApiAzure}/Categorias/categoria-by-filial/${GlobalKeys.codFilial}';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -164,7 +166,15 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 6),
                     _buildFlag('images/es.png', 'es', languageController),
                     const SizedBox(width: 12),
-
+                    MeusPedidosWidget(),
+                    // Text(
+                    //   'Meus pedidos',
+                    //   style: TextStyle(
+                    //     fontSize: 14,
+                    //     color: const Color.fromARGB(255, 93, 71, 41),
+                    //   ),
+                    // ),
+                    const SizedBox(width: 12),
                     // Carrinho com badge
                     Consumer<CarrinhoModel>(
                       builder:
@@ -378,6 +388,393 @@ class _HomePageState extends State<HomePage> {
         controller.changeLanguage(lang);
       },
       child: Image.asset(path, width: 34),
+    );
+  }
+}
+
+// class MeusPedidosWidget extends StatelessWidget {
+//   const MeusPedidosWidget({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final carrinho = Provider.of<CarrinhoModel>(context);
+
+//     return GestureDetector(
+//       onTap: () {
+//         if (carrinho.itens.isEmpty) {
+//           ScaffoldMessenger.of(
+//             context,
+//           ).showSnackBar(const SnackBar(content: Text('Carrinho vazio')));
+//           return;
+//         }
+//         showDialog(
+//           context: context,
+//           builder: (context) {
+//             return AlertDialog(
+//               title: const Text('Meus Pedidos'),
+//               content: SizedBox(
+//                 width: double.maxFinite,
+//                 child: Column(
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     Expanded(
+//                       child: ListView.builder(
+//                         shrinkWrap: true,
+//                         itemCount: carrinho.itens.length,
+//                         itemBuilder: (context, index) {
+//                           final item = carrinho.itens[index];
+//                           final totalItem =
+//                               item.quantidade * item.produto.preco!;
+//                           return ListTile(
+//                             title: Text(item.produto.desProduto!),
+//                             subtitle: Column(
+//                               crossAxisAlignment: CrossAxisAlignment.start,
+//                               children: [
+//                                 Text('Qtd: ${item.quantidade}'),
+//                                 Text(
+//                                   'Total: R\$ ${totalItem.toStringAsFixed(2)}',
+//                                 ),
+//                               ],
+//                             ),
+//                           );
+//                         },
+//                       ),
+//                     ),
+//                     const SizedBox(height: 12),
+//                     Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         const Text(
+//                           'Status do Pagamento:',
+//                           style: TextStyle(fontWeight: FontWeight.bold),
+//                         ),
+//                         // Text(
+//                         //   carrinho.statusPagamento,
+//                         //   style: TextStyle(
+//                         //     color: carrinho.statusPagamento == 'Pago'
+//                         //         ? Colors.green
+//                         //         : Colors.red,
+//                         //     fontWeight: FontWeight.bold,
+//                         //   ),
+//                         // ),
+//                       ],
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               actions: [
+//                 TextButton(
+//                   onPressed: () async {
+//                     // Salvar os itens no SharedPreferences
+//                     await CarrinhoStorage.salvarCarrinho(carrinho.itens);
+//                     Navigator.of(context).pop();
+//                   },
+//                   child: const Text('Fechar e Salvar'),
+//                 ),
+//               ],
+//             );
+//           },
+//         );
+//       },
+//       child: Text(
+//         'Meus pedidos',
+//         style: TextStyle(
+//           fontSize: 14,
+//           color: Colors.blue,
+//           decoration: TextDecoration.underline, // efeito de hyperlink
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class MeusPedidosWidget extends StatelessWidget {
+//   MeusPedidosWidget({super.key});
+
+//   Future<List<ItemCarrinho>> _buscarPedidosSalvos() async {
+//     return await CarrinhoStorage.recuperarCarrinho();
+//   }
+
+//   String _statusPagamento = 'Pendente';
+
+//   consultaPagamento(int idInvoice) async {
+//     final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/consultar');
+
+//     try {
+//       final body = jsonEncode({
+//         "idFilial": GlobalKeys.codFilial,
+//         "idInvoicePix": idInvoice.toString(),
+//       });
+
+//       final response = await http.post(
+//         url,
+//         headers: {"Content-Type": "application/json"},
+//         body: body,
+//       );
+
+//       if (response.statusCode == 200) {
+//         final jsonResponse = jsonDecode(response.body);
+//         if (jsonResponse['statusPagamento'] == 'credited' ||
+//             jsonResponse['statusPagamento'] == 'paid') {
+//           _statusPagamento = 'Pago';
+//         } else {
+//           _statusPagamento = 'Pendente';
+//         }
+//       } else {
+//         print('Erro ao consultar pagamento: ${response.statusCode}');
+//       }
+//     } catch (e) {
+//       print('Erro ao consultar pagamento: $e');
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: () async {
+//         final pedidos = await _buscarPedidosSalvos();
+//         await consultaPagamento(GlobalKeys.idInvoice);
+
+//         if (pedidos.isEmpty) {
+//           ScaffoldMessenger.of(context).showSnackBar(
+//             const SnackBar(content: Text('Nenhum pedido encontrado')),
+//           );
+//           return;
+//         }
+
+//         showDialog(
+//           context: context,
+//           builder: (context) {
+//             return AlertDialog(
+//               title: const Text('Meus Pedidos'),
+//               content: SizedBox(
+//                 width: double.maxFinite,
+//                 child: Column(
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     Expanded(
+//                       child: ListView.builder(
+//                         shrinkWrap: true,
+//                         itemCount: pedidos.length,
+//                         itemBuilder: (context, index) {
+//                           final item = pedidos[index];
+//                           final totalItem =
+//                               item.quantidade * item.produto.preco!;
+//                           return ListTile(
+//                             title: Text(item.produto.desProduto!),
+//                             subtitle: Column(
+//                               crossAxisAlignment: CrossAxisAlignment.start,
+//                               children: [
+//                                 Text('Qtd: ${item.quantidade}'),
+//                                 Text(
+//                                   'Total: R\$ ${totalItem.toStringAsFixed(2)}',
+//                                 ),
+//                               ],
+//                             ),
+//                           );
+//                         },
+//                       ),
+//                     ),
+//                     Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         const Text(
+//                           'Status do Pagamento:',
+//                           style: TextStyle(fontWeight: FontWeight.bold),
+//                         ),
+//                         Text(
+//                           _statusPagamento,
+//                           style: TextStyle(
+//                             color:
+//                                 _statusPagamento == 'Pago'
+//                                     ? Colors.green
+//                                     : Colors.red,
+//                             fontWeight: FontWeight.bold,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               actions: [
+//                 TextButton(
+//                   onPressed: () => Navigator.of(context).pop(),
+//                   child: const Text('Fechar'),
+//                 ),
+//               ],
+//             );
+//           },
+//         );
+//       },
+//       child: const Text(
+//         'Meus pedidos',
+//         style: TextStyle(
+//           fontSize: 14,
+//           color: Colors.blue,
+//           decoration: TextDecoration.underline,
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+class MeusPedidosWidget extends StatefulWidget {
+  const MeusPedidosWidget({super.key});
+
+  @override
+  State<MeusPedidosWidget> createState() => _MeusPedidosWidgetState();
+}
+
+class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
+  String _statusPagamento = 'Pendente';
+
+  Future<List<ItemCarrinho>> _buscarPedidosSalvos() async {
+    return await CarrinhoStorage.recuperarCarrinho();
+  }
+
+  Future<void> _consultaPagamento(int idInvoice) async {
+    final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/consultar');
+
+    try {
+      final body = jsonEncode({
+        "idFilial": GlobalKeys.codFilial,
+        "idInvoicePix": idInvoice.toString(),
+      });
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['statusPagamento'] == 'credited' ||
+            jsonResponse['statusPagamento'] == 'paid') {
+          _statusPagamento = 'Pago';
+        } else {
+          _statusPagamento = 'Pendente';
+        }
+      } else {
+        debugPrint('Erro ao consultar pagamento: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Erro ao consultar pagamento: $e');
+    }
+  }
+
+  Future<void> _mostrarPedidos(BuildContext context) async {
+    // Mostra loading enquanto carrega
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final pedidos = await _buscarPedidosSalvos();
+    await _consultaPagamento(GlobalKeys.idInvoice);
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop(); // Fecha o loading
+
+    if (pedidos.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nenhum pedido encontrado')));
+      return;
+    }
+
+    // Calcula o valor total dos pedidos
+    double totalPedido = pedidos.fold(
+      0.0,
+      (soma, item) => soma + (item.quantidade * item.produto.preco!),
+    );
+
+    // Mostra o dialog com os pedidos
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Meus Pedidos\n'
+            'Total: R\$ ${totalPedido.toStringAsFixed(2)}\n'
+            'ID Invoice: ${GlobalKeys.idInvoice}',
+            style: const TextStyle(fontSize: 16),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: pedidos.length,
+                    itemBuilder: (context, index) {
+                      final item = pedidos[index];
+                      final totalItem = item.quantidade * item.produto.preco!;
+                      return ListTile(
+                        title: Text(item.produto.desProduto!),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Qtd: ${item.quantidade}'),
+                            Text('Total: R\$ ${totalItem.toStringAsFixed(2)}'),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Status do Pagamento:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _statusPagamento,
+                      style: TextStyle(
+                        color:
+                            _statusPagamento == 'Pago'
+                                ? Colors.green
+                                : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _mostrarPedidos(context),
+      child: const Text(
+        'Meus pedidos',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+        ),
+      ),
     );
   }
 }

@@ -79,6 +79,64 @@ class _PagamentoPageState extends State<PagamentoPage> {
     );
   }
 
+  void _confirmarPagamentoOld() async {
+    setState(() {
+      _processandoPagamento = true;
+    });
+
+    // Simulando tempo de processamento
+    await Future.delayed(const Duration(seconds: 3));
+
+    setState(() {
+      _processandoPagamento = false;
+      _pagamentoRealizado = true;
+    });
+
+    var idPedido = await uploadPedido();
+
+    // Mostra alerta de sucesso
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: Text('Pagamento aprovado'),
+            content: Text(
+              'Aguarde que seu pedido será entregue na mesa.\nPedido ID: $idPedido',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // 1- ENVIAR API BRATTER
+                  // Aqui você pode chamar a API para registrar o pagamento
+                  // e enviar os dados necessários, como mesa, comanda, etc.
+                  // 2- DAR BAIXA NA COMANDA BRATTER
+                  // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+                  // 4- CHAMAR API XML
+
+                  Navigator.of(context).pop(); // fecha o dialog
+                  // Navigator.of(context).pop(); // volta para tela anterior
+
+                  // Limpa o carrinho via Provider
+                  final carrinho = Provider.of<CarrinhoModel>(
+                    context,
+                    listen: false,
+                  );
+                  carrinho.limpar();
+                  Provider.of<MesaComandaModel>(
+                    context,
+                    listen: false,
+                  ).limpar();
+
+                  // Fecha o diálogo e volta para a tela inicial
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
   Future<String> uploadPedido() async {
     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
     final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_page.dart';
+import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
 
 class CarrinhoPage extends StatelessWidget {
   const CarrinhoPage({super.key});
@@ -99,7 +100,8 @@ class CarrinhoPage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PagamentoPage(),
+                              builder: (_) => const PagamentoPixPage(),
+                              //  PagamentoPage(),
                             ),
                           );
                         },

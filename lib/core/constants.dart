@@ -1,13 +1,25 @@
 import 'package:flutter/widgets.dart';
+import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
+
+FilialNFModel? globalFilialData;
 
 class GlobalKeys {
   static const String idioma = '';
   static const String codFilial = '8urs76lF1QwjcNpi3CwD';
+  static const String descricaoFilial = 'Lapa';
+  static const String codEmpresa = '1';
+  static const String descricaoEmpresa = 'Dona Deola';
+
   static const ambienteNfe = 'H';
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
   static String tokenBratter = '';
   static const String serieNfe = '1';
+  static String numSequencialNfe = '';
+  static String base64Nfe = '';
+  static String errroResponse = '';
+  static String errroResponseStatusCode = '';
+  static int idInvoice = 0;
 }
 
 class CustomColor {
@@ -20,6 +32,10 @@ class CustomColor {
 class Urls {
   static const String urlApiAzure =
       'https://webapi-sisfiscal-cqf7dxb8dkfye7ap.brazilsouth-01.azurewebsites.net/api/';
+
+  static const String urlApiPagtoAzure =
+      'https://webapi-sispagamento-hnabgfa6h9h7hrg3.brazilsouth-01.azurewebsites.net/api/';
+
   static const String urlApiBratter =
       'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
   static String urlApimEmissaoNFe =

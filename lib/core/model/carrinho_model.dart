@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
+import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 
 class CarrinhoModel extends ChangeNotifier {
   final List<ItemCarrinho> _itens = [];
@@ -15,6 +16,7 @@ class CarrinhoModel extends ChangeNotifier {
     } else {
       _itens.add(ItemCarrinho(produto: produto));
     }
+    CarrinhoStorage.salvarCarrinho(itens); // salva automaticamente
 
     notifyListeners();
   }
@@ -22,6 +24,7 @@ class CarrinhoModel extends ChangeNotifier {
   void remover(ItemModel produto) {
     _itens.removeWhere((item) => item.produto.plu == produto.plu);
     notifyListeners();
+    CarrinhoStorage.salvarCarrinho(itens); // salva automaticamente
   }
 
   void limpar() {

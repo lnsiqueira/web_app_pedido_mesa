@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -8,16 +9,24 @@ import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
+import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
 import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
+import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
+import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GestureBinding.instance.resamplingEnabled = false;
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await tokenApiBratter();
+  globalFilialData = await getFilial();
+
+  CarrinhoStorage.limparCarrinho();
 
   runApp(const MyApp());
 }
@@ -47,6 +56,31 @@ Future<void> tokenApiBratter() async {
   }
 }
 
+Future<FilialNFModel?> getFilial() async {
+  //final url = Uri.parse('${Urls.urlApiBratter}filial');
+  try {
+    var urlBratter = Urls.urlApiBratter;
+    final encodedUrl = Uri.encodeComponent(urlBratter);
+
+    final url =
+        '${Urls.urlApiAzure}Proxy/filial?urlBratter=${encodedUrl}&tokenBratter=${GlobalKeys.tokenBratter}';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      return FilialNFModel.fromJson(data);
+    } else {
+      print('Erro ao buscar dados da filial: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Erro ao obter informações da filial: $e');
+    return null;
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -55,6 +89,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CarrinhoModel()),
+        ChangeNotifierProvider(create: (_) => ProdutosCacheProvider()),
 
         ChangeNotifierProvider(create: (_) => MesaComandaModel()),
         ChangeNotifierProvider(
