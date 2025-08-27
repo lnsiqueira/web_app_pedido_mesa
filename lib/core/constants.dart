@@ -20,6 +20,8 @@ class GlobalKeys {
   static String errroResponse = '';
   static String errroResponseStatusCode = '';
   static int idInvoice = 0;
+  static late String brCode;
+  static late bool pagtoPIX;
 }
 
 class CustomColor {
@@ -39,7 +41,8 @@ class Urls {
   static const String urlApiBratter =
       'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
   static String urlApimEmissaoNFe =
-      GlobalKeys.ambienteNfe == "H"
+      GlobalKeys.ambienteNfe == "P"
           ? 'http://helpmachine.ddns.com.br:9006/nfe'
-          : 'http://192.168.0.100:9005/nfe';
+          : 'http://helpmachine.ddns.com.br:9006/nfe';
+  //: 'http://192.168.0.100:9005/nfe'; //TODO
 }

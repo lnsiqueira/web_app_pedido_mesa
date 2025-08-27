@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
-import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
-import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_page.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
 
 class CarrinhoPage extends StatelessWidget {
@@ -85,8 +83,8 @@ class CarrinhoPage extends StatelessWidget {
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.payment),
-                        label: const Text('Pagar'),
+                        icon: const Icon(Icons.skip_next),
+                        label: const Text('Continuar'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           textStyle: const TextStyle(fontSize: 18),

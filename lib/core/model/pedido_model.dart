@@ -9,7 +9,7 @@ class PedidoModel {
   final String deviceToken;
   final List<ItemModel> itens;
   final double total;
-  final bool pedidoPago;
+  final bool pedidoPagoMesa;
   final String comanda;
   String? serieNfe;
   String? ambiente;
@@ -18,6 +18,7 @@ class PedidoModel {
   String? chave;
   bool? pedidoMesa;
   String? mesa;
+  int? idInvoicePix;
 
   PedidoModel({
     required this.pedidoId,
@@ -27,7 +28,7 @@ class PedidoModel {
     required this.deviceToken,
     required this.itens,
     required this.total,
-    required this.pedidoPago,
+    required this.pedidoPagoMesa,
     required this.comanda,
     this.serieNfe,
     this.ambiente,
@@ -36,6 +37,7 @@ class PedidoModel {
     this.chave,
     this.pedidoMesa = false,
     this.mesa,
+    this.idInvoicePix,
   });
 
   Map<String, dynamic> toMap() {
@@ -47,7 +49,7 @@ class PedidoModel {
       'deviceToken': deviceToken,
       'itens': itens.map((item) => item.toMap()).toList(),
       'total': total,
-      'pedidoPago': pedidoPago,
+      'pedidoPagoMesa': pedidoPagoMesa,
       'comanda': comanda,
       'serieNfe': serieNfe,
       'ambiente': ambiente,
@@ -56,6 +58,7 @@ class PedidoModel {
       'chave': chave,
       'pedidoMesa': pedidoMesa,
       'mesa': mesa,
+      "idInvoicePix": idInvoicePix,
     };
   }
 

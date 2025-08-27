@@ -24,22 +24,83 @@ class CarrinhoStorage {
     prefs.setString(keyCarrinho, jsonEncode(jsonList));
   }
 
-  // Recuperar carrinho do SharedPreferences
+  // // Recuperar carrinho do SharedPreferences
+  // static Future<List<ItemCarrinho>> recuperarCarrinho() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final jsonString = prefs.getString(keyCarrinho);
+  //   if (jsonString == null) return [];
+  //   final List<dynamic> jsonList = jsonDecode(jsonString);
+  //   return jsonList.map((jsonItem) {
+  //     final produtoJson = jsonItem['produto'];
+  //     final preco =
+  //         (produtoJson['preco'] is String)
+  //             ? double.tryParse(produtoJson['preco']) ?? 0.0
+  //             : (produtoJson['preco'] ?? 0.0);
+
+  //     return ItemCarrinho(
+  //       produto: ItemModel(
+  //         desProduto: produtoJson['desProduto'] ?? '',
+  //         preco: preco,
+  //       ),
+  //       quantidade: jsonItem['quantidade'] ?? 0,
+  //     );
+  //   }).toList();
+  // }
+
   static Future<List<ItemCarrinho>> recuperarCarrinho() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(keyCarrinho);
-    if (jsonString == null) return [];
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-    return jsonList.map((jsonItem) {
-      final produtoJson = jsonItem['produto'];
-      return ItemCarrinho(
-        produto: ItemModel(
-          desProduto: produtoJson['desProduto'],
-          preco: produtoJson['preco'],
-        ),
-        quantidade: jsonItem['quantidade'],
-      );
-    }).toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(keyCarrinho);
+
+      if (jsonString == null || jsonString.isEmpty) {
+        print('[DEBUG] Nenhum carrinho encontrado no SharedPreferences.');
+        return [];
+      }
+
+      print('[DEBUG] JSON recuperado: $jsonString');
+
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+
+      print('[DEBUG] Estrutura decodificada: $jsonList');
+
+      return jsonList
+          .map((jsonItem) {
+            if (jsonItem is! Map<String, dynamic>) {
+              print('[ERRO] Item inválido no JSON: $jsonItem');
+              return null;
+            }
+
+            final produtoJson = jsonItem['produto'] as Map<String, dynamic>?;
+
+            if (produtoJson == null) {
+              print('[ERRO] Produto inválido no item: $jsonItem');
+              return null;
+            }
+
+            final preco =
+                (produtoJson['preco'] is String)
+                    ? double.tryParse(produtoJson['preco']) ?? 0.0
+                    : (produtoJson['preco'] ?? 0.0);
+
+            return ItemCarrinho(
+              produto: ItemModel(
+                desProduto: produtoJson['desProduto'] ?? '',
+                preco: preco,
+              ),
+              quantidade:
+                  (jsonItem['quantidade'] is int)
+                      ? jsonItem['quantidade']
+                      : int.tryParse(jsonItem['quantidade'].toString()) ?? 0,
+            );
+          })
+          .where((item) => item != null)
+          .cast<ItemCarrinho>()
+          .toList();
+    } catch (e, stack) {
+      print('[ERRO] Falha ao recuperar carrinho: $e');
+      print(stack);
+      return [];
+    }
   }
 
   // Limpar carrinho do SharedPreferences

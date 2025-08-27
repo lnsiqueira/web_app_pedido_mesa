@@ -184,7 +184,7 @@ class _PagamentoPageState extends State<PagamentoPage> {
         deviceToken: "",
         itens: itensFinais,
         total: carrinho.totalGeral,
-        pedidoPago: true,
+        pedidoPagoMesa: true,
         comanda: mesaComanda.comanda,
         serieNfe: GlobalKeys.serieNfe,
         ambiente: GlobalKeys.ambienteNfe,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
@@ -364,7 +365,7 @@ class _HomePageState extends State<HomePage> {
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 12.0),
                             child: Text(
-                              '© 2025 BakeryFood. Todos os direitos reservados.',
+                              '© 2025 BakeryFood. Todos os direitos reservados. Version: 1.0',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -640,13 +641,12 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
       final body = jsonEncode({
         "idFilial": GlobalKeys.codFilial,
         "idInvoicePix": idInvoice.toString(),
+        "ambiente": GlobalKeys.ambienteNfe,
       });
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: body,
-      );
+      final response = await http
+          .post(url, headers: {"Content-Type": "application/json"}, body: body)
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -686,7 +686,7 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
       return;
     }
 
-    // Calcula o valor total dos pedidos
+    // // Calcula o valor total dos pedidos
     double totalPedido = pedidos.fold(
       0.0,
       (soma, item) => soma + (item.quantidade * item.produto.preco!),
@@ -747,6 +747,30 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    // _statusPagamento == 'Pendente'
+                    //     ? GlobalKeys.pagtoPIX
+                    //         ? ElevatedButton.icon(
+                    //           icon: const Icon(Icons.copy),
+                    //           label: const Text('COPIA E COLA PIX'),
+                    //           onPressed: () {
+                    //             Clipboard.setData(
+                    //               ClipboardData(text: GlobalKeys.brCode),
+                    //             );
+                    //             ScaffoldMessenger.of(context).showSnackBar(
+                    //               const SnackBar(
+                    //                 content: Text('Código PIX copiado!'),
+                    //               ),
+                    //             );
+                    //           },
+                    //           style: ElevatedButton.styleFrom(
+                    //             padding: const EdgeInsets.symmetric(
+                    //               horizontal: 24,
+                    //               vertical: 12,
+                    //             ),
+                    //           ),
+                    //         )
+                    //         : SizedBox()
+                    //     : SizedBox(),
                   ],
                 ),
               ],

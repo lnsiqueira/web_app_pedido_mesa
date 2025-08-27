@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
@@ -20,6 +21,8 @@ import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance(); // força a inicialização
+
   GestureBinding.instance.resamplingEnabled = false;
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

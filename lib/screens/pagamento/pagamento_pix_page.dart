@@ -33,7 +33,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
   String? _qrCodeBase64;
   int? _idInvoice;
   String? _brCode;
-  int _tempoRestante = 180; // 60 segundos para expirar
+  int _tempoRestante = 600; // 10 minutos
   Timer? _timer;
   Timer? _pollingTimer;
   String? formatted;
@@ -81,18 +81,79 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
       "e-mail": "maria.eduarda@email.com.br",
     },
     "split": [
-      {
-        "tipo": "percentual",
-        "valor": "0.70",
-        "conta": "89392367-30d4-11f0-a96f-42010a400013",
-      },
-      {
-        "tipo": "valor",
-        "valor": "0.40",
-        "conta": "89392367-30d4-11f0-a96f-42010a400013",
-      },
+      // {
+      //   "tipo": "percentual",
+      //   "valor": "0.70",
+      //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
+      // },
+      // {
+      //   "tipo": "valor",
+      //   "valor": "0.40",
+      //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
+      // },
     ],
   };
+
+  Future<void> _pagarCaixa() async {
+    GlobalKeys.pagtoPIX = false;
+    try {
+      var idPedido = await uploadPedido();
+      //final nfceService = NfceService();
+
+      //final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+
+      // bool resultado = await nfceService.getInformacoesFiscaisDosProdutos(
+      //   carrinho.itens,
+      //   context,
+      // );
+
+      // if (!mounted) return;
+
+      // final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+      // carrinho.limpar();
+      // Provider.of<MesaComandaModel>(context, listen: false).limpar();
+
+      // Navigator.of(context).popUntil((route) => route.isFirst);
+
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: Text('Pedido solicitado!'),
+              content: Text('Aguarde que seu pedido será entregue na mesa'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // 1- ENVIAR API BRATTER
+
+                    // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+
+                    Navigator.of(context).pop(); // fecha o dialog
+
+                    // Limpa o carrinho via Provider
+                    final carrinho = Provider.of<CarrinhoModel>(
+                      context,
+                      listen: false,
+                    );
+                    carrinho.limpar();
+                    Provider.of<MesaComandaModel>(
+                      context,
+                      listen: false,
+                    ).limpar();
+
+                    // Fecha o diálogo e volta para a tela inicial
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
+    } catch (e) {
+      _showErro('Erro ao chamar API: $e');
+    }
+  }
+
   Future<void> _simularPagamentoPix() async {
     final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/simular_baixa');
 
@@ -110,11 +171,13 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         },
       };
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(_pixRequestBody()),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(_pixRequestBody()),
+          )
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -134,20 +197,25 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
   }
 
   Future<void> _gerarPix() async {
+    if (!mounted) return;
+
     setState(() {
       _processandoPagamento = true;
       _pagamentoRealizado = false;
-      _tempoRestante = 180;
+      _tempoRestante = 600;
     });
 
+    GlobalKeys.pagtoPIX = true;
     final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/gerar');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(_pixRequestBody()),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(_pixRequestBody()),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -158,6 +226,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
             _idInvoice = data['id_invoice_pix'];
             GlobalKeys.idInvoice = _idInvoice!;
             _brCode = data['brcode'];
+            GlobalKeys.brCode = _brCode ?? '';
           });
 
           // Inicia contador regressivo
@@ -176,7 +245,11 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         _showErro('Erro na API: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      _showErro('Erro ao chamar API: $e');
+      if (e is TimeoutException) {
+        _showErro('Tempo limite excedido. Tente novamente.');
+      } else {
+        _showErro('Erro ao chamar API: $e');
+      }
     } finally {
       setState(() {
         _processandoPagamento = false;
@@ -249,13 +322,12 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
       final body = jsonEncode({
         "idFilial": GlobalKeys.codFilial,
         "idInvoicePix": idInvoice.toString(), // ou pode deixar como int
+        "ambiente": GlobalKeys.ambienteNfe,
       });
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: body,
-      );
+      final response = await http
+          .post(url, headers: {"Content-Type": "application/json"}, body: body)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -271,10 +343,12 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
           final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
 
-          bool resultado = await nfceService.getInformacoesFiscaisDosProdutos(
-            carrinho.itens,
-            context,
-          );
+          //TODO: remover
+          bool resultado = true;
+          //await nfceService.getInformacoesFiscaisDosProdutos(
+          //   carrinho.itens,
+          //   context,
+          // );
           if (!mounted) return;
 
           if (resultado) {
@@ -390,13 +464,14 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         deviceToken: "",
         itens: itensFinais,
         total: carrinho.totalGeral,
-        pedidoPago: true,
+        pedidoPagoMesa: _pagamentoRealizado,
         comanda: mesaComanda.comanda,
         serieNfe: GlobalKeys.serieNfe,
         ambiente: GlobalKeys.ambienteNfe,
         vlrDescontoEmbalagem: 0,
         pedidoMesa: true,
         mesa: mesaComanda.mesa,
+        idInvoicePix: GlobalKeys.idInvoice,
       );
 
       await _firestore
@@ -456,6 +531,20 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
   @override
   Widget build(BuildContext context) {
+    String _formatarTempo(int segundos) {
+      if (segundos >= 60) {
+        int minutos = segundos ~/ 60;
+        int segundosRestantes = segundos % 60;
+        if (segundosRestantes == 0) {
+          return '$minutos min';
+        } else {
+          return '$minutos min ${segundosRestantes}s';
+        }
+      } else {
+        return '$segundos s';
+      }
+    }
+
     return Scaffold(
       // appBar: AppBar(
       //   title: const Text('Pagamento PIX'),
@@ -632,23 +721,54 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                         const SizedBox(height: 20),
                         TweenAnimationBuilder<double>(
                           tween: Tween<double>(begin: 1.0, end: 0.0),
-                          duration: const Duration(seconds: 180),
+                          duration: const Duration(seconds: 600),
                           builder: (context, value, child) {
                             return LinearProgressIndicator(value: value);
                           },
                         ),
 
                         const SizedBox(height: 10),
+                        // Widget com animação mais elaborada
                         AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 500),
+                          duration: const Duration(milliseconds: 300),
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize:
+                                _tempoRestante <= 60
+                                    ? 26
+                                    : 24, // Aumenta o tamanho quando está acabando
                             color:
-                                _tempoRestante < 10 ? Colors.red : Colors.black,
+                                _tempoRestante <= 30
+                                    ? Colors.red[700]
+                                    : _tempoRestante <= 60
+                                    ? Colors.orange
+                                    : Colors.green[800],
                             fontWeight: FontWeight.bold,
+                            shadows:
+                                _tempoRestante <= 30
+                                    ? [
+                                      Shadow(
+                                        blurRadius: 10,
+                                        color: Colors.red.withOpacity(0.3),
+                                      ),
+                                    ]
+                                    : null,
                           ),
-                          child: Text('Expira em $_tempoRestante s'),
+                          child: Text(
+                            'Expira em ${_formatarTempo(_tempoRestante)}',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
+
+                        // AnimatedDefaultTextStyle(
+                        //   duration: const Duration(milliseconds: 500),
+                        //   style: TextStyle(
+                        //     fontSize: 24,
+                        //     color:
+                        //         _tempoRestante < 10 ? Colors.red : Colors.black,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        //   child: Text('Expira em $_tempoRestante s'),
+                        // ),
                         const SizedBox(height: 10),
                         if (_mensagemStatus != null)
                           Text(
@@ -662,11 +782,46 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                       ],
                       const SizedBox(height: 20),
                       if (_qrCodeBase64 == null)
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.pix),
-                          onPressed: _gerarPix,
-                          label: const Text('Gerar PIX'),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Título "Opções de Pagamento"
+                            const Text(
+                              'Opções de Pagamento',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 36,
+                            ), // Espaço entre título e botões
+
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.pix),
+                              onPressed: _gerarPix,
+                              label: const Text('Gerar PIX'),
+                            ),
+
+                            const Divider(
+                              height: 20,
+                              thickness: 1,
+                              color: Colors.grey,
+                            ),
+
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.money),
+                              onPressed: _pagarCaixa,
+                              label: const Text('Pagar no Caixa'),
+                            ),
+                          ],
                         ),
+                      // ElevatedButton.icon(
+                      //   icon: const Icon(Icons.pix),
+                      //   onPressed: _gerarPix,
+                      //   label: const Text('Gerar PIX'),
+                      // ),
                       if (_qrCodeBase64 != null &&
                           GlobalKeys.ambienteNfe == "H")
                         ElevatedButton(
