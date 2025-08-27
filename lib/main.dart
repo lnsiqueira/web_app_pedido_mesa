@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +13,8 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
-import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
@@ -93,7 +93,6 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => CarrinhoModel()),
         ChangeNotifierProvider(create: (_) => ProdutosCacheProvider()),
-
         ChangeNotifierProvider(create: (_) => MesaComandaModel()),
         ChangeNotifierProvider(
           create: (context) => LanguageController(),
@@ -120,7 +119,6 @@ class MyApp extends StatelessWidget {
                 Locale('pt'), // Portuguese
               ],
               locale: languageController.locale,
-
               home: SplashScreen(),
             );
           },

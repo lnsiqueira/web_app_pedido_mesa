@@ -27,78 +27,177 @@ class _HomePageState extends State<HomePage> {
   String? _comanda;
   List<Categoria> categorias = [];
   bool isLoading = false;
-
   Future<void> _pedirMesaEComanda() async {
     final mesaController = TextEditingController();
     final comandaController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
 
-    // Dialog da mesa
-    final mesaResult = await showDialog<String>(
+    final result = await showDialog<Map<String, String>?>(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.enterTableNumber),
-            content: TextField(
-              controller: mesaController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.table,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context)!.cancel),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, mesaController.text),
-                child: Text(AppLocalizations.of(context)!.continueText),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 2,
               ),
             ],
           ),
-    );
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    const SizedBox(width: 12),
+                    Text(
+                      'Mesa e Comanda',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
 
-    if (mesaResult != null && mesaResult.isNotEmpty) {
-      final comandaResult = await showDialog<String>(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.enterOrderNumber),
-              content: TextField(
-                controller: comandaController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.order,
+                const SizedBox(height: 24),
+
+                // Campo Mesa
+                Text(
+                  AppLocalizations.of(context)!.table,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context)!.cancel),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: mesaController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.enterTableNumber,
+                    prefixIcon:
+                        Icon(Icons.numbers, color: Colors.grey.shade500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppLocalizations.of(context)!.enterTableNumber;
+                    }
+                    return null;
+                  },
                 ),
-                ElevatedButton(
-                  onPressed:
-                      () => Navigator.pop(context, comandaController.text),
-                  child: Text(AppLocalizations.of(context)!.continueText),
+
+                const SizedBox(height: 20),
+
+                // Campo Comanda
+                Text(
+                  AppLocalizations.of(context)!.order,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: comandaController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.enterOrderNumber,
+                    prefixIcon:
+                        Icon(Icons.receipt_long, color: Colors.grey.shade500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppLocalizations.of(context)!
+                          .pleaseEnterOrderNumber;
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botões
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey.shade600,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      ),
+                      child: Text(AppLocalizations.of(context)!.cancel),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.pop(context, {
+                            'mesa': mesaController.text,
+                            'comanda': comandaController.text,
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(AppLocalizations.of(context)!.confirm),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _mesa = result['mesa'];
+        _comanda = result['comanda'];
+      });
+
+      final mesaComanda = Provider.of<MesaComandaModel>(
+        context,
+        listen: false,
       );
 
-      if (comandaResult != null && comandaResult.isNotEmpty) {
-        setState(() {
-          _mesa = mesaResult;
-          _comanda = comandaResult;
-        });
-        final mesaComanda = Provider.of<MesaComandaModel>(
-          context,
-          listen: false,
-        );
-
-        mesaComanda.setMesa(_mesa!);
-        mesaComanda.setComanda(_comanda!);
-        _carregarCategorias();
-      }
+      mesaComanda.setMesa(_mesa!);
+      mesaComanda.setComanda(_comanda!);
+      _carregarCategorias();
     }
   }
 
@@ -178,42 +277,41 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 12),
                     // Carrinho com badge
                     Consumer<CarrinhoModel>(
-                      builder:
-                          (context, carrinho, _) => Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.shopping_cart),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const CarrinhoPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              if (carrinho.totalItens > 0)
-                                Positioned(
-                                  right: 4,
-                                  top: 4,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      carrinho.totalItens.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                    ),
+                      builder: (context, carrinho, _) => Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.shopping_cart),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CarrinhoPage(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (carrinho.totalItens > 0)
+                            Positioned(
+                              right: 4,
+                              top: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  carrinho.totalItens.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -221,162 +319,138 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-
         body: ConexaoWrapper(
           child: LayoutBuilder(
-            builder:
-                (context, constraints) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Escolha seus produtos',
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                              ],
-                            ),
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      isLoading
+                          ? Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: const CircularProgressIndicator(),
+                            )
+                          : SizedBox(),
+                      const SizedBox(height: 20),
+                      if (mesa != null && comanda != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
                           ),
-                          const SizedBox(height: 40),
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: _pedirMesaEComanda,
-                              child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.placeYourOrder.toUpperCase(),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${AppLocalizations.of(context)!.table}: $mesa',
+                                style: const TextStyle(fontSize: 18),
                               ),
-                            ),
-                          ),
-                          isLoading
-                              ? Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: const CircularProgressIndicator(),
-                              )
-                              : SizedBox(),
-
-                          const SizedBox(height: 40),
-                          if (mesa != null && comanda != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
+                              Text(
+                                '${AppLocalizations.of(context)!.order}: $comanda',
+                                style: const TextStyle(fontSize: 18),
                               ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '${AppLocalizations.of(context)!.table}: $mesa',
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  Text(
-                                    '${AppLocalizations.of(context)!.order}: $comanda',
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    children:
-                                        categorias.map((categoria) {
-                                          return SizedBox(
-                                            width: itemWidth.clamp(100, 200),
-                                            child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                backgroundColor: Colors.white,
-                                                foregroundColor: Colors.black,
-                                              ),
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder:
-                                                        (context) => ItensPage(
-                                                          idCategoria:
-                                                              categoria.id,
-                                                        ),
-                                                  ),
-                                                );
-                                              },
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                    child: Image.network(
-                                                      categoria.imagem,
-                                                      height: 80,
-                                                      width: 80,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder:
-                                                          (
-                                                            context,
-                                                            error,
-                                                            stackTrace,
-                                                          ) => const Icon(
-                                                            Icons.broken_image,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          8.0,
-                                                        ),
-                                                    child: Text(
-                                                      categoria.desCategoria,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      maxLines: 2,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                              const SizedBox(height: 20),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: categorias.map((categoria) {
+                                  return SizedBox(
+                                    width: itemWidth.clamp(100, 200),
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.all(
+                                          8,
+                                        ),
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ItensPage(
+                                              idCategoria: categoria.id,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            child: Image.network(
+                                              categoria.imagem,
+                                              height: 80,
+                                              width: 80,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) =>
+                                                  const Icon(
+                                                Icons.broken_image,
                                               ),
                                             ),
-                                          );
-                                        }).toList(),
-                                  ),
-                                ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Padding(
+                                            padding: const EdgeInsets.all(
+                                              8.0,
+                                            ),
+                                            child: Text(
+                                              categoria.desCategoria,
+                                              textAlign: TextAlign.center,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            ),
-                          const Spacer(),
-                          const Divider(height: 1, thickness: 1),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12.0),
-                            child: Text(
-                              '© 2025 BakeryFood. Todos os direitos reservados. Version: 1.0',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _pedirMesaEComanda,
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!
+                                .placeYourOrder
+                                .toUpperCase(),
+                          ),
+                        ),
                       ),
-                    ),
+                      const Spacer(),
+                      const Divider(height: 1, thickness: 1),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        child: Text(
+                          '© 2025 BakeryFood. Todos os direitos reservados. Version: 1.0',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            ),
           ),
         ),
       ),
@@ -740,10 +814,9 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
                     Text(
                       _statusPagamento,
                       style: TextStyle(
-                        color:
-                            _statusPagamento == 'Pago'
-                                ? Colors.green
-                                : Colors.red,
+                        color: _statusPagamento == 'Pago'
+                            ? Colors.green
+                            : Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -789,14 +862,29 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: () => _mostrarPedidos(context),
-      child: const Text(
-        'Meus pedidos',
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 18,
+              color: Colors.blue.shade600,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Meus pedidos',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.blue.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );

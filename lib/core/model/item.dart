@@ -17,7 +17,7 @@ class ItemModel {
   int? quantidade;
   double? peso;
   String? imageUrl;
-
+  List<ItemObsModel>? obs;
   double? discountpreco;
   int? codigoBarras;
   String? categoria;
@@ -48,6 +48,7 @@ class ItemModel {
     this.categoria,
     this.subCategorias,
     this.pesavel = false,
+    this.obs,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) {
@@ -75,9 +76,13 @@ class ItemModel {
       categoria: null,
       subCategorias: null,
       pesavel: null,
+      obs: (json['Obs'] as List?)
+              ?.map((obsJson) => ItemObsModel.fromJson(obsJson))
+              .toList() ??
+          [],
     );
   }
-  ItemModel copyWith({double? preco}) {
+  ItemModel copyWith({double? preco, List<ItemObsModel>? obs}) {
     return ItemModel(
       id: id,
       idFilial: idFilial,
@@ -91,6 +96,7 @@ class ItemModel {
       dataAtualizacao: dataAtualizacao,
       desCategoria: desCategoria,
       preco: preco ?? this.preco,
+      obs: obs ?? this.obs,
     );
   }
 
@@ -107,4 +113,59 @@ class ItemModel {
       'quantidade': quantidade,
     };
   }
+}
+
+class ItemObsModel {
+  final String tipo;
+  String titulo;
+  final double preco;
+  int pluAdd;
+  final int ordem;
+  String? modificador;
+
+  ItemObsModel(
+      {required this.tipo,
+      required this.titulo,
+      required this.preco,
+      required this.pluAdd,
+      required this.ordem,
+      this.modificador});
+  ItemObsModel copyWith({
+    String? tipo,
+    String? titulo,
+    double? preco,
+    int? pluAdd,
+    int? ordem,
+    String? modificador,
+    bool clearModificador = false, // ← ADICIONE ESTA LINHA
+  }) {
+    return ItemObsModel(
+      tipo: tipo ?? this.tipo,
+      titulo: titulo ?? this.titulo,
+      preco: preco ?? this.preco,
+      pluAdd: pluAdd ?? this.pluAdd,
+      ordem: ordem ?? this.ordem,
+      modificador: clearModificador
+          ? null
+          : (modificador ?? this.modificador), // ← MODIFIQUE ESTA LINHA
+    );
+  }
+
+  factory ItemObsModel.fromJson(Map<String, dynamic> json) {
+    return ItemObsModel(
+        tipo: json['tipo'],
+        titulo: json['titulo'],
+        preco: json['preco'],
+        pluAdd: json['pluAdd'],
+        ordem: json['ordem'],
+        modificador: json['Modificador']);
+  }
+}
+
+//// to criando essa model so para a gente pegar as info preço e obs e concatrenar com a nossa lista de produtos do azure
+class ProdutoInfo {
+  final double? preco;
+  final List<ItemObsModel> obs;
+
+  ProdutoInfo({this.preco, this.obs = const []});
 }

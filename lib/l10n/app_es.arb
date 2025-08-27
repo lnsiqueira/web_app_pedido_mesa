@@ -40,6 +40,8 @@
     "cancelingIn" : "Cancelando en",
     "continuePage" : "Continuar en la página",
     "placeYourOrder" : "Haz tu pedido",
+    "pleaseEnterOrderNumber": "Por favor, ingrese el número de comanda",
+    "confirm": "Confirmar",
     "enterTableNumber" :  "Ingrese el número de mesa",
     "table" : "Mesa",
     "enterOrderNumber" : "Introduzca el número de pedido",

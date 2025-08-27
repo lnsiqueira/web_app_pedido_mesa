@@ -52,52 +52,161 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     print(formatted);
     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
     print(carrinho.totalGeral.toStringAsFixed(2));
-    valorEmCentavos = carrinho.totalGeral
-        .toStringAsFixed(2)
-        .replaceAll('.', '');
+    valorEmCentavos =
+        carrinho.totalGeral.toStringAsFixed(2).replaceAll('.', '');
 
     print(valorEmCentavos);
     super.initState();
   }
 
   Map<String, dynamic> _pixRequestBody() => {
-    "descricaoFilial": GlobalKeys.descricaoFilial,
-    "idFilial": GlobalKeys.codFilial,
-    "idEmpresa": GlobalKeys.codEmpresa,
-    "descricaoEmpresa": GlobalKeys.descricaoEmpresa,
-    "ambiente": GlobalKeys.ambienteNfe,
-    "valor": valorEmCentavos,
-    "tipo_transacao": "pixCashin",
-    "vencimento": formatted, // "2025-08-18T22:50:00",
-    "descricao": "Descrição da cobrança...",
-    "texto_instrucao": "Instruções da cobrança...",
-    "identificador_externo": null,
-    "identificador_movimento": " ",
-    "enviar_qr_code": true,
-    "cliente": {
-      "nome": "Maria Eduarda",
-      "tipo_documento": "cpf",
-      "numero_documento": "255.539.850-30",
-      "e-mail": "maria.eduarda@email.com.br",
-    },
-    "split": [
-      // {
-      //   "tipo": "percentual",
-      //   "valor": "0.70",
-      //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
-      // },
-      // {
-      //   "tipo": "valor",
-      //   "valor": "0.40",
-      //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
-      // },
-    ],
-  };
+        "descricaoFilial": GlobalKeys.descricaoFilial,
+        "idFilial": GlobalKeys.codFilial,
+        "idEmpresa": GlobalKeys.codEmpresa,
+        "descricaoEmpresa": GlobalKeys.descricaoEmpresa,
+        "ambiente": GlobalKeys.ambienteNfe,
+        "valor": valorEmCentavos,
+        "tipo_transacao": "pixCashin",
+        "vencimento": formatted, // "2025-08-18T22:50:00",
+        "descricao": "Descrição da cobrança...",
+        "texto_instrucao": "Instruções da cobrança...",
+        "identificador_externo": null,
+        "identificador_movimento": " ",
+        "enviar_qr_code": true,
+        "cliente": {
+          "nome": "Maria Eduarda",
+          "tipo_documento": "cpf",
+          "numero_documento": "255.539.850-30",
+          "e-mail": "maria.eduarda@email.com.br",
+        },
+        "split": [
+          // {
+          //   "tipo": "percentual",
+          //   "valor": "0.70",
+          //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
+          // },
+          // {
+          //   "tipo": "valor",
+          //   "valor": "0.40",
+          //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
+          // },
+        ],
+      };
 
   Future<void> _pagarCaixa() async {
     GlobalKeys.pagtoPIX = false;
     try {
       var idPedido = await uploadPedido();
+
+// envia direto para a comanda da bratter
+      final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+      final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
+
+      // try {
+      //   List<ItemModel> itensFinais = [];
+
+      //   Map<String, ItemModel> consolidados = {};
+
+      //   for (var item in carrinho.itens) {
+      //     final nome = item.produto.desProduto!.trim().toLowerCase();
+      //     final qtd = item.quantidade;
+
+      //     if (consolidados.containsKey(nome)) {
+      //       consolidados[nome]!.quantidade =
+      //           (consolidados[nome]!.quantidade ?? 0) +
+      //               (item.quantidade > 0 ? item.quantidade : 1);
+      //     } else {
+      //       consolidados[nome] = ItemModel(
+      //         desProduto: nome,
+      //         preco: item.produto.preco! *
+      //             (item.quantidade > 0 ? item.quantidade : 1),
+      //         detalhes: null,
+      //         tipoProduto: item.produto.desCategoria ?? "",
+      //         peso: null,
+      //         produtoId: item.produto.plu,
+      //         quantidade: item.quantidade > 0 ? item.quantidade : 1,
+      //         imageUrl: null,
+      //         discountpreco: null,
+      //         codigoBarras: null,
+      //         categoria: item.produto.desCategoria ?? "",
+      //         pesavel: false,
+      //         obs: item.
+      //       );
+      //     }
+      //     itensFinais = consolidados.values.toList();
+      //   }
+      // } catch (e) {}~
+      try {
+        var idPedido = await uploadPedido();
+
+        final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+        final mesaComanda =
+            Provider.of<MesaComandaModel>(context, listen: false);
+
+// monta JSON direto, sem consolidar
+        List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
+          List<Map<String, dynamic>> observacoesJson = [];
+
+          if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+            for (var obsItem in item.produto.obs!) {
+              if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+                observacoesJson.add({
+                  "Obs": obsItem.titulo,
+                  "Preco": 0.0,
+                  "PluAdd": obsItem.pluAdd ?? 0,
+                  "Modificador": 'COM',
+                });
+              } else if (obsItem.modificador != null &&
+                  (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+                observacoesJson.add({
+                  "Obs": obsItem.titulo,
+                  "Preco": obsItem.preco ?? 0.0,
+                  "PluAdd": obsItem.pluAdd ?? 0,
+                  "Modificador": obsItem.modificador,
+                });
+              }
+            }
+          }
+
+          final qtd = item.quantidade > 0 ? item.quantidade : 1;
+
+          return {
+            "IdProduto": item.produto.plu,
+            "Preco": item.produto.preco,
+            "Qtde": item.quantidade,
+            "Total": item.produto.preco! * qtd,
+            "Observacoes": observacoesJson,
+          };
+        }).toList();
+
+        var urlBratter = Urls.urlApiBratter;
+        final encodedUrl = Uri.encodeComponent(urlBratter);
+
+        final url =
+            '${Urls.urlApiAzure}Proxy/AddComanda/&urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+
+        // body
+
+        var request = http.Request('POST', Uri.parse(url));
+        request.body = json.encode({
+          "IdComanda": int.parse(mesaComanda.comanda),
+          "IdMesa": int.parse(mesaComanda.mesa),
+          "usuario": '',
+          "Itens": itemsJson,
+          "Uuid": idPedido,
+          "Terminal": 301,
+        });
+
+        final response = await request.send();
+        if (response.statusCode == 200) {
+          print('Pedido enviado com sucesso!');
+        } else {
+          print('Erro ao enviar pedido: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Erro no upload do pedido: $e');
+      }
+
       //final nfceService = NfceService();
 
       //final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
@@ -117,37 +226,36 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
       showDialog(
         context: context,
-        builder:
-            (_) => AlertDialog(
-              title: Text('Pedido solicitado!'),
-              content: Text('Aguarde que seu pedido será entregue na mesa'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    // 1- ENVIAR API BRATTER
+        builder: (_) => AlertDialog(
+          title: Text('Pedido solicitado!'),
+          content: Text('Aguarde que seu pedido será entregue na mesa'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // 1- ENVIAR API BRATTER
 
-                    // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+                // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
 
-                    Navigator.of(context).pop(); // fecha o dialog
+                Navigator.of(context).pop(); // fecha o dialog
 
-                    // Limpa o carrinho via Provider
-                    final carrinho = Provider.of<CarrinhoModel>(
-                      context,
-                      listen: false,
-                    );
-                    carrinho.limpar();
-                    Provider.of<MesaComandaModel>(
-                      context,
-                      listen: false,
-                    ).limpar();
+                // Limpa o carrinho via Provider
+                final carrinho = Provider.of<CarrinhoModel>(
+                  context,
+                  listen: false,
+                );
+                carrinho.limpar();
+                Provider.of<MesaComandaModel>(
+                  context,
+                  listen: false,
+                ).limpar();
 
-                    // Fecha o diálogo e volta para a tela inicial
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
+                // Fecha o diálogo e volta para a tela inicial
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('OK'),
             ),
+          ],
+        ),
       );
     } catch (e) {
       _showErro('Erro ao chamar API: $e');
@@ -159,17 +267,16 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
     try {
       Map<String, dynamic> _pixRequestBody() => {
-        "id": _idInvoice,
-        "idFilial": GlobalKeys.codFilial,
-        "tipoTransacao": "pixCashin",
-
-        "pix": {
-          "pagamento": {
-            "valor": "string",
-            "pagador": {"id": "string", "nome": "string"},
-          },
-        },
-      };
+            "id": _idInvoice,
+            "idFilial": GlobalKeys.codFilial,
+            "tipoTransacao": "pixCashin",
+            "pix": {
+              "pagamento": {
+                "valor": "string",
+                "pagador": {"id": "string", "nome": "string"},
+              },
+            },
+          };
 
       final response = await http
           .post(
@@ -386,34 +493,32 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
   void _showErro(String mensagem) {
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Erro'),
-            content: Text(mensagem),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('Erro'),
+        content: Text(mensagem),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
   void _showSucesso(String mensagem) {
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Sucesso'),
-            content: Text(mensagem),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('Sucesso'),
+        content: Text(mensagem),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
@@ -433,12 +538,11 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         if (consolidados.containsKey(nome)) {
           consolidados[nome]!.quantidade =
               (consolidados[nome]!.quantidade ?? 0) +
-              (item.quantidade > 0 ? item.quantidade : 1);
+                  (item.quantidade > 0 ? item.quantidade : 1);
         } else {
           consolidados[nome] = ItemModel(
             desProduto: nome,
-            preco:
-                item.produto.preco! *
+            preco: item.produto.preco! *
                 (item.quantidade > 0 ? item.quantidade : 1),
             detalhes: null,
             tipoProduto: item.produto.desCategoria ?? "",
@@ -513,10 +617,9 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     final blob = html.Blob([pdfBytes], 'application/pdf');
     final url = html.Url.createObjectUrlFromBlob(blob);
 
-    final anchor =
-        html.AnchorElement(href: url)
-          ..setAttribute("download", fileName)
-          ..click();
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute("download", fileName)
+      ..click();
 
     html.Url.revokeObjectUrl(url);
   }
@@ -552,118 +655,284 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
       // ),
       body: SingleChildScrollView(
         child: Center(
-          child:
-              _processandoPagamento
-                  ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: const CircularProgressIndicator(),
-                  )
-                  : _pagamentoRealizado
+          child: _processandoPagamento
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: const CircularProgressIndicator(),
+                )
+              : _pagamentoRealizado
                   ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green, size: 80),
-                      Text(
-                        'Aguarde que seu pedido será entregue na mesa.\nPedido ID: ${_idInvoice}\nObrigado!!',
-                      ),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 80),
+                        Text(
+                          'Aguarde que seu pedido será entregue na mesa.\nPedido ID: ${_idInvoice}\nObrigado!!',
+                        ),
 
-                      // ElevatedButton(
-                      //   onPressed: () async {
-                      //     // 1- ENVIAR API BRATTER
-                      //     // Aqui você pode chamar a API para registrar o pagamento
-                      //     // e enviar os dados necessários, como mesa, comanda, etc.
-                      //     // 2- DAR BAIXA NA COMANDA BRATTER
-                      //     // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
-                      //     var idPedido = await uploadPedido();
-                      //     // 4- CHAMAR API XML
-                      //     // final nfceService = NfceService();
+                        // ElevatedButton(
+                        //   onPressed: () async {
+                        //     // 1- ENVIAR API BRATTER
+                        //     // Aqui você pode chamar a API para registrar o pagamento
+                        //     // e enviar os dados necessários, como mesa, comanda, etc.
+                        //     // 2- DAR BAIXA NA COMANDA BRATTER
+                        //     // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+                        //     var idPedido = await uploadPedido();
+                        //     // 4- CHAMAR API XML
+                        //     // final nfceService = NfceService();
 
-                      //     // final carrinho = Provider.of<CarrinhoModel>(
-                      //     //   context,
-                      //     //   listen: false,
-                      //     // );
-                      //     // bool resultado = await nfceService
-                      //     //     .getInformacoesFiscaisDosProdutos(
-                      //     //       carrinho.itens,
-                      //     //       context,
-                      //     //     );
+                        //     // final carrinho = Provider.of<CarrinhoModel>(
+                        //     //   context,
+                        //     //   listen: false,
+                        //     // );
+                        //     // bool resultado = await nfceService
+                        //     //     .getInformacoesFiscaisDosProdutos(
+                        //     //       carrinho.itens,
+                        //     //       context,
+                        //     //     );
 
-                      //     // if (resultado) {
-                      //     // String base64Pdf =
-                      //     //     GlobalKeys.base64Nfe; // seu PDF em Base64
-                      //     // openPdfInBrowser(base64Pdf);
+                        //     // if (resultado) {
+                        //     // String base64Pdf =
+                        //     //     GlobalKeys.base64Nfe; // seu PDF em Base64
+                        //     // openPdfInBrowser(base64Pdf);
 
-                      //     // carrinho.limpar();
-                      //     // Provider.of<MesaComandaModel>(
-                      //     //   context,
-                      //     //   listen: false,
-                      //     // ).limpar();
+                        //     // carrinho.limpar();
+                        //     // Provider.of<MesaComandaModel>(
+                        //     //   context,
+                        //     //   listen: false,
+                        //     // ).limpar();
 
-                      //     // Navigator.of(
-                      //     //   context,
-                      //     // ).popUntil((route) => route.isFirst);
-                      //     // } else {
-                      //     //   ScaffoldMessenger.of(context).showSnackBar(
-                      //     //     SnackBar(
-                      //     //       content: Text(
-                      //     //         'Erro ao obter informações fiscais dos produtos. ${GlobalKeys.errroResponse} - ${GlobalKeys.errroResponseStatusCode}',
-                      //     //       ),
-                      //     //     ),
-                      //     //   );
-                      //     // }
-                      //   },
-                      //   child: const Text('Ok'),
-                      // ),
-                      const SizedBox(height: 20),
-                      _notaGerada == true
-                          ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.visibility),
-                                label: const Text("Visualizar PDF"),
-                                onPressed: () {
-                                  String base64Pdf =
-                                      GlobalKeys.base64Nfe; // seu PDF em Base64
-                                  openPdfInBrowser(base64Pdf);
-                                },
-                              ),
-                              const SizedBox(width: 16),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.download),
-                                label: const Text("Baixar/Compartilhar"),
-                                onPressed:
-                                    () => downloadPdf(
+                        //     // Navigator.of(
+                        //     //   context,
+                        //     // ).popUntil((route) => route.isFirst);
+                        //     // } else {
+                        //     //   ScaffoldMessenger.of(context).showSnackBar(
+                        //     //     SnackBar(
+                        //     //       content: Text(
+                        //     //         'Erro ao obter informações fiscais dos produtos. ${GlobalKeys.errroResponse} - ${GlobalKeys.errroResponseStatusCode}',
+                        //     //       ),
+                        //     //     ),
+                        //     //   );
+                        //     // }
+                        //   },
+                        //   child: const Text('Ok'),
+                        // ),
+                        const SizedBox(height: 20),
+                        _notaGerada == true
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.visibility),
+                                    label: const Text("Visualizar PDF"),
+                                    onPressed: () {
+                                      String base64Pdf = GlobalKeys
+                                          .base64Nfe; // seu PDF em Base64
+                                      openPdfInBrowser(base64Pdf);
+                                    },
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.download),
+                                    label: const Text("Baixar/Compartilhar"),
+                                    onPressed: () => downloadPdf(
                                       GlobalKeys.base64Nfe,
                                       "documento.pdf",
                                     ),
-                              ),
-                              const SizedBox(width: 16),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.home),
-                                label: const Text("Voltar"),
-                                onPressed: () {
-                                  final carrinho = Provider.of<CarrinhoModel>(
-                                    context,
-                                    listen: false,
-                                  );
-                                  carrinho.limpar();
-                                  Provider.of<MesaComandaModel>(
-                                    context,
-                                    listen: false,
-                                  ).limpar();
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.home),
+                                    label: const Text("Voltar"),
+                                    onPressed: () {
+                                      final carrinho =
+                                          Provider.of<CarrinhoModel>(
+                                        context,
+                                        listen: false,
+                                      );
+                                      carrinho.limpar();
+                                      Provider.of<MesaComandaModel>(
+                                        context,
+                                        listen: false,
+                                      ).limpar();
 
-                                  Navigator.of(
-                                    context,
-                                  ).popUntil((route) => route.isFirst);
-                                },
+                                      Navigator.of(
+                                        context,
+                                      ).popUntil((route) => route.isFirst);
+                                    },
+                                  ),
+                                ],
+                              )
+                            : _ErroGeracaoNF
+                                ? ElevatedButton.icon(
+                                    icon: const Icon(Icons.home),
+                                    label: const Text("Voltar"),
+                                    onPressed: () {
+                                      final carrinho =
+                                          Provider.of<CarrinhoModel>(
+                                        context,
+                                        listen: false,
+                                      );
+                                      carrinho.limpar();
+                                      Provider.of<MesaComandaModel>(
+                                        context,
+                                        listen: false,
+                                      ).limpar();
+
+                                      Navigator.of(
+                                        context,
+                                      ).popUntil((route) => route.isFirst);
+                                    },
+                                  )
+                                : SizedBox(),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_qrCodeBase64 != null) ...[
+                          const SizedBox(height: 10),
+                          Image.asset('images/LogoPix.png', width: 220),
+                          const SizedBox(height: 10),
+                          Image.memory(
+                            base64Decode(_qrCodeBase64!.split(',').last),
+                            width: 250,
+                            height: 250,
+                          ),
+                          const SizedBox(height: 10),
+
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.copy),
+                            label: const Text('COPIA E COLA PIX'),
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: _brCode ?? ''),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Código PIX copiado!'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 1.0, end: 0.0),
+                            duration: const Duration(seconds: 600),
+                            builder: (context, value, child) {
+                              return LinearProgressIndicator(value: value);
+                            },
+                          ),
+
+                          const SizedBox(height: 10),
+                          // Widget com animação mais elaborada
+                          AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 300),
+                            style: TextStyle(
+                              fontSize: _tempoRestante <= 60
+                                  ? 26
+                                  : 24, // Aumenta o tamanho quando está acabando
+                              color: _tempoRestante <= 30
+                                  ? Colors.red[700]
+                                  : _tempoRestante <= 60
+                                      ? Colors.orange
+                                      : Colors.green[800],
+                              fontWeight: FontWeight.bold,
+                              shadows: _tempoRestante <= 30
+                                  ? [
+                                      Shadow(
+                                        blurRadius: 10,
+                                        color: Colors.red.withOpacity(0.3),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Text(
+                              'Expira em ${_formatarTempo(_tempoRestante)}',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+
+                          // AnimatedDefaultTextStyle(
+                          //   duration: const Duration(milliseconds: 500),
+                          //   style: TextStyle(
+                          //     fontSize: 24,
+                          //     color:
+                          //         _tempoRestante < 10 ? Colors.red : Colors.black,
+                          //     fontWeight: FontWeight.bold,
+                          //   ),
+                          //   child: Text('Expira em $_tempoRestante s'),
+                          // ),
+                          const SizedBox(height: 10),
+                          if (_mensagemStatus != null)
+                            Text(
+                              _mensagemStatus!,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                        const SizedBox(height: 20),
+                        if (_qrCodeBase64 == null)
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Título "Opções de Pagamento"
+                              const Text(
+                                'Opções de Pagamento',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 36,
+                              ), // Espaço entre título e botões
+
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.pix),
+                                onPressed: _gerarPix,
+                                label: const Text('Gerar PIX'),
+                              ),
+
+                              const Divider(
+                                height: 20,
+                                thickness: 1,
+                                color: Colors.grey,
+                              ),
+
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.money),
+                                onPressed: _pagarCaixa,
+                                label: const Text('Pagar no Caixa'),
                               ),
                             ],
-                          )
-                          : _ErroGeracaoNF
-                          ? ElevatedButton.icon(
-                            icon: const Icon(Icons.home),
-                            label: const Text("Voltar"),
+                          ),
+                        // ElevatedButton.icon(
+                        //   icon: const Icon(Icons.pix),
+                        //   onPressed: _gerarPix,
+                        //   label: const Text('Gerar PIX'),
+                        // ),
+                        if (_qrCodeBase64 != null &&
+                            GlobalKeys.ambienteNfe == "H")
+                          ElevatedButton(
+                            onPressed: _simularPagamentoPix,
+                            child: const Text('Simular pagamento'),
+                          ),
+                        const SizedBox(height: 20),
+                        if (_qrCodeBase64 != null)
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.paid),
+                            label: const Text("Pagamento Realizado"),
                             onPressed: () {
                               final carrinho = Provider.of<CarrinhoModel>(
                                 context,
@@ -679,178 +948,9 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                 context,
                               ).popUntil((route) => route.isFirst);
                             },
-                          )
-                          : SizedBox(),
-                    ],
-                  )
-                  : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_qrCodeBase64 != null) ...[
-                        const SizedBox(height: 10),
-                        Image.asset('images/LogoPix.png', width: 220),
-                        const SizedBox(height: 10),
-                        Image.memory(
-                          base64Decode(_qrCodeBase64!.split(',').last),
-                          width: 250,
-                          height: 250,
-                        ),
-                        const SizedBox(height: 10),
-
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.copy),
-                          label: const Text('COPIA E COLA PIX'),
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: _brCode ?? ''),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Código PIX copiado!'),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 1.0, end: 0.0),
-                          duration: const Duration(seconds: 600),
-                          builder: (context, value, child) {
-                            return LinearProgressIndicator(value: value);
-                          },
-                        ),
-
-                        const SizedBox(height: 10),
-                        // Widget com animação mais elaborada
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 300),
-                          style: TextStyle(
-                            fontSize:
-                                _tempoRestante <= 60
-                                    ? 26
-                                    : 24, // Aumenta o tamanho quando está acabando
-                            color:
-                                _tempoRestante <= 30
-                                    ? Colors.red[700]
-                                    : _tempoRestante <= 60
-                                    ? Colors.orange
-                                    : Colors.green[800],
-                            fontWeight: FontWeight.bold,
-                            shadows:
-                                _tempoRestante <= 30
-                                    ? [
-                                      Shadow(
-                                        blurRadius: 10,
-                                        color: Colors.red.withOpacity(0.3),
-                                      ),
-                                    ]
-                                    : null,
-                          ),
-                          child: Text(
-                            'Expira em ${_formatarTempo(_tempoRestante)}',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-
-                        // AnimatedDefaultTextStyle(
-                        //   duration: const Duration(milliseconds: 500),
-                        //   style: TextStyle(
-                        //     fontSize: 24,
-                        //     color:
-                        //         _tempoRestante < 10 ? Colors.red : Colors.black,
-                        //     fontWeight: FontWeight.bold,
-                        //   ),
-                        //   child: Text('Expira em $_tempoRestante s'),
-                        // ),
-                        const SizedBox(height: 10),
-                        if (_mensagemStatus != null)
-                          Text(
-                            _mensagemStatus!,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
                       ],
-                      const SizedBox(height: 20),
-                      if (_qrCodeBase64 == null)
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Título "Opções de Pagamento"
-                            const Text(
-                              'Opções de Pagamento',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 36,
-                            ), // Espaço entre título e botões
-
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.pix),
-                              onPressed: _gerarPix,
-                              label: const Text('Gerar PIX'),
-                            ),
-
-                            const Divider(
-                              height: 20,
-                              thickness: 1,
-                              color: Colors.grey,
-                            ),
-
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.money),
-                              onPressed: _pagarCaixa,
-                              label: const Text('Pagar no Caixa'),
-                            ),
-                          ],
-                        ),
-                      // ElevatedButton.icon(
-                      //   icon: const Icon(Icons.pix),
-                      //   onPressed: _gerarPix,
-                      //   label: const Text('Gerar PIX'),
-                      // ),
-                      if (_qrCodeBase64 != null &&
-                          GlobalKeys.ambienteNfe == "H")
-                        ElevatedButton(
-                          onPressed: _simularPagamentoPix,
-                          child: const Text('Simular pagamento'),
-                        ),
-                      const SizedBox(height: 20),
-                      if (_qrCodeBase64 != null)
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.paid),
-                          label: const Text("Pagamento Realizado"),
-                          onPressed: () {
-                            final carrinho = Provider.of<CarrinhoModel>(
-                              context,
-                              listen: false,
-                            );
-                            carrinho.limpar();
-                            Provider.of<MesaComandaModel>(
-                              context,
-                              listen: false,
-                            ).limpar();
-
-                            Navigator.of(
-                              context,
-                            ).popUntil((route) => route.isFirst);
-                          },
-                        ),
-                    ],
-                  ),
+                    ),
         ),
       ),
     );

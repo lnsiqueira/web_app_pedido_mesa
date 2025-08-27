@@ -40,6 +40,8 @@
     "cancelingIn" : "Canceling in",
     "continuePage" : "Continue on page",
     "placeYourOrder" : "place your order",
+    "pleaseEnterOrderNumber": "Please enter the order number",
+    "confirm": "Confirm",
     "enterTableNumber" :  "Enter the table number",
     "table" : "Table",
     "enterOrderNumber" : "Enter the order number",
