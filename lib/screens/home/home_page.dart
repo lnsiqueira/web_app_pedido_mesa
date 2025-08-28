@@ -361,6 +361,7 @@ class _HomePageState extends State<HomePage> {
                                 runSpacing: 12,
                                 children: categorias.map((categoria) {
                                   return SizedBox(
+                                    height: 150,
                                     width: itemWidth.clamp(100, 200),
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(

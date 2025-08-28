@@ -79,64 +79,13 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
           "numero_documento": "255.539.850-30",
           "e-mail": "maria.eduarda@email.com.br",
         },
-        "split": [
-          // {
-          //   "tipo": "percentual",
-          //   "valor": "0.70",
-          //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
-          // },
-          // {
-          //   "tipo": "valor",
-          //   "valor": "0.40",
-          //   "conta": "89392367-30d4-11f0-a96f-42010a400013",
-          // },
-        ],
+        "split": [],
       };
 
   Future<void> _pagarCaixa() async {
     GlobalKeys.pagtoPIX = false;
     bool addPedido = false;
     try {
-      var idPedido = await uploadPedido();
-
-// envia direto para a comanda da bratter
-      final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-      final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
-
-      // try {
-      //   List<ItemModel> itensFinais = [];
-
-      //   Map<String, ItemModel> consolidados = {};
-
-      //   for (var item in carrinho.itens) {
-      //     final nome = item.produto.desProduto!.trim().toLowerCase();
-      //     final qtd = item.quantidade;
-
-      //     if (consolidados.containsKey(nome)) {
-      //       consolidados[nome]!.quantidade =
-      //           (consolidados[nome]!.quantidade ?? 0) +
-      //               (item.quantidade > 0 ? item.quantidade : 1);
-      //     } else {
-      //       consolidados[nome] = ItemModel(
-      //         desProduto: nome,
-      //         preco: item.produto.preco! *
-      //             (item.quantidade > 0 ? item.quantidade : 1),
-      //         detalhes: null,
-      //         tipoProduto: item.produto.desCategoria ?? "",
-      //         peso: null,
-      //         produtoId: item.produto.plu,
-      //         quantidade: item.quantidade > 0 ? item.quantidade : 1,
-      //         imageUrl: null,
-      //         discountpreco: null,
-      //         codigoBarras: null,
-      //         categoria: item.produto.desCategoria ?? "",
-      //         pesavel: false,
-      //         obs: item.
-      //       );
-      //     }
-      //     itensFinais = consolidados.values.toList();
-      //   }
-      // } catch (e) {}~
       try {
         var idPedido = await uploadPedido();
 
@@ -144,7 +93,6 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         final mesaComanda =
             Provider.of<MesaComandaModel>(context, listen: false);
 
-// monta JSON direto, sem consolidar
         List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
           List<Map<String, dynamic>> observacoesJson = [];
 
@@ -185,13 +133,10 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         final url =
             '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
 
-        // body
-
         var request = http.Request('POST', Uri.parse(url));
-        // Define os headers corretos
         request.headers.addAll({
           'Content-Type': 'application/json',
-          'Accept': 'application/json', // opcional, mas recomendado
+          'Accept': 'application/json',
         });
 
         request.body = json.encode({
@@ -228,29 +173,12 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
             'Erro ao enviar pedidoX: ${e.toString()}. \nContate um funcionário!');
       }
 
-      //final nfceService = NfceService();
-
-      //final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-
-      // bool resultado = await nfceService.getInformacoesFiscaisDosProdutos(
-      //   carrinho.itens,
-      //   context,
-      // );
-
-      // if (!mounted) return;
-
-      // final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-      // carrinho.limpar();
-      // Provider.of<MesaComandaModel>(context, listen: false).limpar();
-
-      // Navigator.of(context).popUntil((route) => route.isFirst);
-
       if (addPedido) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: Text('Pedido solicitado!'),
-            content: Text('Aguarde que seu pedido será entregue na mesa'),
+            content: Text('Aguarde, seu pedido será entregue na mesa'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -445,6 +373,94 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     });
   }
 
+  Future<void> _subirComandaEdeletar() async {
+    bool addPedido = false;
+
+    try {
+      var idPedido = await uploadPedido();
+
+      final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+      final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
+
+      List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
+        List<Map<String, dynamic>> observacoesJson = [];
+
+        if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+          for (var obsItem in item.produto.obs!) {
+            if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+              observacoesJson.add({
+                "Obs": obsItem.titulo,
+                "Preco": 0.0,
+                "PluAdd": obsItem.pluAdd ?? 0,
+                "Modificador": 'COM',
+              });
+            } else if (obsItem.modificador != null &&
+                (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+              observacoesJson.add({
+                "Obs": obsItem.titulo,
+                "Preco": obsItem.preco ?? 0.0,
+                "PluAdd": obsItem.pluAdd ?? 0,
+                "Modificador": obsItem.modificador,
+              });
+            }
+          }
+        }
+
+        return {
+          "IdProduto": item.produto.plu,
+          "Preco": item.produto.preco,
+          "Qtde": item.quantidade,
+          "Observacoes": observacoesJson,
+        };
+      }).toList();
+
+      var urlBratter = Urls.urlApiBratter;
+      final encodedUrl = Uri.encodeComponent(urlBratter);
+
+      final url =
+          '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+
+      var request = http.Request('POST', Uri.parse(url));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+
+      request.body = json.encode({
+        "IdComanda": int.parse(mesaComanda.comanda),
+        "IdMesa": int.parse(mesaComanda.mesa),
+        "usuario": '',
+        "Itens": itemsJson,
+        "Uuid": idPedido,
+        "Terminal": 301,
+      });
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        addPedido = true;
+
+        // 🔹 Se deu sucesso, chama CancelarComanda
+        final urlCancel =
+            '${Urls.urlApiAzure}Proxy/CancelarComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}&idComanda=${mesaComanda.comanda}&usuario=conexao&motivoCancelamento=compra';
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        var limparComanda = http.Request('POST', Uri.parse(urlCancel));
+        limparComanda.headers.addAll({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        });
+
+        await limparComanda.send();
+      } else {
+        _showErro(
+            'Erro ao enviar pedidoX: ${response.statusCode}. \nContate um funcionário!');
+      }
+    } catch (e) {
+      _showErro(
+          'Erro ao enviar pedidoX: ${e.toString()}. \nContate um funcionário!');
+    }
+  }
+
   Future<void> _consultarPagamento(int idInvoice) async {
     final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/consultar');
 
@@ -458,7 +474,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
       final response = await http
           .post(url, headers: {"Content-Type": "application/json"}, body: body)
           .timeout(const Duration(seconds: 30));
-
+//sucesso no pagamento
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         if (jsonResponse['statusPagamento'] == 'credited' ||
@@ -468,6 +484,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
           setState(() {
             _pagamentoRealizado = true;
           });
+          _subirComandaEdeletar();
           var idPedido = await uploadPedido();
           final nfceService = NfceService();
 
@@ -672,142 +689,104 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     }
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Pagamento PIX'),
-      //   automaticallyImplyLeading: false,
-      // ),
       body: SingleChildScrollView(
         child: Center(
           child: _processandoPagamento
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: const CircularProgressIndicator(),
+              ? SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 )
               : _pagamentoRealizado
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.green, size: 80),
-                        Text(
-                          'Aguarde que seu pedido será entregue na mesa.\nPedido ID: ${_idInvoice}\nObrigado!!',
-                        ),
+                  ? SingleChildScrollView(
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle,
+                                color: Colors.green, size: 80),
+                            Text(
+                              'Aguarde que seu pedido será entregue na mesa.\nPedido ID: ${_idInvoice}',
+                            ),
+                            const SizedBox(height: 20),
+                            _notaGerada == true
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Wrap(
+                                      spacing:
+                                          16, // espaço horizontal entre os botões
+                                      runSpacing:
+                                          12, // espaço vertical entre linhas
+                                      alignment: WrapAlignment.center,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.visibility),
+                                          label: const Text("Visualizar PDF"),
+                                          onPressed: () {
+                                            String base64Pdf =
+                                                GlobalKeys.base64Nfe;
+                                            openPdfInBrowser(base64Pdf);
+                                          },
+                                        ),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.download),
+                                          label:
+                                              const Text("Baixar/Compartilhar"),
+                                          onPressed: () => downloadPdf(
+                                            GlobalKeys.base64Nfe,
+                                            "documento.pdf",
+                                          ),
+                                        ),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.home),
+                                          label: const Text("Voltar"),
+                                          onPressed: () {
+                                            final carrinho =
+                                                Provider.of<CarrinhoModel>(
+                                              context,
+                                              listen: false,
+                                            );
+                                            carrinho.limpar();
+                                            Provider.of<MesaComandaModel>(
+                                                    context,
+                                                    listen: false)
+                                                .limpar();
 
-                        // ElevatedButton(
-                        //   onPressed: () async {
-                        //     // 1- ENVIAR API BRATTER
-                        //     // Aqui você pode chamar a API para registrar o pagamento
-                        //     // e enviar os dados necessários, como mesa, comanda, etc.
-                        //     // 2- DAR BAIXA NA COMANDA BRATTER
-                        //     // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
-                        //     var idPedido = await uploadPedido();
-                        //     // 4- CHAMAR API XML
-                        //     // final nfceService = NfceService();
-
-                        //     // final carrinho = Provider.of<CarrinhoModel>(
-                        //     //   context,
-                        //     //   listen: false,
-                        //     // );
-                        //     // bool resultado = await nfceService
-                        //     //     .getInformacoesFiscaisDosProdutos(
-                        //     //       carrinho.itens,
-                        //     //       context,
-                        //     //     );
-
-                        //     // if (resultado) {
-                        //     // String base64Pdf =
-                        //     //     GlobalKeys.base64Nfe; // seu PDF em Base64
-                        //     // openPdfInBrowser(base64Pdf);
-
-                        //     // carrinho.limpar();
-                        //     // Provider.of<MesaComandaModel>(
-                        //     //   context,
-                        //     //   listen: false,
-                        //     // ).limpar();
-
-                        //     // Navigator.of(
-                        //     //   context,
-                        //     // ).popUntil((route) => route.isFirst);
-                        //     // } else {
-                        //     //   ScaffoldMessenger.of(context).showSnackBar(
-                        //     //     SnackBar(
-                        //     //       content: Text(
-                        //     //         'Erro ao obter informações fiscais dos produtos. ${GlobalKeys.errroResponse} - ${GlobalKeys.errroResponseStatusCode}',
-                        //     //       ),
-                        //     //     ),
-                        //     //   );
-                        //     // }
-                        //   },
-                        //   child: const Text('Ok'),
-                        // ),
-                        const SizedBox(height: 20),
-                        _notaGerada == true
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.visibility),
-                                    label: const Text("Visualizar PDF"),
-                                    onPressed: () {
-                                      String base64Pdf = GlobalKeys
-                                          .base64Nfe; // seu PDF em Base64
-                                      openPdfInBrowser(base64Pdf);
-                                    },
-                                  ),
-                                  const SizedBox(width: 16),
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.download),
-                                    label: const Text("Baixar/Compartilhar"),
-                                    onPressed: () => downloadPdf(
-                                      GlobalKeys.base64Nfe,
-                                      "documento.pdf",
+                                            Navigator.of(context).popUntil(
+                                                (route) => route.isFirst);
+                                          },
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.home),
-                                    label: const Text("Voltar"),
-                                    onPressed: () {
-                                      final carrinho =
-                                          Provider.of<CarrinhoModel>(
-                                        context,
-                                        listen: false,
-                                      );
-                                      carrinho.limpar();
-                                      Provider.of<MesaComandaModel>(
-                                        context,
-                                        listen: false,
-                                      ).limpar();
-
-                                      Navigator.of(
-                                        context,
-                                      ).popUntil((route) => route.isFirst);
-                                    },
-                                  ),
-                                ],
-                              )
-                            : _ErroGeracaoNF
-                                ? ElevatedButton.icon(
-                                    icon: const Icon(Icons.home),
-                                    label: const Text("Voltar"),
-                                    onPressed: () {
-                                      final carrinho =
-                                          Provider.of<CarrinhoModel>(
-                                        context,
-                                        listen: false,
-                                      );
-                                      carrinho.limpar();
-                                      Provider.of<MesaComandaModel>(
-                                        context,
-                                        listen: false,
-                                      ).limpar();
-
-                                      Navigator.of(
-                                        context,
-                                      ).popUntil((route) => route.isFirst);
-                                    },
                                   )
-                                : SizedBox(),
-                      ],
+                                : _ErroGeracaoNF
+                                    ? ElevatedButton.icon(
+                                        icon: const Icon(Icons.home),
+                                        label: const Text("Voltar"),
+                                        onPressed: () {
+                                          final carrinho =
+                                              Provider.of<CarrinhoModel>(
+                                            context,
+                                            listen: false,
+                                          );
+                                          carrinho.limpar();
+                                          Provider.of<MesaComandaModel>(
+                                            context,
+                                            listen: false,
+                                          ).limpar();
+
+                                          Navigator.of(
+                                            context,
+                                          ).popUntil((route) => route.isFirst);
+                                        },
+                                      )
+                                    : SizedBox(),
+                          ],
+                        ),
+                      ),
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -905,46 +884,44 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                         ],
                         const SizedBox(height: 20),
                         if (_qrCodeBase64 == null)
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Título "Opções de Pagamento"
-                              const Text(
-                                'Opções de Pagamento',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.8,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Título "Opções de Pagamento"
+                                const Text(
+                                  'Opções de Pagamento',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
 
-                              const SizedBox(
-                                height: 36,
-                              ), // Espaço entre título e botões
+                                const SizedBox(
+                                  height: 36,
+                                ), // Espaço entre título e botões
 
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.pix),
-                                onPressed: _gerarPix,
-                                label: const Text('Gerar PIX'),
-                              ),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.pix),
+                                  onPressed: _gerarPix,
+                                  label: const Text('PIX'),
+                                ),
 
-                              const Divider(
-                                height: 20,
-                                thickness: 1,
-                                color: Colors.grey,
-                              ),
+                                const Divider(
+                                  height: 20,
+                                  thickness: 1,
+                                  color: Colors.grey,
+                                ),
 
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.money),
-                                onPressed: _pagarCaixa,
-                                label: const Text('Pagar no Caixa'),
-                              ),
-                            ],
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.money),
+                                  onPressed: _pagarCaixa,
+                                  label: const Text('Pagar no Caixa'),
+                                ),
+                              ],
+                            ),
                           ),
-                        // ElevatedButton.icon(
-                        //   icon: const Icon(Icons.pix),
-                        //   onPressed: _gerarPix,
-                        //   label: const Text('Gerar PIX'),
-                        // ),
                         if (_qrCodeBase64 != null &&
                             GlobalKeys.ambienteNfe == "H")
                           ElevatedButton(
