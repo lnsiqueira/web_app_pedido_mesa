@@ -344,6 +344,35 @@ class _ItensPageState extends State<ItensPage> {
                     );
                   },
                 ),
+      bottomNavigationBar: Consumer<CarrinhoModel>(
+        builder: (context, carrinho, _) {
+          if (carrinho.totalItens == 0) return const SizedBox.shrink();
+
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CarrinhoPage(),
+                  ),
+                );
+              },
+              child: Text(
+                "Prosseguir (${carrinho.totalItens} itens)",
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

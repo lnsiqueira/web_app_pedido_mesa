@@ -1,10 +1,192 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
+import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class CarrinhoPage extends StatelessWidget {
+class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
+
+  @override
+  State<CarrinhoPage> createState() => _CarrinhoPageState();
+}
+
+class _CarrinhoPageState extends State<CarrinhoPage> {
+  Future<void> _pedirMesaEComanda() async {
+    final mesaController = TextEditingController();
+    final comandaController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+    String? _mesa;
+    String? _comanda;
+
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    const SizedBox(width: 12),
+                    Text(
+                      'Mesa e Comanda',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Campo Mesa
+                Text(
+                  AppLocalizations.of(context)!.table,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: mesaController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.enterTableNumber,
+                    prefixIcon:
+                        Icon(Icons.numbers, color: Colors.grey.shade500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppLocalizations.of(context)!.enterTableNumber;
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Campo Comanda
+                Text(
+                  AppLocalizations.of(context)!.order,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: comandaController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.enterOrderNumber,
+                    prefixIcon:
+                        Icon(Icons.receipt_long, color: Colors.grey.shade500),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppLocalizations.of(context)!
+                          .pleaseEnterOrderNumber;
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botões
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey.shade600,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      ),
+                      child: Text(AppLocalizations.of(context)!.cancel),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.pop(context, {
+                            'mesa': mesaController.text,
+                            'comanda': comandaController.text,
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(AppLocalizations.of(context)!.confirm),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _mesa = result['mesa'];
+        _comanda = result['comanda'];
+      });
+
+      final mesaComanda = Provider.of<MesaComandaModel>(
+        context,
+        listen: false,
+      );
+
+      mesaComanda.setMesa(_mesa!);
+      mesaComanda.setComanda(_comanda!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,23 +299,34 @@ class CarrinhoPage extends StatelessWidget {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.skip_next),
-                      label: const Text('Continuar'),
+                      // icon: const Icon(Icons.skip_next),
+                      label: const Text('Pagar'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(fontSize: 18),
                       ),
-                      onPressed: () {
-                        //LER Mesas e Comandas
-                        // final mesa = context.watch<MesaComandaModel>().mesa;
-                        // final comanda =
-                        //     context.watch<MesaComandaModel>().comanda;
+                      onPressed: () async {
+                        final mesaComanda = Provider.of<MesaComandaModel>(
+                            context,
+                            listen: false);
 
+                        // 🔹 Verifica se mesa ou comanda estão vazias
+                        if (mesaComanda.mesa.isEmpty ||
+                            mesaComanda.comanda.isEmpty) {
+                          await _pedirMesaEComanda();
+
+                          // Se ainda estiver vazio, sai sem navegar
+                          if (mesaComanda.mesa.isEmpty ||
+                              mesaComanda.comanda.isEmpty) {
+                            return;
+                          }
+                        }
+
+                        // 🔹 Campos preenchidos → navega para pagamento
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => const PagamentoPixPage(),
-                            //  PagamentoPage(),
                           ),
                         );
                       },

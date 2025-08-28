@@ -174,7 +174,6 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
             "IdProduto": item.produto.plu,
             "Preco": item.produto.preco,
             "Qtde": item.quantidade,
-            "Total": item.produto.preco! * qtd,
             "Observacoes": observacoesJson,
           };
         }).toList();
@@ -196,7 +195,17 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
           "Uuid": idPedido,
           "Terminal": 301,
         });
+        var bodyJson = {
+          "IdComanda": int.parse(mesaComanda.comanda),
+          "IdMesa": int.parse(mesaComanda.mesa),
+          "usuario": '',
+          "Itens": itemsJson,
+          "Uuid": idPedido,
+          "Terminal": 301,
+        };
 
+        print("➡️ JSON enviado:");
+        print(const JsonEncoder.withIndent('  ').convert(bodyJson));
         final response = await request.send();
         if (response.statusCode == 200) {
           print('Pedido enviado com sucesso!');

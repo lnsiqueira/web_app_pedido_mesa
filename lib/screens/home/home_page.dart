@@ -245,7 +245,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // LOGO
-                Image.asset('images/logodd.png', height: 40),
+                Image.asset('images/logodd_clean.png', height: 40),
 
                 // TÍTULO
                 // const Expanded(
@@ -452,6 +452,35 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        ),
+        bottomNavigationBar: Consumer<CarrinhoModel>(
+          builder: (context, carrinho, _) {
+            if (carrinho.totalItens == 0) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CarrinhoPage(),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Prosseguir (${carrinho.totalItens} itens)",
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
