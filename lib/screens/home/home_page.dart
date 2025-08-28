@@ -347,15 +347,15 @@ class _HomePageState extends State<HomePage> {
                           ),
                           child: Column(
                             children: [
-                              Text(
-                                '${AppLocalizations.of(context)!.table}: $mesa',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                              Text(
-                                '${AppLocalizations.of(context)!.order}: $comanda',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                              const SizedBox(height: 20),
+                              // Text(
+                              //   '${AppLocalizations.of(context)!.table}: $mesa',
+                              //   style: const TextStyle(fontSize: 18),
+                              // ),
+                              // Text(
+                              //   '${AppLocalizations.of(context)!.order}: $comanda',
+                              //   style: const TextStyle(fontSize: 18),
+                              // ),
+                              // const SizedBox(height: 20),
                               Wrap(
                                 spacing: 12,
                                 runSpacing: 12,
