@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
@@ -73,6 +74,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 TextFormField(
                   controller: mesaController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // Apenas números
+                  ],
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context)!.enterTableNumber,
                     prefixIcon:
@@ -107,6 +111,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 TextFormField(
                   controller: comandaController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // Apenas números
+                  ],
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context)!.enterOrderNumber,
                     prefixIcon:
@@ -153,8 +160,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(

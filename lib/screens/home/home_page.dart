@@ -85,6 +85,9 @@ class _HomePageState extends State<HomePage> {
                 TextFormField(
                   controller: mesaController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // Apenas números
+                  ],
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context)!.enterTableNumber,
                     prefixIcon:
@@ -119,6 +122,9 @@ class _HomePageState extends State<HomePage> {
                 TextFormField(
                   controller: comandaController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // Apenas números
+                  ],
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context)!.enterOrderNumber,
                     prefixIcon:
@@ -165,8 +171,6 @@ class _HomePageState extends State<HomePage> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(

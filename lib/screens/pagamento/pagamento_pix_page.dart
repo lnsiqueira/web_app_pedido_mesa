@@ -95,6 +95,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
   Future<void> _pagarCaixa() async {
     GlobalKeys.pagtoPIX = false;
+    bool addPedido = false;
     try {
       var idPedido = await uploadPedido();
 
@@ -182,11 +183,17 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         final encodedUrl = Uri.encodeComponent(urlBratter);
 
         final url =
-            '${Urls.urlApiAzure}Proxy/AddComanda/&urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+            '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
 
         // body
 
         var request = http.Request('POST', Uri.parse(url));
+        // Define os headers corretos
+        request.headers.addAll({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json', // opcional, mas recomendado
+        });
+
         request.body = json.encode({
           "IdComanda": int.parse(mesaComanda.comanda),
           "IdMesa": int.parse(mesaComanda.mesa),
@@ -208,12 +215,17 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         print(const JsonEncoder.withIndent('  ').convert(bodyJson));
         final response = await request.send();
         if (response.statusCode == 200) {
+          addPedido = true;
           print('Pedido enviado com sucesso!');
         } else {
           print('Erro ao enviar pedido: ${response.statusCode}');
+          _showErro(
+              'Erro ao enviar pedidoX: ${response.statusCode}. \nContate um funcionário!');
         }
       } catch (e) {
         print('Erro no upload do pedido: $e');
+        _showErro(
+            'Erro ao enviar pedidoX: ${e.toString()}. \nContate um funcionário!');
       }
 
       //final nfceService = NfceService();
@@ -233,39 +245,41 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
       // Navigator.of(context).popUntil((route) => route.isFirst);
 
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text('Pedido solicitado!'),
-          content: Text('Aguarde que seu pedido será entregue na mesa'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // 1- ENVIAR API BRATTER
+      if (addPedido) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text('Pedido solicitado!'),
+            content: Text('Aguarde que seu pedido será entregue na mesa'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // 1- ENVIAR API BRATTER
 
-                // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+                  // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
 
-                Navigator.of(context).pop(); // fecha o dialog
+                  Navigator.of(context).pop(); // fecha o dialog
 
-                // Limpa o carrinho via Provider
-                final carrinho = Provider.of<CarrinhoModel>(
-                  context,
-                  listen: false,
-                );
-                carrinho.limpar();
-                Provider.of<MesaComandaModel>(
-                  context,
-                  listen: false,
-                ).limpar();
+                  // Limpa o carrinho via Provider
+                  final carrinho = Provider.of<CarrinhoModel>(
+                    context,
+                    listen: false,
+                  );
+                  carrinho.limpar();
+                  Provider.of<MesaComandaModel>(
+                    context,
+                    listen: false,
+                  ).limpar();
 
-                // Fecha o diálogo e volta para a tela inicial
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+                  // Fecha o diálogo e volta para a tela inicial
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
       _showErro('Erro ao chamar API: $e');
     }
