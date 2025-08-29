@@ -16,7 +16,9 @@ import 'package:webapp_pedido_mesa/core/model/pedido_model.dart';
 import 'package:webapp_pedido_mesa/services/nfce/nfce_service.dart';
 
 // ignore: deprecated_member_use
-import 'dart:html' as html; // para abrir no browser
+import 'dart:html' as html;
+
+import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart'; // para abrir no browser
 
 class PagamentoPixPage extends StatefulWidget {
   const PagamentoPixPage({super.key});
@@ -771,31 +773,76 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
               ? SizedBox(
                   height: MediaQuery.of(context).size.height * 0.8,
                   child: const Center(
-                    child: CircularProgressIndicator(),
+                    child: PulsingLogo(
+                      assetPath: 'images/logodd_clean.png',
+                      width: 150,
+                      duration: const Duration(seconds: 1),
+                    ),
                   ),
                 )
               : _pagamentoRealizado
                   ? SingleChildScrollView(
                       child: SizedBox(
                         height: MediaQuery.of(context).size.height,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle,
-                                color: Colors.green, size: 80),
-                            Text(
-                              'Aguarde que seu pedido será entregue na mesa.\nPedido ID: ${_idInvoice}',
+                        child: Center(
+                          child: Card(
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            const SizedBox(height: 20),
-                            _notaGerada == true
-                                ? Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    child: Wrap(
-                                      spacing:
-                                          16, // espaço horizontal entre os botões
-                                      runSpacing:
-                                          12, // espaço vertical entre linhas
+                            margin: const EdgeInsets.all(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Ícone de sucesso com animação leve
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween<double>(begin: 0.8, end: 1.0),
+                                    duration: const Duration(milliseconds: 800),
+                                    curve: Curves.elasticOut,
+                                    builder: (context, scale, child) {
+                                      return Transform.scale(
+                                        scale: scale,
+                                        child: Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green[600],
+                                          size: 90,
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                  const SizedBox(height: 20),
+
+                                  // Título
+                                  Text(
+                                    "Pedido Confirmado!",
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[800],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  // Subtítulo
+                                  Text(
+                                    "Aguarde que seu pedido será entregue na mesa.\n\nPedido ID: $_idInvoice",
+                                    style: const TextStyle(
+                                        fontSize: 16, color: Colors.black87),
+                                    textAlign: TextAlign.center,
+                                  ),
+
+                                  const SizedBox(height: 30),
+
+                                  // Se nota gerada
+                                  if (_notaGerada == true)
+                                    Wrap(
+                                      spacing: 16,
+                                      runSpacing: 12,
                                       alignment: WrapAlignment.center,
                                       children: [
                                         ElevatedButton.icon(
@@ -806,6 +853,16 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                                 GlobalKeys.base64Nfe;
                                             openPdfInBrowser(base64Pdf);
                                           },
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
                                         ),
                                         ElevatedButton.icon(
                                           icon: const Icon(Icons.download),
@@ -814,6 +871,16 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                           onPressed: () => downloadPdf(
                                             GlobalKeys.base64Nfe,
                                             "documento.pdf",
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
                                           ),
                                         ),
                                         ElevatedButton.icon(
@@ -827,173 +894,312 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                             );
                                             carrinho.limpar();
                                             Provider.of<MesaComandaModel>(
-                                                    context,
-                                                    listen: false)
-                                                .limpar();
+                                              context,
+                                              listen: false,
+                                            ).limpar();
 
                                             Navigator.of(context).popUntil(
                                                 (route) => route.isFirst);
                                           },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green[700],
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                          ),
                                         ),
                                       ],
-                                    ),
-                                  )
-                                : _ErroGeracaoNF
-                                    ? ElevatedButton.icon(
-                                        icon: const Icon(Icons.home),
-                                        label: const Text("Voltar"),
-                                        onPressed: () {
-                                          final carrinho =
-                                              Provider.of<CarrinhoModel>(
-                                            context,
-                                            listen: false,
-                                          );
-                                          carrinho.limpar();
-                                          Provider.of<MesaComandaModel>(
-                                            context,
-                                            listen: false,
-                                          ).limpar();
+                                    )
+                                  else if (_ErroGeracaoNF)
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.home),
+                                      label: const Text("Voltar"),
+                                      onPressed: () {
+                                        final carrinho =
+                                            Provider.of<CarrinhoModel>(
+                                          context,
+                                          listen: false,
+                                        );
+                                        carrinho.limpar();
+                                        Provider.of<MesaComandaModel>(
+                                          context,
+                                          listen: false,
+                                        ).limpar();
 
-                                          Navigator.of(
-                                            context,
-                                          ).popUntil((route) => route.isFirst);
-                                        },
-                                      )
-                                    : SizedBox(),
-                          ],
+                                        Navigator.of(context)
+                                            .popUntil((route) => route.isFirst);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red[600],
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (_qrCodeBase64 != null) ...[
-                          const SizedBox(height: 10),
-                          Image.asset('images/LogoPix.png', width: 220),
-                          const SizedBox(height: 10),
-                          Image.memory(
-                            base64Decode(_qrCodeBase64!.split(',').last),
-                            width: 250,
-                            height: 250,
-                          ),
-                          const SizedBox(height: 10),
-
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.copy),
-                            label: const Text('COPIA E COLA PIX'),
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(text: _brCode ?? ''),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Código PIX copiado!'),
+                          SingleChildScrollView(
+                            child: Center(
+                              child: Card(
+                                elevation: 6,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-                          TweenAnimationBuilder<double>(
-                            tween: Tween<double>(begin: 1.0, end: 0.0),
-                            duration: const Duration(seconds: 600),
-                            builder: (context, value, child) {
-                              return LinearProgressIndicator(value: value);
-                            },
-                          ),
-
-                          const SizedBox(height: 10),
-                          // Widget com animação mais elaborada
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 300),
-                            style: TextStyle(
-                              fontSize: _tempoRestante <= 60
-                                  ? 26
-                                  : 24, // Aumenta o tamanho quando está acabando
-                              color: _tempoRestante <= 30
-                                  ? Colors.red[700]
-                                  : _tempoRestante <= 60
-                                      ? Colors.orange
-                                      : Colors.green[800],
-                              fontWeight: FontWeight.bold,
-                              shadows: _tempoRestante <= 30
-                                  ? [
-                                      Shadow(
-                                        blurRadius: 10,
-                                        color: Colors.red.withOpacity(0.3),
+                                margin: const EdgeInsets.all(16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(height: 12),
+                                      Image.asset('images/LogoPix.png',
+                                          width: 180),
+                                      const SizedBox(height: 20),
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              blurRadius: 10,
+                                              spreadRadius: 1,
+                                              color: Colors.black12,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Image.memory(
+                                          base64Decode(
+                                              _qrCodeBase64!.split(',').last),
+                                          width: 220,
+                                          height: 220,
+                                        ),
                                       ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Text(
-                              'Expira em ${_formatarTempo(_tempoRestante)}',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-
-                          // AnimatedDefaultTextStyle(
-                          //   duration: const Duration(milliseconds: 500),
-                          //   style: TextStyle(
-                          //     fontSize: 24,
-                          //     color:
-                          //         _tempoRestante < 10 ? Colors.red : Colors.black,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          //   child: Text('Expira em $_tempoRestante s'),
-                          // ),
-                          const SizedBox(height: 10),
-                          if (_mensagemStatus != null)
-                            Text(
-                              _mensagemStatus!,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
+                                      const SizedBox(height: 24),
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.copy, size: 22),
+                                        label: const Text(
+                                          'COPIAR CÓDIGO PIX',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        onPressed: () {
+                                          Clipboard.setData(ClipboardData(
+                                              text: _brCode ?? ''));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content:
+                                                  Text('Código PIX copiado!'),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green[700],
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 28, vertical: 14),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 30),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(
+                                              begin: 1.0, end: 0.0),
+                                          duration:
+                                              const Duration(seconds: 600),
+                                          builder: (context, value, child) {
+                                            return LinearProgressIndicator(
+                                              value: value,
+                                              backgroundColor: Colors.grey[200],
+                                              color: value > 0.5
+                                                  ? Colors.green
+                                                  : value > 0.2
+                                                      ? Colors.orange
+                                                      : Colors.red,
+                                              minHeight: 10,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      AnimatedDefaultTextStyle(
+                                        duration:
+                                            const Duration(milliseconds: 300),
+                                        style: TextStyle(
+                                          fontSize:
+                                              _tempoRestante <= 60 ? 26 : 22,
+                                          color: _tempoRestante <= 30
+                                              ? Colors.red[700]
+                                              : _tempoRestante <= 60
+                                                  ? Colors.orange[700]
+                                                  : Colors.green[800],
+                                          fontWeight: FontWeight.bold,
+                                          shadows: _tempoRestante <= 30
+                                              ? [
+                                                  Shadow(
+                                                    blurRadius: 8,
+                                                    color: Colors.red
+                                                        .withOpacity(0.4),
+                                                  ),
+                                                ]
+                                              : null,
+                                        ),
+                                        child: Text(
+                                          'Expira em ${_formatarTempo(_tempoRestante)}',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      if (_mensagemStatus != null)
+                                        Text(
+                                          _mensagemStatus!,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.orange,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
+                          ),
                         ],
                         const SizedBox(height: 20),
                         if (_qrCodeBase64 == null)
                           SizedBox(
                             height: MediaQuery.of(context).size.height * 0.8,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Stack(
                               children: [
-                                // Título "Opções de Pagamento"
-                                const Text(
-                                  'Opções de Pagamento',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                // Conteúdo centralizado
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        const Text(
+                                          'Opções de Pagamento',
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 40),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.pix, size: 26),
+                                          onPressed: _gerarPix,
+                                          label: const Text(
+                                            'Pagar com PIX',
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green[700],
+                                            foregroundColor: Colors.white,
+                                            minimumSize:
+                                                const Size.fromHeight(55),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Row(
+                                          children: const [
+                                            Expanded(
+                                                child: Divider(thickness: 1)),
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 10),
+                                              child: Text("OU"),
+                                            ),
+                                            Expanded(
+                                                child: Divider(thickness: 1)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 20),
+                                        ElevatedButton.icon(
+                                          icon:
+                                              const Icon(Icons.store, size: 26),
+                                          onPressed: _pagarCaixa,
+                                          label: const Text(
+                                            'Pagar no Caixa',
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                Colors.blueGrey[700],
+                                            foregroundColor: Colors.white,
+                                            minimumSize:
+                                                const Size.fromHeight(55),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
 
-                                const SizedBox(
-                                  height: 36,
-                                ), // Espaço entre título e botões
-
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.pix),
-                                  onPressed: _gerarPix,
-                                  label: const Text('PIX'),
-                                ),
-
-                                const Divider(
-                                  height: 20,
-                                  thickness: 1,
-                                  color: Colors.grey,
-                                ),
-
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.money),
-                                  onPressed: _pagarCaixa,
-                                  label: const Text('Pagar no Caixa'),
+                                // Botão de voltar
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  child: SafeArea(
+                                    child: IconButton(
+                                      icon: const Icon(Icons.arrow_back,
+                                          size: 28),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1005,26 +1211,6 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                             child: const Text('Simular pagamento'),
                           ),
                         const SizedBox(height: 20),
-                        //if (_qrCodeBase64 != null)
-                        // ElevatedButton.icon(
-                        //   icon: const Icon(Icons.paid),
-                        //   label: const Text("Pagamento Realizado"),
-                        //   onPressed: () {
-                        //     final carrinho = Provider.of<CarrinhoModel>(
-                        //       context,
-                        //       listen: false,
-                        //     );
-                        //     carrinho.limpar();
-                        //     Provider.of<MesaComandaModel>(
-                        //       context,
-                        //       listen: false,
-                        //     ).limpar();
-
-                        //     Navigator.of(
-                        //       context,
-                        //     ).popUntil((route) => route.isFirst);
-                        //   },
-                        // ),
                       ],
                     ),
         ),

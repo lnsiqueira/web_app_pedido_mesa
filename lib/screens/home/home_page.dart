@@ -14,6 +14,7 @@ import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
+import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -336,7 +337,11 @@ class _HomePageState extends State<HomePage> {
                       isLoading
                           ? Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: const CircularProgressIndicator(),
+                              child: const PulsingLogo(
+                                assetPath: 'images/logodd_clean.png',
+                                width: 150,
+                                duration: const Duration(seconds: 1),
+                              ),
                             )
                           : SizedBox(),
                       const SizedBox(height: 20),
@@ -777,7 +782,13 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(
+        child: PulsingLogo(
+          assetPath: 'images/logodd_clean.png',
+          width: 150,
+          duration: const Duration(seconds: 1),
+        ),
+      ),
     );
 
     final pedidos = await _buscarPedidosSalvos();

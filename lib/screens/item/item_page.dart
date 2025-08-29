@@ -8,6 +8,7 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
+import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class ItensPage extends StatefulWidget {
   final int idCategoria;
@@ -324,7 +325,12 @@ class _ItensPageState extends State<ItensPage> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: PulsingLogo(
+              assetPath: 'images/logodd_clean.png',
+              width: 150,
+              duration: const Duration(seconds: 1),
+            ))
           : produtos.isEmpty
               ? const Center(child: Text('Nenhum produto encontrado.'))
               : ListView.builder(

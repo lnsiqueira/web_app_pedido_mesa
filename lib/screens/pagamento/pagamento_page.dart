@@ -7,6 +7,7 @@ import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:webapp_pedido_mesa/core/model/pedido_model.dart';
+import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class PagamentoPage extends StatefulWidget {
   const PagamentoPage({Key? key}) : super(key: key);
@@ -39,43 +40,42 @@ class _PagamentoPageState extends State<PagamentoPage> {
     // Mostra alerta de sucesso
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text('Pagamento aprovado'),
-            content: Text(
-              'Aguarde que seu pedido será entregue na mesa.\nPedido ID: $idPedido',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  // 1- ENVIAR API BRATTER
-                  // Aqui você pode chamar a API para registrar o pagamento
-                  // e enviar os dados necessários, como mesa, comanda, etc.
-                  // 2- DAR BAIXA NA COMANDA BRATTER
-                  // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
-                  // 4- CHAMAR API XML
+      builder: (_) => AlertDialog(
+        title: Text('Pagamento aprovado'),
+        content: Text(
+          'Aguarde que seu pedido será entregue na mesa.\nPedido ID: $idPedido',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 1- ENVIAR API BRATTER
+              // Aqui você pode chamar a API para registrar o pagamento
+              // e enviar os dados necessários, como mesa, comanda, etc.
+              // 2- DAR BAIXA NA COMANDA BRATTER
+              // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+              // 4- CHAMAR API XML
 
-                  Navigator.of(context).pop(); // fecha o dialog
-                  // Navigator.of(context).pop(); // volta para tela anterior
+              Navigator.of(context).pop(); // fecha o dialog
+              // Navigator.of(context).pop(); // volta para tela anterior
 
-                  // Limpa o carrinho via Provider
-                  final carrinho = Provider.of<CarrinhoModel>(
-                    context,
-                    listen: false,
-                  );
-                  carrinho.limpar();
-                  Provider.of<MesaComandaModel>(
-                    context,
-                    listen: false,
-                  ).limpar();
+              // Limpa o carrinho via Provider
+              final carrinho = Provider.of<CarrinhoModel>(
+                context,
+                listen: false,
+              );
+              carrinho.limpar();
+              Provider.of<MesaComandaModel>(
+                context,
+                listen: false,
+              ).limpar();
 
-                  // Fecha o diálogo e volta para a tela inicial
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('OK'),
-              ),
-            ],
+              // Fecha o diálogo e volta para a tela inicial
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
@@ -97,43 +97,42 @@ class _PagamentoPageState extends State<PagamentoPage> {
     // Mostra alerta de sucesso
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text('Pagamento aprovado'),
-            content: Text(
-              'Aguarde que seu pedido será entregue na mesa.\nPedido ID: $idPedido',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  // 1- ENVIAR API BRATTER
-                  // Aqui você pode chamar a API para registrar o pagamento
-                  // e enviar os dados necessários, como mesa, comanda, etc.
-                  // 2- DAR BAIXA NA COMANDA BRATTER
-                  // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
-                  // 4- CHAMAR API XML
+      builder: (_) => AlertDialog(
+        title: Text('Pagamento aprovado'),
+        content: Text(
+          'Aguarde que seu pedido será entregue na mesa.\nPedido ID: $idPedido',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 1- ENVIAR API BRATTER
+              // Aqui você pode chamar a API para registrar o pagamento
+              // e enviar os dados necessários, como mesa, comanda, etc.
+              // 2- DAR BAIXA NA COMANDA BRATTER
+              // 3- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
+              // 4- CHAMAR API XML
 
-                  Navigator.of(context).pop(); // fecha o dialog
-                  // Navigator.of(context).pop(); // volta para tela anterior
+              Navigator.of(context).pop(); // fecha o dialog
+              // Navigator.of(context).pop(); // volta para tela anterior
 
-                  // Limpa o carrinho via Provider
-                  final carrinho = Provider.of<CarrinhoModel>(
-                    context,
-                    listen: false,
-                  );
-                  carrinho.limpar();
-                  Provider.of<MesaComandaModel>(
-                    context,
-                    listen: false,
-                  ).limpar();
+              // Limpa o carrinho via Provider
+              final carrinho = Provider.of<CarrinhoModel>(
+                context,
+                listen: false,
+              );
+              carrinho.limpar();
+              Provider.of<MesaComandaModel>(
+                context,
+                listen: false,
+              ).limpar();
 
-                  // Fecha o diálogo e volta para a tela inicial
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('OK'),
-              ),
-            ],
+              // Fecha o diálogo e volta para a tela inicial
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
@@ -153,12 +152,11 @@ class _PagamentoPageState extends State<PagamentoPage> {
         if (consolidados.containsKey(nome)) {
           consolidados[nome]!.quantidade =
               (consolidados[nome]!.quantidade ?? 0) +
-              (item.quantidade > 0 ? item.quantidade : 1);
+                  (item.quantidade > 0 ? item.quantidade : 1);
         } else {
           consolidados[nome] = ItemModel(
             desProduto: nome,
-            preco:
-                item.produto.preco! *
+            preco: item.produto.preco! *
                 (item.quantidade > 0 ? item.quantidade : 1),
             detalhes: null,
             tipoProduto: item.produto.desCategoria ?? "",
@@ -210,51 +208,54 @@ class _PagamentoPageState extends State<PagamentoPage> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Center(
-          child:
-              _processandoPagamento
-                  ? const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Processando pagamento...'),
-                    ],
-                  )
-                  : _pagamentoRealizado
+          child: _processandoPagamento
+              ? const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    PulsingLogo(
+                      assetPath: 'images/logodd_clean.png',
+                      width: 150,
+                      duration: const Duration(seconds: 1),
+                    ),
+                    SizedBox(height: 16),
+                    Text('Processando pagamento...'),
+                  ],
+                )
+              : _pagamentoRealizado
                   ? const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 80,
-                  )
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 80,
+                    )
                   : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Total a pagar via PIX:',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'R\$ ${carrinho.totalGeral.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Total a pagar via PIX:',
+                          style: TextStyle(fontSize: 18),
                         ),
-                      ),
-                      const SizedBox(height: 40),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.pix),
-                        label: const Text('Confirmar Pagamento'),
-                        onPressed: _confirmarPagamento,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
+                        const SizedBox(height: 10),
+                        Text(
+                          'R\$ ${carrinho.totalGeral.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 40),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.pix),
+                          label: const Text('Confirmar Pagamento'),
+                          onPressed: _confirmarPagamento,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
