@@ -771,12 +771,12 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         child: Center(
           child: _processandoPagamento
               ? SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.8,
+                  height: MediaQuery.of(context).size.height * 1,
                   child: const Center(
                     child: PulsingLogo(
                       assetPath: 'images/logodd_clean.png',
                       width: 150,
-                      duration: const Duration(seconds: 1),
+                      duration: Duration(seconds: 1),
                     ),
                   ),
                 )

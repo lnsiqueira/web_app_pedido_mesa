@@ -335,16 +335,17 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       isLoading
-                          ? Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: const PulsingLogo(
-                                assetPath: 'images/logodd_clean.png',
-                                width: 150,
-                                duration: const Duration(seconds: 1),
-                              ),
+                          ? Expanded(
+                              child: isLoading
+                                  ? Center(
+                                      child: PulsingLogo(
+                                        assetPath: 'images/logodd_clean.png',
+                                        duration: const Duration(seconds: 1),
+                                      ),
+                                    )
+                                  : SizedBox(),
                             )
-                          : SizedBox(),
-                      const SizedBox(height: 20),
+                          : const SizedBox(height: 20),
                       if (mesa != null && comanda != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -432,18 +433,24 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _pedirMesaEComanda,
-                          child: Text(
-                            AppLocalizations.of(
-                              context,
-                            )!
-                                .placeYourOrder
-                                .toUpperCase(),
-                          ),
-                        ),
-                      ),
+                      Consumer<MesaComandaModel>(
+                          builder: (context, comanda, _) {
+                        if (comanda.comanda == '') {
+                          return Center(
+                            child: ElevatedButton(
+                              onPressed: _pedirMesaEComanda,
+                              child: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!
+                                    .placeYourOrder
+                                    .toUpperCase(),
+                              ),
+                            ),
+                          );
+                        }
+                        return SizedBox();
+                      }),
                       const Spacer(),
                       const Divider(height: 1, thickness: 1),
                       const Padding(
@@ -778,15 +785,28 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
   }
 
   Future<void> _mostrarPedidos(BuildContext context) async {
-    // Mostra loading enquanto carrega
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: PulsingLogo(
-          assetPath: 'images/logodd_clean.png',
-          width: 150,
-          duration: const Duration(seconds: 1),
+      builder: (context) => Center(
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: PulsingLogo(
+            assetPath: 'images/logodd_clean.png',
+            width: 150,
+            duration: const Duration(seconds: 1),
+          ),
         ),
       ),
     );
