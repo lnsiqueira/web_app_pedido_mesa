@@ -75,12 +75,12 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
         "identificador_externo": null,
         "identificador_movimento": " ",
         "enviar_qr_code": true,
-        "cliente": {
-          "nome": "Maria Eduarda",
-          "tipo_documento": "cpf",
-          "numero_documento": "255.539.850-30",
-          "e-mail": "maria.eduarda@email.com.br",
-        },
+        // "cliente": {
+        //   "nome": "Maria Eduarda",
+        //   "tipo_documento": "cpf",
+        //   "numero_documento": "255.539.850-30",
+        //   "e-mail": "maria.eduarda@email.com.br",
+        // },
         "split": [],
       };
 
