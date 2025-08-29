@@ -254,6 +254,66 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     } finally {}
   }
 
+  // Future<void> _gerarPix() async {
+  //   if (!mounted) return;
+
+  //   setState(() {
+  //     _processandoPagamento = true;
+  //     _pagamentoRealizado = false;
+  //     _tempoRestante = 600;
+  //   });
+
+  //   GlobalKeys.pagtoPIX = true;
+  //   final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/gerar');
+
+  //   try {
+  //     final response = await http
+  //         .post(
+  //           url,
+  //           headers: {"Content-Type": "application/json"},
+  //           body: jsonEncode(_pixRequestBody()),
+  //         )
+  //         .timeout(const Duration(seconds: 30));
+
+  //     if (response.statusCode == 200) {
+  //       final jsonResponse = jsonDecode(response.body);
+  //       if (jsonResponse['success'] == true) {
+  //         final data = jsonResponse['data']['data'];
+  //         setState(() {
+  //           _qrCodeBase64 = data['qrcode'];
+  //           _idInvoice = data['id_invoice_pix'];
+  //           GlobalKeys.idInvoice = _idInvoice!;
+  //           _brCode = data['brcode'];
+  //           GlobalKeys.brCode = _brCode ?? '';
+  //         });
+
+  //         // Inicia contador regressivo
+  //         _iniciarContador();
+
+  //         // Espera 10s e começa o polling a cada 3s
+  //         //10
+  //         Future.delayed(const Duration(seconds: 10), () {
+  //           if (!mounted) return;
+  //           _iniciarPolling();
+  //         });
+  //       } else {
+  //         _showErro('Falha ao gerar PIX: ${jsonResponse['mensagem']}');
+  //       }
+  //     } else {
+  //       _showErro('Erro na API: ${response.statusCode} - ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     if (e is TimeoutException) {
+  //       _showErro('Tempo limite excedido. Tente novamente.');
+  //     } else {
+  //       _showErro('Erro ao chamar API: $e');
+  //     }
+  //   } finally {
+  //     setState(() {
+  //       _processandoPagamento = false;
+  //     });
+  //   }
+  // }
   Future<void> _gerarPix() async {
     if (!mounted) return;
 
@@ -265,48 +325,65 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
     GlobalKeys.pagtoPIX = true;
     final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/gerar');
+    const maxTentativas = 3;
 
     try {
-      final response = await http
-          .post(
-            url,
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(_pixRequestBody()),
-          )
-          .timeout(const Duration(seconds: 30));
+      for (int tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+        try {
+          final response = await http
+              .post(
+                url,
+                headers: {"Content-Type": "application/json"},
+                body: jsonEncode(_pixRequestBody()),
+              )
+              .timeout(const Duration(seconds: 30));
 
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        if (jsonResponse['success'] == true) {
-          final data = jsonResponse['data']['data'];
-          setState(() {
-            _qrCodeBase64 = data['qrcode'];
-            _idInvoice = data['id_invoice_pix'];
-            GlobalKeys.idInvoice = _idInvoice!;
-            _brCode = data['brcode'];
-            GlobalKeys.brCode = _brCode ?? '';
-          });
+          if (response.statusCode == 200) {
+            final jsonResponse = jsonDecode(response.body);
+            if (jsonResponse['success'] == true) {
+              final data = jsonResponse['data']['data'];
+              setState(() {
+                _qrCodeBase64 = data['qrcode'];
+                _idInvoice = data['id_invoice_pix'];
+                GlobalKeys.idInvoice = _idInvoice!;
+                _brCode = data['brcode'];
+                GlobalKeys.brCode = _brCode ?? '';
+              });
 
-          // Inicia contador regressivo
-          _iniciarContador();
+              // Inicia contador regressivo
+              _iniciarContador();
 
-          // Espera 10s e começa o polling a cada 3s
-          //10
-          Future.delayed(const Duration(seconds: 10), () {
-            if (!mounted) return;
-            _iniciarPolling();
-          });
-        } else {
-          _showErro('Falha ao gerar PIX: ${jsonResponse['mensagem']}');
+              // Espera 10s e começa o polling a cada 3s
+              Future.delayed(const Duration(seconds: 10), () {
+                if (!mounted) return;
+                _iniciarPolling();
+              });
+
+              return; // ✅ Sai do loop porque deu certo
+            } else {
+              _showErro('Falha ao gerar PIX: ${jsonResponse['mensagem']}');
+              break; // Não faz sentido tentar de novo se a API respondeu falha lógica
+            }
+          } else {
+            if (tentativa == maxTentativas) {
+              _showErro(
+                  'Erro na API: ${response.statusCode} - ${response.body}');
+            } else {
+              await Future.delayed(const Duration(
+                  seconds: 2)); // espera antes da próxima tentativa
+            }
+          }
+        } catch (e) {
+          if (tentativa == maxTentativas) {
+            if (e is TimeoutException) {
+              _showErro('Tempo limite excedido. Tente novamente.');
+            } else {
+              _showErro('Erro ao chamar API: $e');
+            }
+          } else {
+            await Future.delayed(const Duration(seconds: 2));
+          }
         }
-      } else {
-        _showErro('Erro na API: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      if (e is TimeoutException) {
-        _showErro('Tempo limite excedido. Tente novamente.');
-      } else {
-        _showErro('Erro ao chamar API: $e');
       }
     } finally {
       setState(() {
@@ -490,9 +567,8 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
           final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
 
-          //TODO: remover
           bool resultado = true;
-          //await nfceService.getInformacoesFiscaisDosProdutos(
+          // resultado = await nfceService.getInformacoesFiscaisDosProdutos(
           //   carrinho.itens,
           //   context,
           // );
@@ -929,26 +1005,26 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                             child: const Text('Simular pagamento'),
                           ),
                         const SizedBox(height: 20),
-                        if (_qrCodeBase64 != null)
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.paid),
-                            label: const Text("Pagamento Realizado"),
-                            onPressed: () {
-                              final carrinho = Provider.of<CarrinhoModel>(
-                                context,
-                                listen: false,
-                              );
-                              carrinho.limpar();
-                              Provider.of<MesaComandaModel>(
-                                context,
-                                listen: false,
-                              ).limpar();
+                        //if (_qrCodeBase64 != null)
+                        // ElevatedButton.icon(
+                        //   icon: const Icon(Icons.paid),
+                        //   label: const Text("Pagamento Realizado"),
+                        //   onPressed: () {
+                        //     final carrinho = Provider.of<CarrinhoModel>(
+                        //       context,
+                        //       listen: false,
+                        //     );
+                        //     carrinho.limpar();
+                        //     Provider.of<MesaComandaModel>(
+                        //       context,
+                        //       listen: false,
+                        //     ).limpar();
 
-                              Navigator.of(
-                                context,
-                              ).popUntil((route) => route.isFirst);
-                            },
-                          ),
+                        //     Navigator.of(
+                        //       context,
+                        //     ).popUntil((route) => route.isFirst);
+                        //   },
+                        // ),
                       ],
                     ),
         ),

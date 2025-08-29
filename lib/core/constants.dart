@@ -10,11 +10,11 @@ class GlobalKeys {
   static const String codEmpresa = '1';
   static const String descricaoEmpresa = 'Dona Deola';
 
-  static const ambienteNfe = 'H';
+  static const ambienteNfe = 'P';
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
   static String tokenBratter = '';
-  static const String serieNfe = '1';
+  static const String serieNfe = '20';
   static String numSequencialNfe = '';
   static String base64Nfe = '';
   static String errroResponse = '';
@@ -40,9 +40,7 @@ class Urls {
 
   static const String urlApiBratter =
       'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
-  static String urlApimEmissaoNFe =
-      GlobalKeys.ambienteNfe == "P"
-          ? 'http://helpmachine.ddns.com.br:9006/nfe'
-          : 'http://helpmachine.ddns.com.br:9006/nfe';
-  //: 'http://192.168.0.100:9005/nfe'; //TODO
+  static String urlApimEmissaoNFe = GlobalKeys.ambienteNfe == "P"
+      ? 'http://helpmachine.ddns.com.br:9006/nfe'
+      : 'http://192.168.0.100:9005/nfe';
 }
