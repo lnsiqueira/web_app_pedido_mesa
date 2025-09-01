@@ -340,8 +340,11 @@ class _ItensPageState extends State<ItensPage> {
                     return ListTile(
                       leading: const Icon(Icons.fastfood),
                       title: Text(produto.desProduto ?? ''),
+                      // subtitle: Text(
+                      //   'PLU: ${produto.plu} - Preço: R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                      // ),
                       subtitle: Text(
-                        'PLU: ${produto.plu} - Preço: R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                        'Preço: R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
                       ),
                       onTap: () {
                         _mostrarPopupObs(produto);
