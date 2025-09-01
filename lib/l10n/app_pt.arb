@@ -44,6 +44,8 @@
     "confirm": "Confirmar",
     "enterTableNumber" :  "Informe o número da mesa",
     "table" : "Mesa",
+    "myOrders": "Meus pedidos",
     "enterOrderNumber" : "Informe o número do comanda",
     "order" : "Comanda"
+    
 }

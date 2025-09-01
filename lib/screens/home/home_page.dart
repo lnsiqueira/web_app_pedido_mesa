@@ -353,15 +353,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                           child: Column(
                             children: [
-                              // Text(
-                              //   '${AppLocalizations.of(context)!.table}: $mesa',
-                              //   style: const TextStyle(fontSize: 18),
-                              // ),
-                              // Text(
-                              //   '${AppLocalizations.of(context)!.order}: $comanda',
-                              //   style: const TextStyle(fontSize: 18),
-                              // ),
-                              // const SizedBox(height: 20),
                               Wrap(
                                 spacing: 12,
                                 runSpacing: 12,
@@ -436,15 +427,16 @@ class _HomePageState extends State<HomePage> {
                       Consumer<MesaComandaModel>(
                           builder: (context, comanda, _) {
                         if (comanda.comanda == '') {
-                          return Center(
-                            child: ElevatedButton(
-                              onPressed: _pedirMesaEComanda,
-                              child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!
-                                    .placeYourOrder
-                                    .toUpperCase(),
+                          return SizedBox(
+                            height: constraints.maxHeight / 1.2,
+                            child: Center(
+                              child: ElevatedButton(
+                                onPressed: _pedirMesaEComanda,
+                                child: Text(
+                                  AppLocalizations.of(context)!
+                                      .placeYourOrder
+                                      .toUpperCase(),
+                                ),
                               ),
                             ),
                           );
@@ -942,7 +934,8 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Meus pedidos',
+              // 'Meus pedidos',
+              AppLocalizations.of(context)!.myOrders,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,

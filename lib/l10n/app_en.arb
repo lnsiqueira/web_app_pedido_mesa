@@ -44,6 +44,7 @@
     "confirm": "Confirm",
     "enterTableNumber" :  "Enter the table number",
     "table" : "Table",
+    "myOrders": "My orders",
     "enterOrderNumber" : "Enter the order number",
     "order" : "Order"
 
