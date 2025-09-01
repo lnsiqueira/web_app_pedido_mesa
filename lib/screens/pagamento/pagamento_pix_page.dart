@@ -1089,7 +1089,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                           _mensagemStatus!,
                                           style: const TextStyle(
                                             fontSize: 18,
-                                            color: Colors.orange,
+                                            color: Colors.black26,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
