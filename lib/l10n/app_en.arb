@@ -45,6 +45,7 @@
     "enterTableNumber" :  "Enter the table number",
     "table" : "Table",
     "myOrders": "My orders",
+    "mesaEcomanda": "Table and Order",
     "enterOrderNumber" : "Enter the order number",
     "order" : "Order"
 

@@ -15,6 +15,7 @@ import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
+import 'package:webapp_pedido_mesa/widgets/popup_mesa_comanda.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,225 +36,10 @@ class _HomePageState extends State<HomePage> {
 
     final result = await showDialog<Map<String, String>?>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    const SizedBox(width: 12),
-                    Text(
-                      'Mesa e Comanda',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Campo Mesa
-                Text(
-                  AppLocalizations.of(context)!.table,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: mesaController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Apenas números
-                  ],
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.enterTableNumber,
-                    prefixIcon:
-                        Icon(Icons.numbers, color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!.enterTableNumber;
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // Campo Comanda
-                Text(
-                  AppLocalizations.of(context)!.order,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: comandaController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Apenas números
-                  ],
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.enterOrderNumber,
-                    prefixIcon:
-                        Icon(Icons.receipt_long, color: Colors.grey.shade500),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!
-                          .pleaseEnterOrderNumber;
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 32),
-
-                // Botões
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey.shade600,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                      ),
-                      child: Text(AppLocalizations.of(context)!.cancel),
-                    ),
-                    const SizedBox(width: 12),
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     if (_formKey.currentState!.validate()) {
-                    //       Navigator.pop(context, {
-                    //         'mesa': mesaController.text,
-                    //         'comanda': comandaController.text,
-                    //       });
-                    //     }
-                    //   },
-                    //   style: ElevatedButton.styleFrom(
-                    //     padding: const EdgeInsets.symmetric(
-                    //         horizontal: 24, vertical: 12),
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(12),
-                    //     ),
-                    //   ),
-                    //   child: Text(AppLocalizations.of(context)!.confirm),
-                    // ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final comanda = comandaController.text;
-
-                          var urlBratter = Urls.urlApiBratter;
-                          final encodedUrl = Uri.encodeComponent(urlBratter);
-                          final url =
-                              '${Urls.urlApiAzure}Proxy/ConsultaComanda/?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}&idComanda=$comanda';
-
-                          try {
-                            final response = await http.get(
-                              Uri.parse(url),
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                              },
-                            );
-
-                            if (response.statusCode == 200) {
-                              final data = jsonDecode(response.body);
-
-                              // verifica se a comanda existe
-                              if (data['Id'] != 0 && data['Status'] != null) {
-                                // ✅ existe, pode prosseguir
-                                Navigator.pop(context, {
-                                  'mesa': mesaController.text,
-                                  'comanda': comanda,
-                                });
-                              } else {
-                                // ❌ não existe
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Comanda não encontrada."),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            } else {
-                              // erro de comunicação
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      "Erro ao consultar comanda: ${response.statusCode}"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Erro: $e"),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(AppLocalizations.of(context)!.confirm),
-                    )
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      builder: (context) => PopupMesaComanda(
+          formKey: _formKey,
+          mesaController: mesaController,
+          comandaController: comandaController),
     );
 
     if (result != null) {
@@ -497,12 +283,31 @@ class _HomePageState extends State<HomePage> {
                           return SizedBox(
                             height: constraints.maxHeight / 1.2,
                             child: Center(
-                              child: ElevatedButton(
+                              child: ElevatedButton.icon(
                                 onPressed: _pedirMesaEComanda,
-                                child: Text(
+                                icon: const Icon(Icons.restaurant_menu,
+                                    size: 20, color: Colors.white),
+                                label: Text(
                                   AppLocalizations.of(context)!
                                       .placeYourOrder
                                       .toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange.shade700,
+                                  foregroundColor: Colors.white,
+                                  elevation: 6,
+                                  shadowColor: Colors.orange.withOpacity(0.5),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 28, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
                               ),
                             ),
