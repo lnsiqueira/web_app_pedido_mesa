@@ -563,17 +563,33 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
           setState(() {
             _pagamentoRealizado = true;
           });
-          _subirComandaEdeletar();
-          var idPedido = await uploadPedido();
+
+          //*var idPedido = await uploadPedido();
           final nfceService = NfceService();
 
           final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
 
           bool resultado = true;
-          // resultado = await nfceService.getInformacoesFiscaisDosProdutos(
-          //   carrinho.itens,
-          //   context,
-          // );
+          resultado =
+              await nfceService.getInformacoesFiscaisDosProdutosNaoGeraNFe(
+            carrinho.itens,
+            context,
+          );
+
+          if (!resultado) {
+            _ErroGeracaoNF = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Erro ao obter informações fiscais dos produtos. ${GlobalKeys.errroResponse} - ${GlobalKeys.errroResponseStatusCode}',
+                ),
+              ),
+            );
+            return;
+          }
+
+          _subirComandaEdeletar();
+
           if (!mounted) return;
 
           if (resultado) {
@@ -679,22 +695,22 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
       String pedidoId = uuid.v4();
       PedidoModel pedido = PedidoModel(
-        pedidoId: pedidoId,
-        codEmpresa: '1',
-        codFilial: GlobalKeys.codFilial,
-        dataHoraPedido: Timestamp.now(),
-        deviceToken: "",
-        itens: itensFinais,
-        total: carrinho.totalGeral,
-        pedidoPagoMesa: _pagamentoRealizado,
-        comanda: mesaComanda.comanda,
-        serieNfe: GlobalKeys.serieNfe,
-        ambiente: GlobalKeys.ambienteNfe,
-        vlrDescontoEmbalagem: 0,
-        pedidoMesa: true,
-        mesa: mesaComanda.mesa,
-        idInvoicePix: GlobalKeys.idInvoice,
-      );
+          pedidoId: pedidoId,
+          codEmpresa: '1',
+          codFilial: GlobalKeys.codFilial,
+          dataHoraPedido: Timestamp.now(),
+          deviceToken: "",
+          itens: itensFinais,
+          total: carrinho.totalGeral,
+          pedidoPagoMesa: _pagamentoRealizado,
+          comanda: mesaComanda.comanda,
+          serieNfe: GlobalKeys.serieNfe,
+          ambiente: GlobalKeys.ambienteNfe,
+          vlrDescontoEmbalagem: 0,
+          pedidoMesa: true,
+          mesa: mesaComanda.mesa,
+          idInvoicePix: GlobalKeys.idInvoice,
+          json: GlobalKeys.nfe.toString());
 
       await _firestore
           .collection('teste_pedido_mesa')

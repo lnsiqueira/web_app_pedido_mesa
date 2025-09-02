@@ -10,11 +10,11 @@ class GlobalKeys {
   static const String codEmpresa = '1';
   static const String descricaoEmpresa = 'Dona Deola';
 
-  static const ambienteNfe = 'P';
+  static const ambienteNfe = 'H';
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
   static String tokenBratter = '';
-  static const String serieNfe = '20';
+  static const String serieNfe = '1'; //'20';
   static String numSequencialNfe = '';
   static String base64Nfe = '';
   static String errroResponse = '';
@@ -22,6 +22,7 @@ class GlobalKeys {
   static int idInvoice = 0;
   static late String brCode;
   static late bool pagtoPIX;
+  static dynamic nfe;
 }
 
 class CustomColor {
