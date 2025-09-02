@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:http/http.dart' as http;
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -151,12 +155,61 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context, {
-                            'mesa': mesaController.text,
-                            'comanda': comandaController.text,
-                          });
+                          final comanda = comandaController.text;
+
+                          var urlBratter = Urls.urlApiBratter;
+                          final encodedUrl = Uri.encodeComponent(urlBratter);
+                          final url =
+                              '${Urls.urlApiAzure}Proxy/ConsultaComanda/?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}&idComanda=$comanda';
+
+                          try {
+                            final response = await http.get(
+                              Uri.parse(url),
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                              },
+                            );
+
+                            if (response.statusCode == 200) {
+                              final data = jsonDecode(response.body);
+
+                              // verifica se a comanda existe
+                              if (data['Id'] != 0 && data['Status'] != null) {
+                                // ✅ existe, pode prosseguir
+                                Navigator.pop(context, {
+                                  'mesa': mesaController.text,
+                                  'comanda': comanda,
+                                });
+                              } else {
+                                // ❌ não existe
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Comanda não encontrada."),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } else {
+                              // erro de comunicação
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      "Erro ao consultar comanda: ${response.statusCode}"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Erro: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -167,7 +220,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         ),
                       ),
                       child: Text(AppLocalizations.of(context)!.confirm),
-                    ),
+                    )
                   ],
                 ),
               ],
