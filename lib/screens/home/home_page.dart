@@ -105,16 +105,6 @@ class _HomePageState extends State<HomePage> {
                 // LOGO
                 Image.asset('images/logodd_clean.png', height: 40),
 
-                // TÍTULO
-                // const Expanded(
-                //   child: Center(
-                //     child: Text(
-                //       'Escolha seus produtos',
-                //       style: TextStyle(fontSize: 18),
-                //     ),
-                //   ),
-                // ),
-
                 // FLAGS + CARRINHO
                 Row(
                   children: [
@@ -123,17 +113,11 @@ class _HomePageState extends State<HomePage> {
                     _buildFlag('images/en.png', 'en', languageController),
                     const SizedBox(width: 6),
                     _buildFlag('images/es.png', 'es', languageController),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     MeusPedidosWidget(),
-                    // Text(
-                    //   'Meus pedidos',
-                    //   style: TextStyle(
-                    //     fontSize: 14,
-                    //     color: const Color.fromARGB(255, 93, 71, 41),
-                    //   ),
-                    // ),
-                    const SizedBox(width: 4),
-                    // Carrinho com badge
+
+                    // const SizedBox(width: 4),
+                    // // Carrinho com badge
                     Consumer<CarrinhoModel>(
                       builder: (context, carrinho, _) => Stack(
                         alignment: Alignment.center,
@@ -202,7 +186,7 @@ class _HomePageState extends State<HomePage> {
                       if (mesa != null && comanda != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
+                            horizontal: 0.0,
                           ),
                           child: Column(
                             children: [
@@ -387,7 +371,7 @@ class _HomePageState extends State<HomePage> {
       onTap: () {
         controller.changeLanguage(lang);
       },
-      child: Image.asset(path, width: 34),
+      child: Image.asset(path, width: 24),
     );
   }
 }
@@ -809,39 +793,37 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
     return InkWell(
       onTap: () => _mostrarPedidos(context),
       borderRadius: BorderRadius.circular(8),
-      child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 18,
+                  color: Colors.black38,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 18,
-                      color: Colors.black38,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      AppLocalizations.of(context)!.myOrders,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                        // color: Colors.orange.shade800,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 5),
+                Text(
+                  AppLocalizations.of(context)!.myOrders,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                    // color: Colors.orange.shade800,
+                  ),
                 ),
-              ),
-            ],
-          )),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
