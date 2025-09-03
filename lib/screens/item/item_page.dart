@@ -12,8 +12,10 @@ import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class ItensPage extends StatefulWidget {
   final int idCategoria;
+  final String nomeCategoria;
 
-  const ItensPage({super.key, required this.idCategoria});
+  const ItensPage(
+      {super.key, required this.idCategoria, required this.nomeCategoria});
 
   @override
   State<ItensPage> createState() => _ItensPageState();
@@ -278,7 +280,7 @@ class _ItensPageState extends State<ItensPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Itens'),
+        title: Text(widget.nomeCategoria),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -337,19 +339,81 @@ class _ItensPageState extends State<ItensPage> {
                   itemCount: produtos.length,
                   itemBuilder: (context, index) {
                     final produto = produtos[index];
-                    return ListTile(
-                      leading: const Icon(Icons.fastfood),
-                      title: Text(produto.desProduto ?? ''),
-                      // subtitle: Text(
-                      //   'PLU: ${produto.plu} - Preço: R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
-                      // ),
-                      subtitle: Text(
-                        'Preço: R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 0),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            _mostrarPopupObs(produto);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                // Ícone / Imagem
+                                Container(
+                                  height: 42,
+                                  width: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.orange.shade300,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 24,
+                                    color: Colors.orange.shade600,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // Nome + Preço
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        produto.desProduto ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const Icon(
+                                  Icons.add,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                      onTap: () {
-                        _mostrarPopupObs(produto);
-                        // _adicionarAoCarrinho(produto);
-                      },
                     );
                   },
                 ),

@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                     //     color: const Color.fromARGB(255, 93, 71, 41),
                     //   ),
                     // ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 4),
                     // Carrinho com badge
                     Consumer<CarrinhoModel>(
                       builder: (context, carrinho, _) => Stack(
@@ -207,68 +207,83 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             children: [
                               Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
+                                spacing: 16,
+                                runSpacing: 16,
                                 children: categorias.map((categoria) {
                                   return SizedBox(
-                                    height: 150,
-                                    width: itemWidth.clamp(100, 200),
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.all(
-                                          8,
-                                        ),
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black,
+                                    height: 160,
+                                    width: itemWidth.clamp(120, 200),
+                                    child: Card(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ItensPage(
-                                              idCategoria: categoria.id,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            child: Image.network(
-                                              categoria.imagem,
-                                              height: 80,
-                                              width: 80,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) =>
-                                                  const Icon(
-                                                Icons.broken_image,
+                                      elevation: 3,
+                                      clipBehavior: Clip.antiAlias,
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ItensPage(
+                                                nomeCategoria:
+                                                    categoria.desCategoria,
+                                                idCategoria: categoria.id,
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Padding(
-                                            padding: const EdgeInsets.all(
-                                              8.0,
-                                            ),
-                                            child: Text(
-                                              categoria.desCategoria,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 12,
+                                          );
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Expanded(
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    const BorderRadius.vertical(
+                                                  top: Radius.circular(16),
+                                                ),
+                                                child: Image.network(
+                                                  categoria.imagem,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                          stackTrace) =>
+                                                      Container(
+                                                    color: Colors.grey[200],
+                                                    child: const Icon(
+                                                      Icons.broken_image,
+                                                      size: 40,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                            Padding(
+                                              padding: const EdgeInsets.all(10),
+                                              child: SizedBox(
+                                                height:
+                                                    38, // altura equivalente a 2 linhas
+                                                child: Center(
+                                                  child: Text(
+                                                    categoria.desCategoria,
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.black87,
+                                                      height: 1.2,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -795,28 +810,38 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
       onTap: () => _mostrarPedidos(context),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 18,
-              color: Colors.blue.shade600,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              // 'Meus pedidos',
-              AppLocalizations.of(context)!.myOrders,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.blue.shade600,
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 18,
+                      color: Colors.black38,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      AppLocalizations.of(context)!.myOrders,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                        // color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          )),
     );
   }
 }
