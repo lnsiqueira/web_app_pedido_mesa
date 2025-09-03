@@ -191,12 +191,12 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             children: [
                               Wrap(
-                                spacing: 16,
+                                spacing: 12,
                                 runSpacing: 16,
                                 children: categorias.map((categoria) {
                                   return SizedBox(
                                     height: 160,
-                                    width: itemWidth.clamp(120, 200),
+                                    width: itemWidth.clamp(100, 180),
                                     child: Card(
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
@@ -810,13 +810,16 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
                   color: Colors.black38,
                 ),
                 const SizedBox(width: 5),
-                Text(
-                  AppLocalizations.of(context)!.myOrders,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                    // color: Colors.orange.shade800,
+                SizedBox(
+                  width: 88,
+                  child: Text(
+                    AppLocalizations.of(context)!.myOrders,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                      // color: Colors.orange.shade800,
+                    ),
                   ),
                 ),
               ],
