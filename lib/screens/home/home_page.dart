@@ -813,6 +813,7 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
                 SizedBox(
                   width: 88,
                   child: Text(
+                    textAlign: TextAlign.center,
                     AppLocalizations.of(context)!.myOrders,
                     style: TextStyle(
                       fontSize: 14,

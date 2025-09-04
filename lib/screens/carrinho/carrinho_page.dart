@@ -253,7 +253,35 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Carrinho')),
       body: carrinho.itens.isEmpty
-          ? const Center(child: Text('Carrinho vazio'))
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 60,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Seu carrinho está vazio',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Adicione itens para continuar',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : Column(
               children: [
                 Expanded(

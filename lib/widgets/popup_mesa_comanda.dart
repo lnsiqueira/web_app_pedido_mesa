@@ -1030,7 +1030,6 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
           } else {
             _triggerShakeAnimation();
             HapticFeedback.heavyImpact();
-
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -1052,7 +1051,7 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
                     ),
                   ],
                 ),
-                backgroundColor: Colors.red.shade600,
+                backgroundColor: Colors.orange.shade600,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
