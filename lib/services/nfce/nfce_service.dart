@@ -473,6 +473,36 @@ class NfceService {
         print('try');
         print(nfe.toJson());
 
+// EmissaoNfce emissaoNfce = EmissaoNfce();
+
+//          final dadosParaAzure = {
+//             "id": 0,
+//             "descricaoFilial": filial,
+//             "idFilial": codFilial,
+//             "descricaoEmpresa": "Dona Deola",
+//             "idEmpresa": "1",
+//             "dataEmissaoNfe": nfeRetorno.data.toIso8601String(),
+//             "cnpjEmpresa": nfeModel.cnpj,
+//             "modeloNfe": nfeModel.modelo,
+//             "numeroNfe": nfeModel.numeroDFe,
+//             "serieNfe": terminalCaixa,
+//             "ipEmissor": "",
+//             "dispositivoEmissor": "",
+//             "ambiente": ambiente,
+//             "conteudoBase64": nfeRetorno.base64,
+//             "xmlNfe": nfeRetorno.xmlNfe,
+//             "nomeArquivo": nfeRetorno.nome,
+//             "valorTotal": nfeModel.pagamentos.first.valor,
+//             "linkNfe": "https://api.suaempresa.com/nfe/${nfeRetorno.nome}",
+//             "dataRegistro": DateTime.now().toIso8601String(),
+//             "tipPagamento": nfeModel.pagamentos.first.identificacao,
+//           };
+//           var base64Limpa = limparBase64(nfeRetorno.base64);
+//           print(base64Limpa);
+
+//           // 4. Chamar a API Azure
+//           await emissaoNfce.chamarAPIAzure(Urls.urlApiAzure, dadosParaAzure);
+
         //  GlobalKeys.nfe = nfe.toJson();
 
         // GlobalKeys.base64Nfe = await EmissaoNfce().enviarNFe(

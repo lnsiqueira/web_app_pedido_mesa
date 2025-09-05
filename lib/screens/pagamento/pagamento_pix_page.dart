@@ -1,12 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
@@ -14,7 +21,9 @@ import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/model/pedido_model.dart';
 import 'package:webapp_pedido_mesa/services/nfce/nfce_service.dart';
-
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 // ignore: deprecated_member_use
 import 'dart:html' as html;
 
@@ -724,6 +733,186 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     }
   }
 
+  Future<void> mostrarReciboPopup(
+    BuildContext context,
+    double totalPedido,
+    String idInvoice,
+    String statusPagamento,
+    List pedidos,
+  ) async {
+    final GlobalKey repaintKey = GlobalKey();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          content: RepaintBoundary(
+            key: repaintKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // <-- evita ocupar tela toda
+              children: [
+                Text(
+                  'Recibo do Pedido - ID $idInvoice',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Dona Deola  ${GlobalKeys.descricaoFilial}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text('Status do Pagamento: $statusPagamento'),
+                const SizedBox(height: 10),
+                const Text(
+                  'Itens do Pedido:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                ...pedidos.map((item) {
+                  final totalItem =
+                      item.quantidade * (item.produto.preco ?? 0.0);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text((item.produto.desProduto ?? '').toUpperCase()),
+                        Text('Qtd: ${item.quantidade}'),
+                        Text('Total: R\$ ${totalItem.toStringAsFixed(2)}'),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                const Divider(),
+                Text(
+                  'Total do Pedido: R\$ ${totalPedido.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Fechar'),
+            ),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.download),
+              label: const Text("Baixar/Compartilhar"),
+              onPressed: () async {
+                try {
+                  final boundary = repaintKey.currentContext!.findRenderObject()
+                      as RenderRepaintBoundary;
+
+                  final image = await boundary.toImage(pixelRatio: 3.0);
+                  final byteData =
+                      await image.toByteData(format: ui.ImageByteFormat.png);
+                  final pngBytes = byteData!.buffer.asUint8List();
+
+                  final recorder = ui.PictureRecorder();
+                  final canvas = Canvas(
+                    recorder,
+                    Rect.fromLTWH(
+                        0, 0, image.width.toDouble(), image.height.toDouble()),
+                  );
+
+                  final paint = Paint()..color = Colors.white;
+                  canvas.drawRect(
+                    Rect.fromLTWH(
+                        0, 0, image.width.toDouble(), image.height.toDouble()),
+                    paint,
+                  );
+
+                  canvas.drawImage(image, Offset.zero, Paint());
+
+                  final finalImage = await recorder
+                      .endRecording()
+                      .toImage(image.width, image.height);
+
+                  final finalByteData = await finalImage.toByteData(
+                      format: ui.ImageByteFormat.png);
+                  final finalPngBytes = finalByteData!.buffer.asUint8List();
+
+                  final blob = html.Blob([finalPngBytes]);
+                  final url = html.Url.createObjectUrlFromBlob(blob);
+                  final anchor = html.AnchorElement(href: url)
+                    ..setAttribute("download", "recibo_$idInvoice.png")
+                    ..click();
+                  html.Url.revokeObjectUrl(url);
+                } catch (e) {
+                  debugPrint("Erro ao salvar recibo: $e");
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+
+            // TextButton(
+            //   onPressed: () async {
+            //     try {
+            //       final boundary = repaintKey.currentContext!.findRenderObject()
+            //           as RenderRepaintBoundary;
+
+            //       final image = await boundary.toImage(pixelRatio: 3.0);
+            //       final byteData =
+            //           await image.toByteData(format: ui.ImageByteFormat.png);
+            //       final pngBytes = byteData!.buffer.asUint8List();
+
+            //       final recorder = ui.PictureRecorder();
+            //       final canvas = Canvas(
+            //         recorder,
+            //         Rect.fromLTWH(
+            //             0, 0, image.width.toDouble(), image.height.toDouble()),
+            //       );
+
+            //       final paint = Paint()..color = Colors.white;
+            //       canvas.drawRect(
+            //         Rect.fromLTWH(
+            //             0, 0, image.width.toDouble(), image.height.toDouble()),
+            //         paint,
+            //       );
+
+            //       canvas.drawImage(image, Offset.zero, Paint());
+
+            //       final finalImage = await recorder
+            //           .endRecording()
+            //           .toImage(image.width, image.height);
+
+            //       final finalByteData = await finalImage.toByteData(
+            //           format: ui.ImageByteFormat.png);
+            //       final finalPngBytes = finalByteData!.buffer.asUint8List();
+
+            //       final blob = html.Blob([finalPngBytes]);
+            //       final url = html.Url.createObjectUrlFromBlob(blob);
+            //       final anchor = html.AnchorElement(href: url)
+            //         ..setAttribute("download", "recibo_$idInvoice.png")
+            //         ..click();
+            //       html.Url.revokeObjectUrl(url);
+            //     } catch (e) {
+            //       debugPrint("Erro ao salvar recibo: $e");
+            //     }
+            //   },
+            //   child: const Text('Salvar recibo'),
+            // ),
+          ],
+        );
+      },
+    );
+  }
+
   void openPdfInBrowser(String base64Pdf) {
     final decodedBytes = base64Decode(
       base64Pdf.replaceAll('\n', '').replaceAll('\r', ''),
@@ -863,11 +1052,33 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                       children: [
                                         ElevatedButton.icon(
                                           icon: const Icon(Icons.visibility),
-                                          label: const Text("Visualizar PDF"),
-                                          onPressed: () {
-                                            String base64Pdf =
-                                                GlobalKeys.base64Nfe;
-                                            openPdfInBrowser(base64Pdf);
+                                          label: const Text(
+                                              "Visualizar comprovante"),
+
+                                          // String base64Pdf =
+                                          //     GlobalKeys.base64Nfe;
+                                          // openPdfInBrowser(base64Pdf);
+                                          onPressed: () async {
+                                            // Recupera os pedidos já salvos
+                                            final pedidos =
+                                                await CarrinhoStorage
+                                                    .recuperarCarrinho();
+
+// Calcula o total
+                                            double totalPedido = pedidos.fold(
+                                              0.0,
+                                              (soma, item) =>
+                                                  soma +
+                                                  (item.quantidade *
+                                                      (item.produto.preco ??
+                                                          0.0)),
+                                            );
+                                            mostrarReciboPopup(
+                                                context,
+                                                totalPedido,
+                                                GlobalKeys.idInvoice.toString(),
+                                                'Pago',
+                                                pedidos);
                                           },
                                           style: ElevatedButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(
@@ -880,25 +1091,25 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                                             ),
                                           ),
                                         ),
-                                        ElevatedButton.icon(
-                                          icon: const Icon(Icons.download),
-                                          label:
-                                              const Text("Baixar/Compartilhar"),
-                                          onPressed: () => downloadPdf(
-                                            GlobalKeys.base64Nfe,
-                                            "documento.pdf",
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 14,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                        ),
+                                        // ElevatedButton.icon(
+                                        //   icon: const Icon(Icons.download),
+                                        //   label:
+                                        //       const Text("Baixar/Compartilhar"),
+                                        //   onPressed: () => downloadPdf(
+                                        //     GlobalKeys.base64Nfe,
+                                        //     "documento.pdf",
+                                        //   ),
+                                        //   style: ElevatedButton.styleFrom(
+                                        //     padding: const EdgeInsets.symmetric(
+                                        //       horizontal: 20,
+                                        //       vertical: 14,
+                                        //     ),
+                                        //     shape: RoundedRectangleBorder(
+                                        //       borderRadius:
+                                        //           BorderRadius.circular(14),
+                                        //     ),
+                                        //   ),
+                                        // ),
                                         ElevatedButton.icon(
                                           icon: const Icon(Icons.home),
                                           label: const Text("Voltar"),
