@@ -35,6 +35,9 @@ class CustomColor {
 }
 
 class Urls {
+  static const String urlApiAzureCardapioDiario =
+      'https://webapi-uteis-ezf9f5gaaghcgzah.brazilsouth-01.azurewebsites.net/api/';
+
   static const String urlApiAzure =
       'https://webapi-sisfiscal-cqf7dxb8dkfye7ap.brazilsouth-01.azurewebsites.net/api/';
 
