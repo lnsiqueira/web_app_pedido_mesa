@@ -3,6 +3,8 @@ import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
 
 FilialNFModel? globalFilialData;
 
+String filialId = '';
+
 class GlobalKeys {
   static const String idioma = '';
   static const String codFilial = '8urs76lF1QwjcNpi3CwD';
@@ -10,7 +12,7 @@ class GlobalKeys {
   static const String codEmpresa = '1';
   static const String descricaoEmpresa = 'Dona Deola';
 
-  static const ambienteNfe = 'H';
+  static const ambienteNfe = 'P';
   static const userApiBratter = 'ConexaoMovel';
   static const passwordApiBratter = '20250301';
   static String tokenBratter = '';

@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:webapp_pedido_mesa/admin/screens/home/admin_home_page.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
@@ -14,6 +15,7 @@ import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
 import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
@@ -31,7 +33,140 @@ Future<void> main() async {
 
   CarrinhoStorage.limparCarrinho();
 
-  runApp(const MyApp());
+  final params = Uri.base.queryParameters;
+
+  if (params.containsKey('filialId')) {
+    filialId = params['filialId']!;
+    if (filialId.isEmpty || filialId == '0') {
+      ErrorApp(
+        message: 'Parâmetros Numero do Apartamenro é obrigatórios na URL',
+      );
+      return;
+    }
+    runApp(const MyOrderRoom());
+    return;
+  } else if (params.containsKey('admin')) {
+    runApp(const MyAdmin());
+    return;
+  } else {
+    runApp(const MyApp());
+  }
+  try {
+    runApp(const MyApp());
+  } catch (e) {
+    runApp(ErrorApp(message: 'Erro ao carregar configurações: $e'));
+  }
+
+  ///runApp(const MyApp());
+}
+
+class MyAdmin extends StatelessWidget {
+  const MyAdmin({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CarrinhoModel()),
+        ChangeNotifierProvider(create: (_) => ProdutosCacheProvider()),
+        ChangeNotifierProvider(create: (_) => MesaComandaModel()),
+        ChangeNotifierProvider(
+          create: (context) => LanguageController(),
+          builder: (context, child) {
+            final languageController = Provider.of<LanguageController>(context);
+
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Dona Deola',
+              theme: ThemeData(
+                textTheme: GoogleFonts.nunitoTextTheme(), // Fonte padrão global
+
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+              ),
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: [
+                Locale('en'), // English
+                Locale('es'), // Spanish
+                Locale('pt'), // Portuguese
+              ],
+              locale: languageController.locale,
+              home: AdminHomePage(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class MyOrderRoom extends StatelessWidget {
+  const MyOrderRoom({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CarrinhoModel()),
+        ChangeNotifierProvider(create: (_) => ProdutosCacheProvider()),
+        ChangeNotifierProvider(create: (_) => MesaComandaModel()),
+        ChangeNotifierProvider(
+          create: (context) => LanguageController(),
+          builder: (context, child) {
+            final languageController = Provider.of<LanguageController>(context);
+
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Dona Deola',
+              theme: ThemeData(
+                textTheme: GoogleFonts.nunitoTextTheme(), // Fonte padrão global
+
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+              ),
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: [
+                Locale('en'), // English
+                Locale('es'), // Spanish
+                Locale('pt'), // Portuguese
+              ],
+              locale: languageController.locale,
+              home: OrderHomePage(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  final String message;
+
+  const ErrorApp({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Text(
+            message,
+            style: const TextStyle(color: Colors.red, fontSize: 18),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> tokenApiBratter() async {

@@ -319,7 +319,7 @@ class _HomePageState extends State<HomePage> {
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12.0),
                         child: Text(
-                          '© 2025 BakeryFood. Todos os direitos reservados. Version: 1.1',
+                          '© 2025 BakeryFood. Todos os direitos reservados. Version: 1.2.0',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
