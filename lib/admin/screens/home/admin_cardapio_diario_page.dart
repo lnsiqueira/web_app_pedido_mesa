@@ -116,7 +116,7 @@ class _AdminCardapioDiarioPageState extends State<AdminCardapioDiarioPage> {
                 final produtos = categoria['produtos'] as List;
 
                 return _CategoriaSection(
-                  titulo: categoria['categoria'],
+                  titulo: categoria['desCategoria'],
                   produtos: produtos,
                 );
               },
@@ -274,7 +274,7 @@ class _ProdutoGridCardState extends State<_ProdutoGridCard> {
                     const SizedBox(height: 6),
 
                     Text(
-                      widget.produto['nome'],
+                      widget.produto['desProduto'],
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -360,7 +360,7 @@ class _ProdutoGridCardState extends State<_ProdutoGridCard> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: Text(widget.produto['nome']),
+              title: Text(widget.produto['desProduto']),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

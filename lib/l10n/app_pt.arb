@@ -47,6 +47,10 @@
     "myOrders": "Meus pedidos",
     "enterOrderNumber" : "Informe o número do comanda",
     "mesaEcomanda": "Mesa e Comanda",
-    "order" : "Comanda"
-    
+    "order" : "Comanda",
+    "quartoEnome": "Quarto e Nome",
+    "quarto" : "Quarto",
+    "nome" : "Nome",
+    "enterQuartoNumber" :  "Informe o número do quarto",
+    "enterNome" : "Informe o seu do nome"
 }

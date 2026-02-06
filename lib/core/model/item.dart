@@ -23,6 +23,8 @@ class ItemModel {
   String? categoria;
   String? subCategorias;
   bool? pesavel;
+  int? quantidadeDisponivel;
+  bool? ativo;
 
   ItemModel({
     this.id,
@@ -48,6 +50,8 @@ class ItemModel {
     this.categoria,
     this.subCategorias,
     this.pesavel = false,
+    this.quantidadeDisponivel,
+    this.ativo,
     this.obs,
   });
 
@@ -76,6 +80,8 @@ class ItemModel {
       categoria: null,
       subCategorias: null,
       pesavel: null,
+      quantidadeDisponivel: json['quantidadeDisponivel'],
+      ativo: json['ativo'],
       obs: (json['Obs'] as List?)
               ?.map((obsJson) => ItemObsModel.fromJson(obsJson))
               .toList() ??
@@ -96,6 +102,8 @@ class ItemModel {
       dataAtualizacao: dataAtualizacao,
       desCategoria: desCategoria,
       preco: preco ?? this.preco,
+      quantidadeDisponivel: quantidadeDisponivel,
+      ativo: ativo,
       obs: obs ?? this.obs,
     );
   }

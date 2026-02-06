@@ -12,6 +12,7 @@ import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
+import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
 import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -113,7 +114,7 @@ class MyOrderRoom extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => CarrinhoModel()),
         ChangeNotifierProvider(create: (_) => ProdutosCacheProvider()),
-        ChangeNotifierProvider(create: (_) => MesaComandaModel()),
+        ChangeNotifierProvider(create: (_) => QuartoNomeModel()),
         ChangeNotifierProvider(
           create: (context) => LanguageController(),
           builder: (context, child) {

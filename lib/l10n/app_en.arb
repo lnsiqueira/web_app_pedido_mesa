@@ -47,9 +47,10 @@
     "myOrders": "My orders",
     "mesaEcomanda": "Table and Order",
     "enterOrderNumber" : "Enter the order number",
-    "order" : "Order"
-
-
-
-
+    "order" : "Order",
+    "quartoEnome": "Quarto e Nome",
+    "quarto" : "Quarto",
+    "nome" : "Nome",
+    "enterQuartoNumber" :  "Informe o número do quarto",
+    "enterNome" : "Informe o seu do nome"
 }
