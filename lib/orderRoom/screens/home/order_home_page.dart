@@ -15,6 +15,7 @@ import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/popup_quarto_nome.d
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/home/home_page.dart';
+import 'package:webapp_pedido_mesa/widgets/app_footer.dart';
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class OrderHomePage extends StatefulWidget {
@@ -36,7 +37,8 @@ class _OrderHomePageState extends State<OrderHomePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // _pedirQuartoENome();
+      // _carregarProdutos();
+      _pedirQuartoENome();
       _carregarProdutos();
     });
   }
@@ -65,7 +67,7 @@ class _OrderHomePageState extends State<OrderHomePage> {
       quartoNome.setMesa(result['quarto']!);
       quartoNome.setComanda(result['nome']!);
 
-      _carregarProdutos();
+      // _carregarProdutos();
     }
   }
 
@@ -254,7 +256,14 @@ class _OrderHomePageState extends State<OrderHomePage> {
                 );
               },
             ),
-      bottomNavigationBar: const BottomCarrinhoBar(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          BottomCarrinhoBar(),
+          Divider(),
+          AppFooter(),
+        ],
+      ),
     );
   }
 

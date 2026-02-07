@@ -316,10 +316,10 @@ class _HomePageState extends State<HomePage> {
                       }),
                       const Spacer(),
                       const Divider(height: 1, thickness: 1),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 12.0),
                         child: Text(
-                          '© 2026 BakeryFood. Todos os direitos reservados. Version: 1.2.0',
+                          '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey,

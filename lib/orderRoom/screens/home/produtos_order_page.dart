@@ -8,6 +8,7 @@ import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/bottom_carrinho.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
+import 'package:webapp_pedido_mesa/widgets/app_footer.dart';
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 class ProdutosCategoriaPage extends StatefulWidget {
@@ -24,145 +25,6 @@ class ProdutosCategoriaPage extends StatefulWidget {
   State<ProdutosCategoriaPage> createState() => _ProdutosCategoriaPageState();
 }
 
-// class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(widget.titulo),
-//         elevation: 0,
-//         foregroundColor: Colors.black,
-//       ),
-//       body: GridView.builder(
-//         padding: const EdgeInsets.all(16),
-//         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-//           crossAxisCount: 2,
-//           mainAxisSpacing: 16,
-//           crossAxisSpacing: 16,
-//           childAspectRatio: 0.96,
-//         ),
-//         itemCount: widget.produtos.length,
-//         itemBuilder: (context, index) {
-//           final item = widget.produtos[index];
-//           final indisponivel = (item.quantidadeDisponivel ?? 0) <= 0;
-
-//           return Opacity(
-//             opacity: indisponivel ? 0.5 : 1,
-//             child: ClipRRect(
-//               borderRadius: BorderRadius.circular(18),
-//               child: Stack(
-//                 children: [
-//                   /// Imagem de fundo padrão
-//                   Positioned.fill(
-//                     child: Image.asset(
-//                       'images/default.png',
-//                       fit: BoxFit.cover,
-//                     ),
-//                   ),
-
-//                   /// Overlay clean
-//                   Positioned.fill(
-//                     child: Container(
-//                       decoration: BoxDecoration(
-//                         gradient: LinearGradient(
-//                           begin: Alignment.bottomCenter,
-//                           end: Alignment.topCenter,
-//                           colors: [
-//                             Colors.black.withOpacity(0.55),
-//                             Colors.transparent,
-//                           ],
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-
-//                   /// Conteúdo
-//                   Padding(
-//                     padding: const EdgeInsets.all(14),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         const Spacer(),
-
-//                         /// Nome do produto
-//                         Text(
-//                           item.desProduto ?? '',
-//                           maxLines: 2,
-//                           overflow: TextOverflow.ellipsis,
-//                           style: const TextStyle(
-//                             color: Colors.white,
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-
-//                         const SizedBox(height: 6),
-//                         Text(
-//                           'R\$ 16,00',
-//                           style: TextStyle(
-//                               color: indisponivel
-//                                   ? Colors.white12
-//                                   : Colors.white60,
-//                               fontSize: 16,
-//                               fontWeight: FontWeight.w600),
-//                         ),
-
-//                         /// Disponibilidade
-//                         // Text(
-//                         //   indisponivel
-//                         //       ? 'Indisponível'
-//                         //       : 'Disponível: ${item.quantidadeDisponivel}',
-//                         //   style: TextStyle(
-//                         //     color: indisponivel
-//                         //         ? Colors.redAccent.shade100
-//                         //         : Colors.white70,
-//                         //     fontSize: 12,
-//                         //   ),
-//                         // ),
-//                       ],
-//                     ),
-//                   ),
-
-//                   /// Botão +
-//                   Positioned(
-//                     bottom: 12,
-//                     right: 12,
-//                     child: GestureDetector(
-//                       onTap: indisponivel ? null : () {},
-//                       child: Container(
-//                         width: 32,
-//                         height: 32,
-//                         decoration: BoxDecoration(
-//                           color: indisponivel
-//                               ? Colors.grey.shade400
-//                               : Colors.white
-//                                   .withOpacity(0.4), // suaviza o branco
-//                           shape: BoxShape.circle,
-//                           boxShadow: [
-//                             BoxShadow(
-//                               color: Colors.black.withOpacity(0.15),
-//                               blurRadius: 6,
-//                               offset: const Offset(0, 4),
-//                             ),
-//                           ],
-//                         ),
-//                         child: Icon(
-//                           Icons.add_outlined,
-//                           size: 20,
-//                           color: indisponivel ? Colors.white : Colors.black54,
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
 class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
   late List<ItemModel> _produtos;
   bool _isLoading = true;
@@ -380,7 +242,14 @@ class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
                 );
               },
             ),
-      bottomNavigationBar: const BottomCarrinhoBar(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          BottomCarrinhoBar(),
+          Divider(),
+          AppFooter(),
+        ],
+      ),
     );
   }
 

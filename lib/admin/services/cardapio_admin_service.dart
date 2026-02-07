@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/core/constants.dart';
+import 'package:webapp_pedido_mesa/core/model/item.dart';
 
 Future<bool> atualizarCardapioDiario() async {
   final url = Uri.parse(
@@ -61,10 +62,10 @@ Future<bool> ativarDesativarProduto({
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
-    final jsonBody = jsonEncode(body);
+    // final jsonBody = jsonEncode(body);
 
-    debugPrint('📤 BODY ENVIADO PARA API:');
-    debugPrint(jsonBody);
+    // // debugPrint('📤 BODY ENVIADO PARA API:');
+    // // debugPrint(jsonBody);
     return response.statusCode == 200 || response.statusCode == 204;
   } catch (e) {
     debugPrint('Erro ao ativar/desativar produto: $e');
@@ -129,6 +130,48 @@ Future<bool> cardapioJaExisteHoje() async {
     return false;
   } catch (e) {
     debugPrint('Erro ao verificar cardápio do dia: $e');
+    return false;
+  }
+}
+
+Future<bool> baixarQuantidadeProdutos({
+  required List<ItemModel> produtos,
+}) async {
+  final url = Uri.parse(
+    '${Urls.urlApiAzureCardapioDiario}CardapioHospital/cardapio/baixar-quantidade',
+  );
+
+  try {
+    final futures = produtos.where((p) => p.quantidade! > 0).map((produto) {
+      final body = {
+        "filialId": '1768831340259',
+        "idProduto": produto.id!,
+        "dataCardapio": DateTime.now().toUtc().toIso8601String(),
+        "novaQuantidade": produto.quantidade,
+      };
+      final jsonBody = jsonEncode(body);
+
+      debugPrint('📤 BODY ENVIADO PARA API:');
+      debugPrint(jsonBody);
+      return http.put(
+        url,
+        headers: const {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(body),
+      );
+    }).toList();
+
+    final responses = await Future.wait(futures);
+
+    for (final r in responses) {
+      debugPrint('📥 STATUS CODE: ${r.statusCode}');
+      debugPrint('📥 RESPONSE BODY: ${r.body}');
+    }
+
+    return responses.every((r) => r.statusCode == 200);
+  } catch (e) {
+    debugPrint('Erro ao baixar quantidades: $e');
     return false;
   }
 }

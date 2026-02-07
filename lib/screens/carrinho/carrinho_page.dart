@@ -374,6 +374,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                   ),
 
                                 const SizedBox(height: 12),
+                                Text(
+                                    'qtd disponivel: ${item.produto.quantidadeDisponivel.toString()}'),
+                                Text('id : ${item.produto.id.toString()}'),
 
                                 /// Quantidade
                                 Row(
