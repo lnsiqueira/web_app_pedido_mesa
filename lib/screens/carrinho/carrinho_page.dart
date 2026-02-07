@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/pagamento/pagamento_order_page.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
@@ -251,199 +252,302 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final carrinho = Provider.of<CarrinhoModel>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Carrinho')),
-      body: carrinho.itens.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 60,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Seu carrinho está vazio',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
+        appBar: AppBar(title: const Text('')),
+        body: carrinho.itens.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 60,
+                      color: Colors.grey.shade400,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Adicione itens para continuar',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: carrinho.itens.length,
-                    itemBuilder: (context, index) {
-                      final item = carrinho.itens[index];
-                      final totalItem = item.quantidade * item.produto.preco!;
-                      final observacoesSelecionadas =
-                          item.produto.obs?.where((obs) {
-                        // Para observações do tipo 'escolha': modificador 'C' ou 'S'
-                        if (obs.tipo == 'escolha') {
-                          return obs.modificador == 'C' ||
-                              obs.modificador == 'S';
-                        }
-                        // Para observações do tipo 'texto': modificador 'COM'
-                        else if (obs.tipo == 'texto') {
-                          return obs.modificador == 'COM';
-                        }
-                        return false;
-                      }).toList();
-                      return ListTile(
-                        title: Text(item.produto.desProduto!),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Qtd: ${item.quantidade}'),
-                            Text(
-                              'Total: R\$ ${totalItem.toStringAsFixed(2)}',
-                            ),
-                            if (observacoesSelecionadas != null &&
-                                observacoesSelecionadas.isNotEmpty)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: observacoesSelecionadas.map((obs) {
-                                  // Diferencia a exibição baseada no tipo da observação
-                                  if (obs.tipo == 'escolha') {
-                                    return Text(
-                                      "Obs: ${obs.titulo} (${obs.modificador == 'C' ? 'Com' : 'Sem'})",
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    );
-                                  } else if (obs.tipo == 'texto') {
-                                    return Text(
-                                      "Obs: ${obs.titulo}",
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                }).toList(),
-                              ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                // carrinho.remover(item.produto);
-                                if (item.quantidade > 1) {
-                                  item.quantidade--;
-                                } else {
-                                  carrinho.remover(item.produto);
-                                }
-                                carrinho
-                                    .notifyListeners(); // para atualizar a UI
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () {
-                                carrinho.adicionar(item.produto);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Total Geral: R\$ ${carrinho.totalGeral.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                    const SizedBox(height: 20),
+                    Text(
+                      'Seu carrinho está vazio',
+                      style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      // icon: const Icon(Icons.skip_next),
-                      label: const Text('Pagar'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(fontSize: 18),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Adicione itens para continuar',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
                       ),
-                      onPressed: () async {
-                        final mesaComanda = Provider.of<MesaComandaModel>(
-                            context,
-                            listen: false);
-
-                        // 🔹 Verifica se mesa ou comanda estão vazias
-                        if (mesaComanda.mesa.isEmpty ||
-                            mesaComanda.comanda.isEmpty) {
-                          await _pedirMesaEComanda();
-
-                          // Se ainda estiver vazio, sai sem navegar
-                          if (mesaComanda.mesa.isEmpty ||
-                              mesaComanda.comanda.isEmpty) {
-                            return;
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                children: [
+                  /// Lista de itens
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 8, bottom: 8),
+                      itemCount: carrinho.itens.length,
+                      itemBuilder: (context, index) {
+                        final item = carrinho.itens[index];
+                        final totalItem = item.quantidade * item.produto.preco!;
+                        final observacoesSelecionadas =
+                            item.produto.obs?.where((obs) {
+                          if (obs.tipo == 'escolha') {
+                            return obs.modificador == 'C' ||
+                                obs.modificador == 'S';
+                          } else if (obs.tipo == 'texto') {
+                            return obs.modificador == 'COM';
                           }
-                        }
+                          return false;
+                        }).toList();
 
-                        // 🔹 Campos preenchidos → navega para pagamento
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PagamentoPixPage(),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// Nome + total do item
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        item.produto.desProduto!,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'R\$ ${totalItem.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                /// Observações
+                                if (observacoesSelecionadas != null &&
+                                    observacoesSelecionadas.isNotEmpty)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children:
+                                        observacoesSelecionadas.map((obs) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          obs.tipo == 'escolha'
+                                              ? '• ${obs.titulo} (${obs.modificador == 'C' ? 'Com' : 'Sem'})'
+                                              : '• ${obs.titulo}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+
+                                const SizedBox(height: 12),
+
+                                /// Quantidade
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Qtd: ${item.quantidade}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove,
+                                                size: 18),
+                                            onPressed: () {
+                                              if (item.quantidade > 1) {
+                                                item.quantidade--;
+                                              } else {
+                                                carrinho.remover(item.produto);
+                                              }
+                                              carrinho.notifyListeners();
+                                            },
+                                          ),
+                                          Text(
+                                            item.quantidade.toString(),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          IconButton(
+                                            icon:
+                                                const Icon(Icons.add, size: 18),
+                                            onPressed: () {
+                                              carrinho.adicionar(item.produto);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
                     ),
                   ),
-                ),
-              ],
-            ),
-    );
 
-    // return Scaffold(
-    //   appBar: AppBar(title: const Text('Carrinho')),
-    //   body:
-    //       carrinho.itens.isEmpty
-    //           ? const Center(child: Text('Carrinho vazio'))
-    //           : ListView.builder(
-    //             itemCount: carrinho.itens.length,
-    //             itemBuilder: (context, index) {
-    //               final item = carrinho.itens[index];
-    //               return ListTile(
-    //                 title: Text(item.produto.desProduto),
-    //                 subtitle: Text('Qtd: ${item.quantidade}'),
-    //                 trailing: IconButton(
-    //                   icon: const Icon(Icons.delete),
-    //                   onPressed: () {
-    //                     carrinho.remover(item.produto);
-    //                   },
-    //                 ),
-    //               );
-    //             },
-    //           ),
-    // );
+                  /// Bottom fixo: total + pagar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(22), // 🔥 padrão iFood/Uber
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 24,
+                          offset: const Offset(0, -8), // sombra só pra cima
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: SafeArea(
+                      top: false,
+                      child: Row(
+                        children: [
+                          /// Total geral
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'R\$ ${carrinho.totalGeral.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// Botão pagar
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(18),
+                              onTap: () async {
+                                if (isQuartoENome) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PagamentoOrderPage(),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final mesaComanda =
+                                    Provider.of<MesaComandaModel>(context,
+                                        listen: false);
+
+                                if (mesaComanda.mesa.isEmpty ||
+                                    mesaComanda.comanda.isEmpty) {
+                                  await _pedirMesaEComanda();
+                                  if (mesaComanda.mesa.isEmpty ||
+                                      mesaComanda.comanda.isEmpty) return;
+                                }
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const PagamentoPixPage(),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      Colors.black.withOpacity(0.9),
+                                      Colors.black.withOpacity(0.7),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(18),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.35),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 36,
+                                  vertical: 16,
+                                ),
+                                child: const Text(
+                                  'Pagar',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ));
   }
 }

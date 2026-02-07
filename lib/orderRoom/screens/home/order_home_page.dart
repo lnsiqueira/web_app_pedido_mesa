@@ -9,7 +9,8 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
-import 'package:webapp_pedido_mesa/orderRoom/screens/home/produtos_page.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/home/produtos_order_page.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/bottom_carrinho.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/popup_quarto_nome.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
@@ -253,6 +254,7 @@ class _OrderHomePageState extends State<OrderHomePage> {
                 );
               },
             ),
+      bottomNavigationBar: const BottomCarrinhoBar(),
     );
   }
 
