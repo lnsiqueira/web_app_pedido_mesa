@@ -10,6 +10,7 @@ import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/home/produtos_order_page.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/pagamento/senha_comanda_page.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/bottom_carrinho.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/popup_quarto_nome.dart';
 import 'package:http/http.dart' as http;
@@ -36,8 +37,14 @@ class _OrderHomePageState extends State<OrderHomePage> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // _carregarProdutos();
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => SenhaComandaPage(senha: 42),
+      //   ),
+      // );
       _pedirQuartoENome();
       _carregarProdutos();
     });
