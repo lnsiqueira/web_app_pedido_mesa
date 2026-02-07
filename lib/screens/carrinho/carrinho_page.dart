@@ -258,14 +258,17 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.shopping_cart_outlined,
-                      size: 60,
-                      color: Colors.grey.shade400,
+                    Opacity(
+                      opacity: 0.8,
+                      child: Image.asset(
+                        'images/empty_cart.png',
+                        width: 160,
+                        height: 160,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Seu carrinho está vazio',
+                      AppLocalizations.of(context)!.cartEmpty,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
@@ -274,7 +277,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Adicione itens para continuar',
+                      AppLocalizations.of(context)!.addItem,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade500,

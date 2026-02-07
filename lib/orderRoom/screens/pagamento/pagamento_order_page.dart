@@ -20,6 +20,7 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/model/pedido_model.dart';
+import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
 import 'package:webapp_pedido_mesa/services/nfce/nfce_service.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -96,7 +97,21 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
   Future<void> _pagarCaixa() async {
     GlobalKeys.pagtoPIX = false;
     bool addPedido = false;
-    try {} catch (e) {}
+    try {
+      final carrinho = Provider.of<CarrinhoModel>(
+        context,
+        listen: false,
+      );
+
+      carrinho.limpar();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const OrderHomePage(),
+        ),
+        (route) => false,
+      );
+    } catch (e) {}
     // try {
     //   try {
     //     var idPedido = await uploadPedido();
