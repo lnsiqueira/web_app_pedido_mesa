@@ -120,128 +120,130 @@ class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
                 duration: Duration(seconds: 1),
               ),
             )
-          : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.96,
-              ),
-              itemCount: _produtos.length,
-              itemBuilder: (context, index) {
-                final item = _produtos[index];
-                final indisponivel = (item.quantidadeDisponivel ?? 0) <= 0;
+          : _produtos.isEmpty
+              ? _buildEmptyEstado()
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.96,
+                  ),
+                  itemCount: _produtos.length,
+                  itemBuilder: (context, index) {
+                    final item = _produtos[index];
+                    final indisponivel = (item.quantidadeDisponivel ?? 0) <= 0;
 
-                return GestureDetector(
-                  onTap: () => _mostrarPopupProduto(item),
-                  child: Opacity(
-                    opacity: indisponivel ? 0.5 : 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Stack(
-                        children: [
-                          /// Imagem de fundo padrão
-                          Positioned.fill(
-                            child: Image.asset(
-                              'images/default.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-
-                          /// Overlay clean
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.55),
-                                    Colors.transparent,
-                                  ],
+                    return GestureDetector(
+                      onTap: () => _mostrarPopupProduto(item),
+                      child: Opacity(
+                        opacity: indisponivel ? 0.5 : 1,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Stack(
+                            children: [
+                              /// Imagem de fundo padrão
+                              Positioned.fill(
+                                child: Image.asset(
+                                  'images/default.png',
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                            ),
-                          ),
 
-                          /// Conteúdo
-                          Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Spacer(),
-
-                                /// Nome do produto
-                                Text(
-                                  item.desProduto ?? '',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                              /// Overlay clean
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.55),
+                                        Colors.transparent,
+                                      ],
+                                    ),
                                   ),
                                 ),
+                              ),
 
-                                const SizedBox(height: 6),
-                                Text(
-                                  'R\$ ${item.preco?.toStringAsFixed(2) ?? '--'}',
-                                  style: TextStyle(
-                                      color: indisponivel
-                                          ? Colors.white12
-                                          : Colors.white60,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
+                              /// Conteúdo
+                              Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Spacer(),
 
-                          /// Botão +
-                          Positioned(
-                            bottom: 12,
-                            right: 12,
-                            child: GestureDetector(
-                              onTap: indisponivel
-                                  ? null
-                                  : () {
-                                      _adicionarAoCarrinho(item);
-                                    },
-                              child: Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: indisponivel
-                                      ? Colors.grey.shade400
-                                      : Colors.white.withOpacity(0.4),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 4),
+                                    /// Nome do produto
+                                    Text(
+                                      item.desProduto ?? '',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'R\$ ${item.preco?.toStringAsFixed(2) ?? '--'}',
+                                      style: TextStyle(
+                                          color: indisponivel
+                                              ? Colors.white12
+                                              : Colors.white60,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
-                                child: Icon(
-                                  Icons.add_outlined,
-                                  size: 20,
-                                  color: indisponivel
-                                      ? Colors.white
-                                      : Colors.black54,
+                              ),
+
+                              /// Botão +
+                              Positioned(
+                                bottom: 12,
+                                right: 12,
+                                child: GestureDetector(
+                                  onTap: indisponivel
+                                      ? null
+                                      : () {
+                                          _adicionarAoCarrinho(item);
+                                        },
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: indisponivel
+                                          ? Colors.grey.shade400
+                                          : Colors.white.withOpacity(0.4),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.15),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      Icons.add_outlined,
+                                      size: 20,
+                                      color: indisponivel
+                                          ? Colors.white
+                                          : Colors.black54,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [
@@ -690,6 +692,64 @@ class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildEmptyEstado() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // const Text(
+            //   'Tente novamente mais tarde\n'
+            //   'ou escolha outra categoria.',
+            //   textAlign: TextAlign.center,
+            //   style: TextStyle(
+            //     fontSize: 14,
+            //     color: Colors.black45,
+            //   ),
+            // ),
+            // const SizedBox(height: 48),
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Image.asset(
+                'images/sad.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Estoque esgotado no momento',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Todos os itens desta categoria\n'
+              'já foram vendidos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.black54,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 

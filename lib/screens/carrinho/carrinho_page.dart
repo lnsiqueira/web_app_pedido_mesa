@@ -258,29 +258,38 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Opacity(
-                      opacity: 0.8,
-                      child: Image.asset(
-                        'images/empty_cart.png',
-                        width: 160,
-                        height: 160,
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Opacity(
+                        opacity: 0.8,
+                        child: Image.asset(
+                          'images/empty_cart.png',
+                          width: 140,
+                          height: 140,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     Text(
                       AppLocalizations.of(context)!.cartEmpty,
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade600,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       AppLocalizations.of(context)!.addItem,
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
+                        fontSize: 15,
+                        color: Colors.black54,
+                        height: 1.4,
                       ),
                     ),
                   ],
