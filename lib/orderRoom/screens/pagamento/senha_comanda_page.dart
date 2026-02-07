@@ -3,10 +3,12 @@ import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
 
 class SenhaComandaPage extends StatefulWidget {
   final int senha;
+  bool? isPagamento;
 
-  const SenhaComandaPage({
+  SenhaComandaPage({
     super.key,
     required this.senha,
+    this.isPagamento,
   });
 
   @override
@@ -204,40 +206,42 @@ class _SenhaComandaPageState extends State<SenhaComandaPage>
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: Column(
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // TODO: abrir nota fiscal
-                          },
-                          icon: const Icon(Icons.receipt_long),
-                          label: const Text('Ver nota fiscal'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blueGrey[800],
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                        if (widget.isPagamento == true) ...[
+                          ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.receipt_long),
+                            label: const Text('Ver nota fiscal'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blueGrey[800],
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // TODO: enviar email
-                          },
-                          icon: const Icon(Icons.email_outlined),
-                          label: const Text('Enviar nota por e-mail'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blueGrey[800],
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
+                          // const SizedBox(height: 12),
+                          // ElevatedButton.icon(
+                          //   onPressed: () {
+                          //     // TODO: enviar email
+                          //   },
+                          //   icon: const Icon(Icons.email_outlined),
+                          //   label: const Text('Enviar nota por e-mail'),
+                          //   style: ElevatedButton.styleFrom(
+                          //     minimumSize: const Size.fromHeight(52),
+                          //     backgroundColor: Colors.white,
+                          //     foregroundColor: Colors.blueGrey[800],
+                          //     elevation: 3,
+                          //     shape: RoundedRectangleBorder(
+                          //       borderRadius: BorderRadius.circular(14),
+                          //     ),
+                          //   ),
+                          // ),
+                        ],
                         const SizedBox(height: 24),
+
+                        /// SEMPRE VISÍVEL
                         TextButton(
                           onPressed: () {
                             Navigator.pushAndRemoveUntil(

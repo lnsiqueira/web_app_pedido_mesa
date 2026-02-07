@@ -42,7 +42,10 @@ class _OrderHomePageState extends State<OrderHomePage> {
       // Navigator.pushReplacement(
       //   context,
       //   MaterialPageRoute(
-      //     builder: (_) => SenhaComandaPage(senha: 42),
+      //     builder: (_) => SenhaComandaPage(
+      //       senha: 42,
+      //       isPagamento: true,
+      //     ),
       //   ),
       // );
       _pedirQuartoENome();
