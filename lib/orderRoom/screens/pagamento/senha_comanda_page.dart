@@ -86,7 +86,7 @@ class _SenhaComandaPageState extends State<SenhaComandaPage>
 
                   const SizedBox(height: 16),
                   const Text(
-                    'Peido realizado!',
+                    'Pedido realizado!',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 26,

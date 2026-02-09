@@ -37,8 +37,8 @@ Future<void> main() async {
   final params = Uri.base.queryParameters;
 
   if (params.containsKey('filialId')) {
-    filialId = params['filialId']!;
-    if (filialId.isEmpty || filialId == '0') {
+    codFilial = params['filialId']!;
+    if (codFilial.isEmpty || codFilial == '0') {
       ErrorApp(
         message: 'Parâmetros Numero do Apartamenro é obrigatórios na URL',
       );

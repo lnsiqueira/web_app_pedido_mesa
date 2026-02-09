@@ -158,6 +158,18 @@ class ItemObsModel {
           : (modificador ?? this.modificador), // ← MODIFIQUE ESTA LINHA
     );
   }
+  // PARA O FIRESTORE
+
+  Map<String, dynamic> toMap() {
+    return {
+      'tipo': tipo,
+      'titulo': titulo,
+      'preco': preco,
+      'pluAdd': pluAdd,
+      'ordem': ordem,
+      'modificador': modificador,
+    };
+  }
 
   factory ItemObsModel.fromJson(Map<String, dynamic> json) {
     return ItemObsModel(

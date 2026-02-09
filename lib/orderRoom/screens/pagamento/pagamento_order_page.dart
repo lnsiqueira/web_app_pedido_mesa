@@ -30,7 +30,9 @@ import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 // ignore: deprecated_member_use
 import 'dart:html' as html;
 
-import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart'; // para abrir no browser
+import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
+
+import '../../oder_service.dart'; // para abrir no browser
 
 class PagamentoOrderPage extends StatefulWidget {
   const PagamentoOrderPage({super.key});
@@ -95,7 +97,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         // },
         "split": [],
       };
-
   Future<void> _pagarCaixa() async {
     if (_pagando) return;
 
@@ -109,6 +110,22 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         listen: false,
       );
 
+      /// 🔥 1. GERA COMANDA
+      final String comanda = await gerarNovaComandaWebApp();
+
+      /// 🔒 VALIDAÇÃO NA API (FUTURO)
+      /*
+    final livre = await comandaEstaLivre(comanda);
+    if (!livre) {
+      throw Exception('Comanda não está livre');
+    }
+    */
+
+      /// 🧾 2. SALVA PEDIDO NO FIREBASE
+      await salvarPedidoWebApp(
+        comanda: comanda,
+        carrinho: carrinho,
+      );
       final produtos = carrinho.itens.map((itemCarrinho) {
         final produto = itemCarrinho.produto;
         produto.quantidade = itemCarrinho.quantidade;
@@ -124,19 +141,15 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       }
 
       carrinho.limpar();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => SenhaComandaPage(senha: 42),
+          builder: (_) => SenhaComandaPage(
+            senha: int.parse(comanda),
+          ),
         ),
       );
-      // Navigator.pushAndRemoveUntil(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => const OrderHomePage(),
-      //   ),
-      //   (route) => false,
-      // );
     } catch (e) {
       debugPrint('Erro ao pagar no caixa: $e');
     } finally {
@@ -146,132 +159,48 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
     }
   }
 
-  // try {
+  // Future<void> _pagarCaixa() async {
+  //   if (_pagando) return;
+
+  //   setState(() => _pagando = true);
+
   //   try {
-  //     var idPedido = await uploadPedido();
+  //     GlobalKeys.pagtoPIX = false;
 
-  //     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-  //     final mesaComanda =
-  //         Provider.of<MesaComandaModel>(context, listen: false);
+  //     final carrinho = Provider.of<CarrinhoModel>(
+  //       context,
+  //       listen: false,
+  //     );
 
-  //     List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
-  //       List<Map<String, dynamic>> observacoesJson = [];
-
-  //       if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
-  //         for (var obsItem in item.produto.obs!) {
-  //           if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
-  //             observacoesJson.add({
-  //               "Obs": obsItem.titulo,
-  //               "Preco": 0.0,
-  //               "PluAdd": obsItem.pluAdd ?? 0,
-  //               "Modificador": 'COM',
-  //             });
-  //           } else if (obsItem.modificador != null &&
-  //               (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
-  //             observacoesJson.add({
-  //               "Obs": obsItem.titulo,
-  //               "Preco": obsItem.preco ?? 0.0,
-  //               "PluAdd": obsItem.pluAdd ?? 0,
-  //               "Modificador": obsItem.modificador,
-  //             });
-  //           }
-  //         }
-  //       }
-
-  //       final qtd = item.quantidade > 0 ? item.quantidade : 1;
-
-  //       return {
-  //         "IdProduto": item.produto.plu,
-  //         "Preco": item.produto.preco,
-  //         "Qtde": item.quantidade,
-  //         "Observacoes": observacoesJson,
-  //       };
+  //     final produtos = carrinho.itens.map((itemCarrinho) {
+  //       final produto = itemCarrinho.produto;
+  //       produto.quantidade = itemCarrinho.quantidade;
+  //       return produto;
   //     }).toList();
 
-  //     var urlBratter = Urls.urlApiBratter;
-  //     final encodedUrl = Uri.encodeComponent(urlBratter);
+  //     final sucesso = await baixarQuantidadeProdutos(
+  //       produtos: produtos,
+  //     );
 
-  //     final url =
-  //         '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
-
-  //     var request = http.Request('POST', Uri.parse(url));
-  //     request.headers.addAll({
-  //       'Content-Type': 'application/json',
-  //       'Accept': 'application/json',
-  //     });
-
-  //     request.body = json.encode({
-  //       "IdComanda": int.parse(mesaComanda.comanda),
-  //       "IdMesa": int.parse(mesaComanda.mesa),
-  //       "usuario": '',
-  //       "Itens": itemsJson,
-  //       "Uuid": idPedido,
-  //       "Terminal": 301,
-  //     });
-  //     var bodyJson = {
-  //       "IdComanda": int.parse(mesaComanda.comanda),
-  //       "IdMesa": int.parse(mesaComanda.mesa),
-  //       "usuario": '',
-  //       "Itens": itemsJson,
-  //       "Uuid": idPedido,
-  //       "Terminal": 301,
-  //     };
-
-  //     print("➡️ JSON enviado:");
-  //     print(const JsonEncoder.withIndent('  ').convert(bodyJson));
-  //     final response = await request.send();
-  //     if (response.statusCode == 200) {
-  //       addPedido = true;
-  //       print('Pedido enviado com sucesso!');
-  //     } else {
-  //       print('Erro ao enviar pedido: ${response.statusCode}');
-  //       _showErro(
-  //           'Erro ao enviar pedidoX: ${response.statusCode}. \nContate um funcionário!');
+  //     if (!sucesso) {
+  //       throw Exception('Erro ao baixar quantidade dos produtos');
   //     }
-  //   } catch (e) {
-  //     print('Erro no upload do pedido: $e');
-  //     _showErro(
-  //         'Erro ao enviar pedidoX: ${e.toString()}. \nContate um funcionário!');
-  //   }
 
-  //   if (addPedido) {
-  //     showDialog(
-  //       context: context,
-  //       builder: (_) => AlertDialog(
-  //         title: Text('Pedido solicitado!'),
-  //         content: Text('Aguarde, seu pedido será entregue na mesa'),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               // 1- ENVIAR API BRATTER
-
-  //               // 2- GRAVAR NO FIREBASE, tabela: pedidos add obs:  pedido_mesa
-
-  //               Navigator.of(context).pop(); // fecha o dialog
-
-  //               // Limpa o carrinho via Provider
-  //               final carrinho = Provider.of<CarrinhoModel>(
-  //                 context,
-  //                 listen: false,
-  //               );
-  //               carrinho.limpar();
-  //               Provider.of<MesaComandaModel>(
-  //                 context,
-  //                 listen: false,
-  //               ).limpar();
-
-  //               // Fecha o diálogo e volta para a tela inicial
-  //               Navigator.of(context).popUntil((route) => route.isFirst);
-  //             },
-  //             child: const Text('OK'),
-  //           ),
-  //         ],
+  //     carrinho.limpar();
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) => SenhaComandaPage(senha: 42),
   //       ),
   //     );
+
+  //   } catch (e) {
+  //     debugPrint('Erro ao pagar no caixa: $e');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _pagando = false);
+  //     }
   //   }
-  // } catch (e) {
-  //   _showErro('Erro ao chamar API: $e');
-  // }
   // }
 
   Future<void> _simularPagamentoPix() async {
