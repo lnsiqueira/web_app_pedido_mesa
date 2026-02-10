@@ -10,7 +10,8 @@ Future<bool> atualizarCardapioDiario() async {
   );
 
   final body = {
-    "idFilial": "1768831340259",
+    // "idFilial": "1768831340259",
+    "idFilial": 'cOfPgf6ajwzfBaRJ7xMS',
     "dataCardapio": DateTime.now().toIso8601String(),
     "criadoPor": "userTeste",
   };
@@ -50,7 +51,8 @@ Future<bool> ativarDesativarProduto({
   );
 
   final body = {
-    "filialId": "1768831340259",
+    // "filialId": "1768831340259",
+    "filialId": 'cOfPgf6ajwzfBaRJ7xMS',
     "idProduto": idProduto,
     "dataCardapio": DateTime.now().toIso8601String(),
     "ativo": ativo,
@@ -82,7 +84,8 @@ Future<bool> atualizarQuantidadeProduto({
   );
 
   final body = {
-    "filialId": "1768831340259",
+    // "filialId": "1768831340259",
+    "filialId": 'cOfPgf6ajwzfBaRJ7xMS',
     "idProduto": idProduto,
     "dataCardapio": DateTime.now().toIso8601String(),
     "novaQuantidade": novaQuantidade,
@@ -113,7 +116,8 @@ Future<bool> cardapioJaExisteHoje() async {
 
   final url = Uri.parse(
     '${Urls.urlApiAzureCardapioDiario}CardapioHospital/cardapio-diario'
-    '?filialId=1768831340259'
+    '?filialId=$codFilial'
+    // '?filialId=1768831340259'
     '&data=$data',
   );
 
@@ -144,7 +148,8 @@ Future<bool> baixarQuantidadeProdutos({
   try {
     final futures = produtos.where((p) => p.quantidade! > 0).map((produto) {
       final body = {
-        "filialId": '1768831340259',
+        // "filialId": '1768831340259',
+        "filialId": 'cOfPgf6ajwzfBaRJ7xMS',
         "idProduto": produto.id!,
         "dataCardapio": DateTime.now().toUtc().toIso8601String(),
         "novaQuantidade": produto.quantidade,

@@ -14,6 +14,7 @@ import 'package:webapp_pedido_mesa/orderRoom/screens/pagamento/senha_comanda_pag
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/bottom_carrinho.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/popup_quarto_nome.dart';
 import 'package:http/http.dart' as http;
+import 'package:webapp_pedido_mesa/orderRoom/screens/widgets/ultimos_pedidos_widget.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/home/home_page.dart';
 import 'package:webapp_pedido_mesa/widgets/app_footer.dart';
@@ -82,7 +83,7 @@ class _OrderHomePageState extends State<OrderHomePage> {
   }
 
   Future<void> _carregarProdutos({
-    String filialId = '1768831340259',
+    // String filialId = '1768831340259',
     String? data,
   }) async {
     setState(() => isLoading = true);
@@ -91,7 +92,8 @@ class _OrderHomePageState extends State<OrderHomePage> {
 
     final url = Uri.parse(
       '${Urls.urlApiAzureCardapioDiario}/CardapioHospital/cardapio-diario'
-      '?filialId=$filialId'
+      // '?filialId=$filialId'
+      '?filialId=$codFilial'
       '&data=$dataFormatada',
     );
 
@@ -137,7 +139,7 @@ class _OrderHomePageState extends State<OrderHomePage> {
                   const SizedBox(width: 6),
                   _buildFlag('images/es.png', 'es', languageController),
                   const SizedBox(width: 8),
-                  MeusPedidosWidget(),
+                  UltimosPedidosOrderWidget(),
 
                   // const SizedBox(width: 4),
                   // // Carrinho com badge

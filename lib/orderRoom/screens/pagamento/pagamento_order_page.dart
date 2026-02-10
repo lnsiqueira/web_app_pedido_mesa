@@ -122,9 +122,10 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
     */
 
       /// 🧾 2. SALVA PEDIDO NO FIREBASE
-      await salvarPedidoWebApp(
+      await enviarPedidoFireBase(
         comanda: comanda,
         carrinho: carrinho,
+        context: context,
       );
       final produtos = carrinho.itens.map((itemCarrinho) {
         final produto = itemCarrinho.produto;

@@ -33,7 +33,8 @@ class _AdminCardapioDiarioPageState extends State<AdminCardapioDiarioPage> {
 
     final url = Uri.parse(
       '${Urls.urlApiAzureCardapioDiario}CardapioHospital/cardapio-diario'
-      '?filialId=1768831340259'
+      '?filialId=$codFilial'
+      // '?filialId=1768831340259'
       '&data=$now',
     );
 

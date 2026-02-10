@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
+import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
 
 Future<String> gerarNovaComandaWebApp() async {
   final firestore = FirebaseFirestore.instance;
@@ -67,11 +70,15 @@ Future<bool> comandaEstaLivre(String comanda) async {
   return false;
 }
 */
-Future<void> salvarPedidoWebApp({
+Future<void> enviarPedidoFireBase({
   required String comanda,
   required CarrinhoModel carrinho,
+  required BuildContext context,
 }) async {
   final firestore = FirebaseFirestore.instance;
+
+  // 🔥 Recupera o quarto e o nome direto do provider
+  final quartoNome = Provider.of<QuartoNomeModel>(context, listen: false);
 
   final itens = carrinho.itens.map((item) {
     return {
@@ -80,7 +87,11 @@ Future<void> salvarPedidoWebApp({
       'quantidade': item.quantidade,
       'valor_unitario': item.produto.preco,
       'total': item.quantidade * item.produto.preco!,
-      'observacoes': item.produto.obs?.map((obs) => obs.toMap()).toList() ?? [],
+      'observacoes': item.produto.obs
+              ?.where((obs) => obs.modificador != null)
+              .map((obs) => obs.toMap())
+              .toList() ??
+          [],
     };
   }).toList();
 
@@ -97,6 +108,52 @@ Future<void> salvarPedidoWebApp({
     'vlr_json': total,
     'IND_PAGO': 'ABERTO',
     'TIP_OPERACAO': 'WEB_APP',
+    'quarto': quartoNome.mesa,
+    'nome_cliente': quartoNome.comanda,
     'itens': itens,
   });
+}
+
+Future<List<QueryDocumentSnapshot>> buscarPedidosFirebase(
+  BuildContext context,
+) async {
+  final firestore = FirebaseFirestore.instance;
+
+  final quartoNome = Provider.of<QuartoNomeModel>(context, listen: false);
+
+  final String quarto = quartoNome.mesa.trim();
+  final String nome = quartoNome.comanda.trim();
+
+  DateTime now = DateTime.now();
+  DateTime inicioHoje = DateTime(now.year, now.month, now.day);
+  DateTime fimHoje = inicioHoje.add(const Duration(days: 1));
+
+  /// 🔹 1ª tentativa: data + quarto + nome
+  Query query = firestore
+      .collection('Pedidos_Web_App')
+      .where('id_filial', isEqualTo: codFilial)
+      .where('quarto', isEqualTo: quarto)
+      .where('dat_registro',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(inicioHoje))
+      .where('dat_registro', isLessThan: Timestamp.fromDate(fimHoje));
+
+  if (nome.isNotEmpty) {
+    query = query.where('nome_cliente', isEqualTo: nome);
+  }
+
+  QuerySnapshot snapshot = await query.get();
+
+  /// 🔁 Fallback: sem nome
+  if (snapshot.docs.isEmpty && nome.isNotEmpty) {
+    snapshot = await firestore
+        .collection('Pedidos_Web_App')
+        .where('id_filial', isEqualTo: codFilial)
+        .where('quarto', isEqualTo: quarto)
+        .where('dat_registro',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(inicioHoje))
+        .where('dat_registro', isLessThan: Timestamp.fromDate(fimHoje))
+        .get();
+  }
+
+  return snapshot.docs;
 }

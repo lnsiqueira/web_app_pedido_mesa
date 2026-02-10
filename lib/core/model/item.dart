@@ -167,7 +167,7 @@ class ItemObsModel {
       'preco': preco,
       'pluAdd': pluAdd,
       'ordem': ordem,
-      'modificador': modificador,
+      if (modificador != null) 'modificador': modificador,
     };
   }
 
