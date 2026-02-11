@@ -196,11 +196,11 @@ class _OrderHomePageState extends State<OrderHomePage> {
             )
           : GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.9,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 180, // controla tamanho do card
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.1, // deixa mais compacto
               ),
               itemCount: categorias.length,
               itemBuilder: (context, index) {
@@ -225,49 +225,142 @@ class _OrderHomePageState extends State<OrderHomePage> {
                       ),
                     );
                   },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          categoria['imagemCategoria'] ?? '',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Container(color: Colors.grey.shade300),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 4),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withOpacity(0.65),
-                                Colors.transparent,
-                              ],
-                            ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            categoria['imagemCategoria'] ?? '',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Container(color: Colors.grey.shade300),
                           ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Text(
-                              categoria['desCategoria'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+
+                          // Overlay mais suave estilo iFood
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withOpacity(0.55),
+                                  Colors.transparent,
+                                ],
                               ),
                             ),
                           ),
-                        ),
-                      ],
+
+                          Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Text(
+                                categoria['desCategoria'],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14, // menor que antes
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
+      // cards menores
+      // : GridView.builder(
+      //     padding: const EdgeInsets.all(16),
+      //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      //       crossAxisCount: 2,
+      //       crossAxisSpacing: 16,
+      //       mainAxisSpacing: 16,
+      //       childAspectRatio: 0.9,
+      //     ),
+      //     itemCount: categorias.length,
+      //     itemBuilder: (context, index) {
+      //       final categoria = categorias[index];
+
+      //       return GestureDetector(
+      //         onTap: () {
+      //           final produtosJson = categoria['produtos'] as List<dynamic>;
+
+      //           final produtos = produtosJson
+      //               .map((e) => ItemModel.fromJson(e))
+      //               .where((p) => p.ativo == true)
+      //               .toList();
+
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(
+      //               builder: (_) => ProdutosCategoriaPage(
+      //                 titulo: categoria['desCategoria'],
+      //                 produtos: produtos,
+      //               ),
+      //             ),
+      //           );
+      //         },
+      //         child: ClipRRect(
+      //           borderRadius: BorderRadius.circular(16),
+      //           child: Stack(
+      //             fit: StackFit.expand,
+      //             children: [
+      //               Image.network(
+      //                 categoria['imagemCategoria'] ?? '',
+      //                 fit: BoxFit.cover,
+      //                 errorBuilder: (_, __, ___) =>
+      //                     Container(color: Colors.grey.shade300),
+      //               ),
+      //               Container(
+      //                 decoration: BoxDecoration(
+      //                   gradient: LinearGradient(
+      //                     begin: Alignment.bottomCenter,
+      //                     end: Alignment.topCenter,
+      //                     colors: [
+      //                       Colors.black.withOpacity(0.65),
+      //                       Colors.transparent,
+      //                     ],
+      //                   ),
+      //                 ),
+      //               ),
+      //               Align(
+      //                 alignment: Alignment.bottomLeft,
+      //                 child: Padding(
+      //                   padding: const EdgeInsets.all(12),
+      //                   child: Text(
+      //                     categoria['desCategoria'],
+      //                     style: const TextStyle(
+      //                       color: Colors.white,
+      //                       fontSize: 18,
+      //                       fontWeight: FontWeight.bold,
+      //                     ),
+      //                   ),
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       );
+      //     },
+      //   ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [

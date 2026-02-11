@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
+import 'package:webapp_pedido_mesa/l10n/app_localizations.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/pagamento/pagamento_order_page.dart';
 import 'package:webapp_pedido_mesa/screens/pagamento/pagamento_pix_page.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 
 class CarrinhoPage extends StatefulWidget {

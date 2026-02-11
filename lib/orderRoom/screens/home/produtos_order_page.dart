@@ -124,11 +124,11 @@ class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
               ? _buildEmptyEstado()
               : GridView.builder(
                   padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.96,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200, // controla largura do card
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.95,
                   ),
                   itemCount: _produtos.length,
                   itemBuilder: (context, index) {
@@ -139,111 +139,252 @@ class _ProdutosCategoriaPageState extends State<ProdutosCategoriaPage> {
                       onTap: () => _mostrarPopupProduto(item),
                       child: Opacity(
                         opacity: indisponivel ? 0.5 : 1,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: Stack(
-                            children: [
-                              /// Imagem de fundo padrão
-                              Positioned.fill(
-                                child: Image.asset(
-                                  'images/default.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-
-                              /// Overlay clean
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.55),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              /// Conteúdo
-                              Padding(
-                                padding: const EdgeInsets.all(14),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Spacer(),
-
-                                    /// Nome do produto
-                                    Text(
-                                      item.desProduto ?? '',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'R\$ ${item.preco?.toStringAsFixed(2) ?? '--'}',
-                                      style: TextStyle(
-                                          color: indisponivel
-                                              ? Colors.white12
-                                              : Colors.white60,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              /// Botão +
-                              Positioned(
-                                bottom: 12,
-                                right: 12,
-                                child: GestureDetector(
-                                  onTap: indisponivel
-                                      ? null
-                                      : () {
-                                          _adicionarAoCarrinho(item);
-                                        },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: indisponivel
-                                          ? Colors.grey.shade400
-                                          : Colors.white.withOpacity(0.4),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.15),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      Icons.add_outlined,
-                                      size: 20,
-                                      color: indisponivel
-                                          ? Colors.white
-                                          : Colors.black54,
-                                    ),
-                                  ),
-                                ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
                               ),
                             ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Stack(
+                              children: [
+                                /// Imagem
+                                Positioned.fill(
+                                  child: Image.asset(
+                                    'images/default.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+
+                                /// Overlay estilo iFood
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.65),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                /// Conteúdo
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Spacer(),
+
+                                      /// Nome
+                                      Text(
+                                        item.desProduto ?? '',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.2,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 6),
+
+                                      /// Preço
+                                      Text(
+                                        'R\$ ${item.preco?.toStringAsFixed(2) ?? '--'}',
+                                        style: TextStyle(
+                                          color: indisponivel
+                                              ? Colors.white24
+                                              : Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                /// Botão adicionar estilo iFood
+                                Positioned(
+                                  bottom: 10,
+                                  right: 10,
+                                  child: GestureDetector(
+                                    onTap: indisponivel
+                                        ? null
+                                        : () {
+                                            _adicionarAoCarrinho(item);
+                                          },
+                                    child: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: indisponivel
+                                            ? Colors.grey.shade400
+                                            : Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.2),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.add,
+                                        size: 20,
+                                        color: indisponivel
+                                            ? Colors.white
+                                            : Colors.redAccent,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     );
                   },
                 ),
+//// cards menores
+      // : GridView.builder(
+      //     padding: const EdgeInsets.all(16),
+      //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      //       crossAxisCount: 2,
+      //       mainAxisSpacing: 16,
+      //       crossAxisSpacing: 16,
+      //       childAspectRatio: 0.96,
+      //     ),
+      //     itemCount: _produtos.length,
+      //     itemBuilder: (context, index) {
+      //       final item = _produtos[index];
+      //       final indisponivel = (item.quantidadeDisponivel ?? 0) <= 0;
+
+      //       return GestureDetector(
+      //         onTap: () => _mostrarPopupProduto(item),
+      //         child: Opacity(
+      //           opacity: indisponivel ? 0.5 : 1,
+      //           child: ClipRRect(
+      //             borderRadius: BorderRadius.circular(18),
+      //             child: Stack(
+      //               children: [
+      //                 /// Imagem de fundo padrão
+      //                 Positioned.fill(
+      //                   child: Image.asset(
+      //                     'images/default.png',
+      //                     fit: BoxFit.cover,
+      //                   ),
+      //                 ),
+
+      //                 /// Overlay clean
+      //                 Positioned.fill(
+      //                   child: Container(
+      //                     decoration: BoxDecoration(
+      //                       gradient: LinearGradient(
+      //                         begin: Alignment.bottomCenter,
+      //                         end: Alignment.topCenter,
+      //                         colors: [
+      //                           Colors.black.withOpacity(0.55),
+      //                           Colors.transparent,
+      //                         ],
+      //                       ),
+      //                     ),
+      //                   ),
+      //                 ),
+
+      //                 /// Conteúdo
+      //                 Padding(
+      //                   padding: const EdgeInsets.all(14),
+      //                   child: Column(
+      //                     crossAxisAlignment: CrossAxisAlignment.start,
+      //                     children: [
+      //                       const Spacer(),
+
+      //                       /// Nome do produto
+      //                       Text(
+      //                         item.desProduto ?? '',
+      //                         maxLines: 2,
+      //                         overflow: TextOverflow.ellipsis,
+      //                         style: const TextStyle(
+      //                           color: Colors.white,
+      //                           fontSize: 16,
+      //                           fontWeight: FontWeight.w600,
+      //                         ),
+      //                       ),
+
+      //                       const SizedBox(height: 6),
+      //                       Text(
+      //                         'R\$ ${item.preco?.toStringAsFixed(2) ?? '--'}',
+      //                         style: TextStyle(
+      //                             color: indisponivel
+      //                                 ? Colors.white12
+      //                                 : Colors.white60,
+      //                             fontSize: 16,
+      //                             fontWeight: FontWeight.w600),
+      //                       ),
+      //                     ],
+      //                   ),
+      //                 ),
+
+      //                 /// Botão +
+      //                 Positioned(
+      //                   bottom: 12,
+      //                   right: 12,
+      //                   child: GestureDetector(
+      //                     onTap: indisponivel
+      //                         ? null
+      //                         : () {
+      //                             _adicionarAoCarrinho(item);
+      //                           },
+      //                     child: Container(
+      //                       width: 32,
+      //                       height: 32,
+      //                       decoration: BoxDecoration(
+      //                         color: indisponivel
+      //                             ? Colors.grey.shade400
+      //                             : Colors.white.withOpacity(0.4),
+      //                         shape: BoxShape.circle,
+      //                         boxShadow: [
+      //                           BoxShadow(
+      //                             color: Colors.black.withOpacity(0.15),
+      //                             blurRadius: 6,
+      //                             offset: const Offset(0, 4),
+      //                           ),
+      //                         ],
+      //                       ),
+      //                       child: Icon(
+      //                         Icons.add_outlined,
+      //                         size: 20,
+      //                         color: indisponivel
+      //                             ? Colors.white
+      //                             : Colors.black54,
+      //                       ),
+      //                     ),
+      //                   ),
+      //                 ),
+      //               ],
+      //             ),
+      //           ),
+      //         ),
+      //       );
+      //     },
+      //   ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: const [
