@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
+// trocar por codFilial
 
 Future<bool> atualizarCardapioDiario() async {
   final url = Uri.parse(
@@ -11,7 +12,7 @@ Future<bool> atualizarCardapioDiario() async {
 
   final body = {
     // "idFilial": "1768831340259",
-    "idFilial": 'cOfPgf6ajwzfBaRJ7xMS',
+    "idFilial": "cOfPgf6ajwzfBaRJ7xMS",
     "dataCardapio": DateTime.now().toIso8601String(),
     "criadoPor": "userTeste",
   };
@@ -52,7 +53,7 @@ Future<bool> ativarDesativarProduto({
 
   final body = {
     // "filialId": "1768831340259",
-    "filialId": 'cOfPgf6ajwzfBaRJ7xMS',
+    "filialId": "cOfPgf6ajwzfBaRJ7xMS",
     "idProduto": idProduto,
     "dataCardapio": DateTime.now().toIso8601String(),
     "ativo": ativo,
@@ -116,7 +117,7 @@ Future<bool> cardapioJaExisteHoje() async {
 
   final url = Uri.parse(
     '${Urls.urlApiAzureCardapioDiario}CardapioHospital/cardapio-diario'
-    '?filialId=$codFilial'
+    '?filialId=cOfPgf6ajwzfBaRJ7xMS'
     // '?filialId=1768831340259'
     '&data=$data',
   );

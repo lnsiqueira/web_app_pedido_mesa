@@ -111,15 +111,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       );
 
       /// 🔥 1. GERA COMANDA
-      final String comanda = await gerarNovaComandaWebApp();
-
-      /// 🔒 VALIDAÇÃO NA API (FUTURO)
-      /*
-    final livre = await comandaEstaLivre(comanda);
-    if (!livre) {
-      throw Exception('Comanda não está livre');
-    }
-    */
+      final String comanda = await gerarComandaLivreWebApp();
 
       /// 🧾 2. SALVA PEDIDO NO FIREBASE
       await enviarPedidoFireBase(

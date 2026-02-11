@@ -1,48 +1,113 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
+import 'package:http/http.dart' as http;
 
-Future<String> gerarNovaComandaWebApp() async {
+// Future<String> gerarNovaComandaWebApp() async {
+//   final firestore = FirebaseFirestore.instance;
+
+//   final filialRef = firestore.collection('Filial').doc(codFilial);
+
+//   return firestore.runTransaction((transaction) async {
+//     final snapshot = await transaction.get(filialRef);
+
+//     if (!snapshot.exists) {
+//       throw Exception('Filial não encontrada');
+//     }
+
+//     final data = snapshot.data() as Map<String, dynamic>;
+
+//     final String comandaAtualStr = data['comanda_atual_webapp'] ?? '0';
+
+//     final int comandaAtual = int.tryParse(comandaAtualStr) ?? 0;
+//     final int novaComanda = comandaAtual + 1;
+
+//     final String novaComandaStr = novaComanda.toString();
+
+//     /// 🔥 ATUALIZA NO FIREBASE
+//     transaction.update(filialRef, {
+//       'comanda_atual_webapp': novaComandaStr,
+//     });
+
+//     /// Retorna a nova comanda pra usar no pedido
+//     return novaComandaStr;
+//   });
+// }
+
+Future<String> gerarComandaLivreWebApp() async {
   final firestore = FirebaseFirestore.instance;
-
   final filialRef = firestore.collection('Filial').doc(codFilial);
 
-  return firestore.runTransaction((transaction) async {
-    final snapshot = await transaction.get(filialRef);
+  const int maxTentativas = 50; // pode ajustar conforme o range
+  int tentativas = 0;
 
-    if (!snapshot.exists) {
-      throw Exception('Filial não encontrada');
-    }
+  while (tentativas < maxTentativas) {
+    tentativas++;
 
-    final data = snapshot.data() as Map<String, dynamic>;
+    /// 1️⃣ Gera próxima comanda respeitando o RANGE
+    final String novaComanda =
+        await firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(filialRef);
 
-    final String comandaAtualStr = data['comanda_atual_webapp'] ?? '0';
+      if (!snapshot.exists) {
+        throw Exception('Filial não encontrada');
+      }
 
-    final int comandaAtual = int.tryParse(comandaAtualStr) ?? 0;
-    final int novaComanda = comandaAtual + 1;
+      final data = snapshot.data() as Map<String, dynamic>;
 
-    final String novaComandaStr = novaComanda.toString();
+      final int comandaAtual =
+          int.tryParse(data['comanda_atual_webapp'] ?? '0') ?? 0;
 
-    /// 🔥 ATUALIZA NO FIREBASE
-    transaction.update(filialRef, {
-      'comanda_atual_webapp': novaComandaStr,
+      final int comandaInicio =
+          int.tryParse(data['comanda_inicio_webapp'] ?? '0') ?? 0;
+
+      final int comandaFim =
+          int.tryParse(data['comanda_fim_webapp'] ?? '0') ?? 0;
+
+      int proximaComanda;
+
+      /// 🔁 CONTROLE CIRCULAR
+      if (comandaAtual >= comandaFim) {
+        proximaComanda = comandaInicio;
+      } else {
+        proximaComanda = comandaAtual + 1;
+      }
+
+      final String novaComandaStr = proximaComanda.toString();
+
+      transaction.update(filialRef, {
+        'comanda_atual_webapp': novaComandaStr,
+      });
+
+      return novaComandaStr;
     });
 
-    /// Retorna a nova comanda pra usar no pedido
-    return novaComandaStr;
-  });
+    /// 2️⃣ Verifica se está livre
+    final bool estaLivre = await comandaEstaLivre(novaComanda);
+
+    if (estaLivre) {
+      return novaComanda;
+    }
+
+    /// Pequeno delay opcional (evita spam extremo de API)
+    await Future.delayed(const Duration(milliseconds: 150));
+  }
+
+  throw Exception(
+    'Não foi possível gerar uma comanda livre após $maxTentativas tentativas.',
+  );
 }
 
-/*
 Future<bool> comandaEstaLivre(String comanda) async {
   var urlBratter = Urls.urlApiBratter;
   final encodedUrl = Uri.encodeComponent(urlBratter);
 
-  final url =
-      '${Urls.urlApiAzure}Proxy/ConsultaComanda/'
+  final url = '${Urls.urlApiAzure}Proxy/ConsultaComanda/'
       '?urlBratter=$encodedUrl'
       '&tokenBratter=${GlobalKeys.tokenBratter}'
       '&idComanda=$comanda';
@@ -58,8 +123,7 @@ Future<bool> comandaEstaLivre(String comanda) async {
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
 
-    final double vlrComanda =
-        (data['VlrComanda'] ?? 0).toDouble();
+    final double vlrComanda = (data['VlrComanda'] ?? 0).toDouble();
     final String status = data['Status'];
 
     if (vlrComanda == 0.0 && (status == '00' || status == '01')) {
@@ -69,7 +133,7 @@ Future<bool> comandaEstaLivre(String comanda) async {
 
   return false;
 }
-*/
+
 Future<void> enviarPedidoFireBase({
   required String comanda,
   required CarrinhoModel carrinho,
