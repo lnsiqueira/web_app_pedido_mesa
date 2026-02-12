@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
+import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 
 class SenhaComandaPage extends StatefulWidget {
   final int senha;
   bool? isPagamento;
+  double totalPedido;
 
   SenhaComandaPage({
     super.key,
     required this.senha,
     this.isPagamento,
+    this.totalPedido = 0.0,
   });
 
   @override
@@ -47,6 +51,41 @@ class _SenhaComandaPageState extends State<SenhaComandaPage>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  _mostrarPixDialog(double valor) {
+    // Simulação de payload PIX (não é real bancário)
+    final pixPayload = '''
+00020126360014BR.GOV.BCB.PIX0114+55119999999990214Pagamento Mesa 1235204000053039865405${widget.totalPedido.toStringAsFixed(2)}5802BR5920Restaurante Dona Deola Sao Paulo62070503***6304ABCD
+''';
+
+    Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "Pagamento via PIX",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          /// QR CODE
+          QrImageView(
+            data: pixPayload,
+            version: QrVersions.auto,
+            size: 220,
+          ),
+
+          const SizedBox(height: 16),
+
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
   }
 
   @override
@@ -198,7 +237,31 @@ class _SenhaComandaPageState extends State<SenhaComandaPage>
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Pagamento via PIX",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        /// QR CODE
+                        QrImageView(
+                          data: 'pixPayload',
+                          version: QrVersions.auto,
+                          size: 120,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
 
                   /// AÇÕES
                   Container(
@@ -239,7 +302,7 @@ class _SenhaComandaPageState extends State<SenhaComandaPage>
                           //   ),
                           // ),
                         ],
-                        const SizedBox(height: 24),
+                        //const SizedBox(height: 24),
 
                         /// SEMPRE VISÍVEL
                         TextButton(

@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -100,6 +101,14 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
   Future<void> _pagarCaixa() async {
     if (_pagando) return;
 
+    final pedidos = await CarrinhoStorage.recuperarCarrinho();
+
+// Calcula o total
+    double totalPedido = pedidos.fold(
+      0.0,
+      (soma, item) => soma + (item.quantidade * (item.produto.preco ?? 0.0)),
+    );
+
     setState(() => _pagando = true);
 
     try {
@@ -148,6 +157,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         MaterialPageRoute(
           builder: (_) => SenhaComandaPage(
             senha: int.parse(comanda),
+            totalPedido: totalPedido,
           ),
         ),
       );
@@ -885,6 +895,71 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       }
     }
 
+    void _mostrarPixDialog(BuildContext context, double valor) {
+      // Simulação de payload PIX (não é real bancário)
+      final pixPayload = '''
+00020126360014BR.GOV.BCB.PIX0114+55119999999990214Pagamento Mesa 1235204000053039865405${valor.toStringAsFixed(2)}5802BR5920Restaurante Dona Deola Sao Paulo62070503***6304ABCD
+''';
+
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Pagamento via PIX",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                /// QR CODE
+                QrImageView(
+                  data: pixPayload,
+                  version: QrVersions.auto,
+                  size: 220,
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  "Valor: R\$ ${valor.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                SelectableText(
+                  pixPayload,
+                  style: const TextStyle(fontSize: 12),
+                ),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Fechar"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Center(
@@ -1269,7 +1344,24 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                         ElevatedButton.icon(
                                           icon: const Icon(Icons.payments,
                                               size: 26),
-                                          onPressed: () {},
+                                          onPressed: () async {
+                                            final pedidos =
+                                                await CarrinhoStorage
+                                                    .recuperarCarrinho();
+
+// Calcula o total
+                                            double totalPedido = pedidos.fold(
+                                              0.0,
+                                              (soma, item) =>
+                                                  soma +
+                                                  (item.quantidade *
+                                                      (item.produto.preco ??
+                                                          0.0)),
+                                            );
+
+                                            _mostrarPixDialog(
+                                                context, totalPedido);
+                                          },
                                           // _gerarPix,
                                           label: const Text(
                                             'Pagar Agora',
