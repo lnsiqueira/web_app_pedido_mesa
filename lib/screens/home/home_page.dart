@@ -12,6 +12,7 @@ import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
+import 'package:webapp_pedido_mesa/widgets/botao_pagamento_flutuante.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
@@ -25,7 +26,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String? _mesa;
+  // String? _mesa;
   String? _comanda;
   List<Categoria> categorias = [];
   bool isLoading = false;
@@ -42,9 +43,23 @@ class _HomePageState extends State<HomePage> {
           comandaController: comandaController),
     );
 
+    // if (result != null) {
+    //   setState(() {
+    //     _mesa = result['mesa'];
+    //     _comanda = result['comanda'];
+    //   });
+
+    //   final mesaComanda = Provider.of<MesaComandaModel>(
+    //     context,
+    //     listen: false,
+    //   );
+
+    //   mesaComanda.setMesa(_mesa!);
+    //   mesaComanda.setComanda(_comanda!);
+    //   _carregarCategorias();
+    // }
     if (result != null) {
       setState(() {
-        _mesa = result['mesa'];
         _comanda = result['comanda'];
       });
 
@@ -53,8 +68,8 @@ class _HomePageState extends State<HomePage> {
         listen: false,
       );
 
-      mesaComanda.setMesa(_mesa!);
       mesaComanda.setComanda(_comanda!);
+
       _carregarCategorias();
     }
   }
@@ -123,7 +138,10 @@ class _HomePageState extends State<HomePage> {
                         alignment: Alignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.shopping_cart),
+                            icon: const Icon(
+                              Icons.shopping_cart_outlined,
+                              color: Colors.black54,
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -161,152 +179,158 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        body: ConexaoWrapper(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Column(
-                  children: [
-                    isLoading
-                        ? Expanded(
-                            child: isLoading
-                                ? Center(
-                                    child: PulsingLogo(
-                                      assetPath: 'images/logodd_clean.png',
-                                      duration: const Duration(seconds: 1),
-                                    ),
-                                  )
-                                : SizedBox(),
-                          )
-                        : const SizedBox(height: 20),
-                    if (mesa != null && comanda != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.only(bottom: 16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.92,
-                          ),
-                          itemCount: categorias.length,
-                          itemBuilder: (context, index) {
-                            final categoria = categorias[index];
-
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ItensPage(
-                                      nomeCategoria: categoria.desCategoria,
-                                      idCategoria: categoria.id,
-                                    ),
+        body: Stack(
+          children: [
+            ConexaoWrapper(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 120),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      children: [
+                        isLoading
+                            ? SizedBox(
+                                height: constraints.maxHeight * 0.7,
+                                child: Center(
+                                  child: PulsingLogo(
+                                    assetPath: 'images/logodd_clean.png',
+                                    duration: const Duration(seconds: 1),
                                   ),
-                                );
-                              },
-                              child: Hero(
-                                tag: categoria.id,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 8),
+                                ),
+                              )
+                            : const SizedBox(height: 20),
+
+                        /// GRID DE CATEGORIAS
+                        if (comanda != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.only(bottom: 16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 0.92,
+                              ),
+                              itemCount: categorias.length,
+                              itemBuilder: (context, index) {
+                                final categoria = categorias[index];
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ItensPage(
+                                          nomeCategoria: categoria.desCategoria,
+                                          idCategoria: categoria.id,
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        /// IMAGEM
-                                        Image.network(
-                                          categoria.imagem,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) {
-                                            return Container(
-                                              color: Colors.grey.shade300,
-                                              child: const Center(
-                                                child: Icon(
-                                                  Icons.fastfood_rounded,
-                                                  size: 46,
-                                                  color: Colors.grey,
+                                    );
+                                  },
+                                  child: Hero(
+                                    tag: categoria.id,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(24),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.12),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(24),
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            /// IMAGEM
+                                            Image.network(
+                                              categoria.imagem,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) {
+                                                return Container(
+                                                  color: Colors.grey.shade300,
+                                                  child: const Center(
+                                                    child: Icon(
+                                                      Icons.fastfood_rounded,
+                                                      size: 46,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
+                                            /// OVERLAY
+                                            Positioned.fill(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    begin:
+                                                        Alignment.bottomCenter,
+                                                    end: Alignment.topCenter,
+                                                    colors: [
+                                                      Colors.black
+                                                          .withOpacity(0.82),
+                                                      Colors.black
+                                                          .withOpacity(0.18),
+                                                      Colors.transparent,
+                                                    ],
+                                                    stops: const [0.0, 0.55, 1],
+                                                  ),
                                                 ),
                                               ),
-                                            );
-                                          },
-                                        ),
-
-                                        /// OVERLAY ESCURO MODERNO
-                                        Positioned.fill(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.bottomCenter,
-                                                end: Alignment.topCenter,
-                                                colors: [
-                                                  Colors.black
-                                                      .withOpacity(0.82),
-                                                  Colors.black
-                                                      .withOpacity(0.18),
-                                                  Colors.transparent,
-                                                ],
-                                                stops: const [0.0, 0.55, 1],
-                                              ),
                                             ),
-                                          ),
-                                        ),
 
-                                        /// BRILHO SUPERIOR
-                                        Positioned(
-                                          top: -20,
-                                          right: -20,
-                                          child: Container(
-                                            width: 90,
-                                            height: 90,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.white
-                                                  .withOpacity(0.10),
-                                            ),
-                                          ),
-                                        ),
-
-                                        /// TEXTO
-                                        Positioned(
-                                          left: 16,
-                                          right: 16,
-                                          bottom: 16,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                categoria.desCategoria,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 19,
-                                                  fontWeight: FontWeight.w700,
-                                                  height: 1.15,
-                                                  letterSpacing: -0.3,
+                                            /// BRILHO
+                                            Positioned(
+                                              top: -20,
+                                              right: -20,
+                                              child: Container(
+                                                width: 90,
+                                                height: 90,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.white
+                                                      .withOpacity(0.10),
                                                 ),
                                               ),
-                                              const SizedBox(height: 10),
-                                              Row(
+                                            ),
+
+                                            /// TEXTO
+                                            Positioned(
+                                              left: 16,
+                                              right: 16,
+                                              bottom: 16,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
+                                                  Text(
+                                                    categoria.desCategoria,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 19,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      height: 1.15,
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 10),
                                                   Container(
                                                     padding: const EdgeInsets
                                                         .symmetric(
@@ -325,6 +349,8 @@ class _HomePageState extends State<HomePage> {
                                                       ),
                                                     ),
                                                     child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
                                                       children: const [
                                                         Text(
                                                           'Ver itens',
@@ -347,119 +373,96 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                 ],
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    Consumer<MesaComandaModel>(builder: (context, comanda, _) {
-                      // if (comanda.comanda == '') {
-                      //   return SizedBox(
-                      //     height: constraints.maxHeight / 1.2,
-                      //     child: Center(
-                      //       child: ElevatedButton.icon(
-                      //         onPressed: _pedirMesaEComanda,
-                      //         icon: const Icon(Icons.restaurant_menu,
-                      //             size: 20, color: Colors.white),
-                      //         label: Text(
-                      //           AppLocalizations.of(context)!
-                      //               .placeYourOrder
-                      //               .toUpperCase(),
-                      //           style: const TextStyle(
-                      //             fontWeight: FontWeight.bold,
-                      //             letterSpacing: 1.2,
-                      //             fontSize: 16,
-                      //             color: Colors.white,
-                      //           ),
-                      //         ),
-                      //         style: ElevatedButton.styleFrom(
-                      //           backgroundColor: Colors.orange.shade700,
-                      //           foregroundColor: Colors.white,
-                      //           elevation: 6,
-                      //           shadowColor: Colors.orange.withOpacity(0.5),
-                      //           padding: const EdgeInsets.symmetric(
-                      //               horizontal: 28, vertical: 16),
-                      //           shape: RoundedRectangleBorder(
-                      //             borderRadius: BorderRadius.circular(14),
-                      //           ),
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   );
-                      // }
-                      if (comanda.comanda == '') {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _pedirMesaEComanda();
-                        });
-
-                        return SizedBox(
-                          height: constraints.maxHeight / 1.2,
-                          child: const Center(
-                            child: PulsingLogo(
-                              assetPath: 'images/logodd_clean.png',
-                              width: 150,
-                              duration: Duration(seconds: 1),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      }
-                      return SizedBox();
-                    }),
-                    // const Spacer(),
-                    const SizedBox(height: 24),
-                    const Divider(height: 1, thickness: 1),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12.0),
-                      child: Text(
-                        '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+
+                        /// POPUP COMANDA
+                        Consumer<MesaComandaModel>(
+                          builder: (context, comanda, _) {
+                            if (comanda.comanda == '') {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                _pedirMesaEComanda();
+                              });
+
+                              return SizedBox(
+                                height: constraints.maxHeight / 1.2,
+                                child: const Center(
+                                  child: PulsingLogo(
+                                    assetPath: 'images/logodd_clean.png',
+                                    width: 150,
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return const SizedBox();
+                          },
                         ),
-                      ),
+
+                        // const SizedBox(height: 24),
+
+                        // /// FOOTER
+                        // const Divider(height: 1, thickness: 1),
+
+                        // Padding(
+                        //   padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        //   child: Text(
+                        //     '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
+                        //     style: const TextStyle(
+                        //       fontSize: 12,
+                        //       color: Colors.grey,
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        bottomNavigationBar: Consumer<CarrinhoModel>(
-          builder: (context, carrinho, _) {
-            if (carrinho.totalItens == 0) return const SizedBox.shrink();
 
-            return Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CarrinhoPage(),
-                    ),
-                  );
-                },
-                child: Text(
-                  "Prosseguir (${carrinho.totalItens} itens)",
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ),
-            );
-          },
+            /// BOTÃO FLUTUANTE
+            const BotaoPagamentoFlutuante(),
+          ],
         ),
+        // bottomNavigationBar: Consumer<CarrinhoModel>(
+        //   builder: (context, carrinho, _) {
+        //     if (carrinho.totalItens == 0) return const SizedBox.shrink();
+
+        //     return Padding(
+        //       padding: const EdgeInsets.all(12.0),
+        //       child: ElevatedButton(
+        //         style: ElevatedButton.styleFrom(
+        //           padding: const EdgeInsets.symmetric(vertical: 16),
+        //           shape: RoundedRectangleBorder(
+        //             borderRadius: BorderRadius.circular(12),
+        //           ),
+        //         ),
+        //         onPressed: () {
+        //           Navigator.push(
+        //             context,
+        //             MaterialPageRoute(
+        //               builder: (_) => const CarrinhoPage(),
+        //             ),
+        //           );
+        //         },
+        //         child: Text(
+        //           "Prosseguir (${carrinho.totalItens} itens)",
+        //           style: const TextStyle(fontSize: 18),
+        //         ),
+        //       ),
+        //     );
+        //   },
+        // ),
       ),
     );
   }
@@ -664,40 +667,46 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
     return InkWell(
       onTap: () => _mostrarPedidos(context),
       borderRadius: BorderRadius.circular(8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.receipt_long_outlined,
-                  size: 18,
-                  color: Colors.black38,
-                ),
-                const SizedBox(width: 5),
-                SizedBox(
-                  width: 88,
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    AppLocalizations.of(context)!.myOrders,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                      // color: Colors.orange.shade800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 7,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.orange.shade100,
           ),
-        ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.receipt_long_rounded,
+                size: 15,
+                color: Colors.orange.shade700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              AppLocalizations.of(context)!.myOrders,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

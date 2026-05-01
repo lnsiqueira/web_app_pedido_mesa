@@ -659,42 +659,45 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
                       SizedBox(height: isSmallScreen ? 24 : 36),
 
                       // Campo Mesa
-                      _buildModernTextField(
-                        label: AppLocalizations.of(context)!.table,
-                        controller: widget.mesaController,
-                        hintText:
-                            AppLocalizations.of(context)!.enterTableNumber,
-                        icon: Icons.table_restaurant,
-                        isSmallScreen: isSmallScreen,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(context)!
-                                .enterTableNumber;
-                          }
-                          return null;
-                        },
-                      ),
+                      // _buildModernTextField(
+                      //   label: AppLocalizations.of(context)!.table,
+                      //   controller: widget.mesaController,
+                      //   hintText:
+                      //       AppLocalizations.of(context)!.enterTableNumber,
+                      //   icon: Icons.table_restaurant,
+                      //   isSmallScreen: isSmallScreen,
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return AppLocalizations.of(context)!
+                      //           .enterTableNumber;
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
 
-                      SizedBox(height: isSmallScreen ? 20 : 28),
+                      // SizedBox(height: isSmallScreen ? 20 : 28),
+                      _buildComandaInput(isSmallScreen),
+
+                      SizedBox(height: isSmallScreen ? 28 : 36),
 
                       // Campo Comanda
-                      _buildModernTextField(
-                        label: AppLocalizations.of(context)!.order,
-                        controller: widget.comandaController,
-                        hintText:
-                            AppLocalizations.of(context)!.enterOrderNumber,
-                        icon: Icons.receipt_long,
-                        isSmallScreen: isSmallScreen,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(context)!
-                                .pleaseEnterOrderNumber;
-                          }
-                          return null;
-                        },
-                      ),
+                      // _buildModernTextField(
+                      //   label: AppLocalizations.of(context)!.order,
+                      //   controller: widget.comandaController,
+                      //   hintText:
+                      //       AppLocalizations.of(context)!.enterOrderNumber,
+                      //   icon: Icons.receipt_long,
+                      //   isSmallScreen: isSmallScreen,
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return AppLocalizations.of(context)!
+                      //           .pleaseEnterOrderNumber;
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
 
-                      SizedBox(height: isSmallScreen ? 32 : 48),
+                      // SizedBox(height: isSmallScreen ? 32 : 48),
 
                       // Botões responsivos
                       _buildButtons(isSmallScreen),
@@ -768,6 +771,159 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
         //   ),
         // ),
       ],
+    );
+  }
+
+  Widget _buildComandaInput(bool isSmallScreen) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Comanda',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 15 : 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.brown.shade900,
+            letterSpacing: -0.3,
+          ),
+        ),
+
+        SizedBox(height: isSmallScreen ? 14 : 18),
+
+        // DISPLAY
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: isSmallScreen ? 18 : 22,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.orange.shade200,
+              width: 2,
+            ),
+          ),
+          child: Text(
+            widget.comandaController.text.isEmpty
+                ? 'Digite a comanda'
+                : widget.comandaController.text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 28 : 34,
+              fontWeight: FontWeight.w800,
+              color: widget.comandaController.text.isEmpty
+                  ? Colors.orange.shade300
+                  : Colors.brown.shade900,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+
+        SizedBox(height: isSmallScreen ? 18 : 24),
+
+        // TECLADO
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.2,
+          children: [
+            ...List.generate(9, (index) {
+              final number = '${index + 1}';
+
+              return _buildKeyboardButton(
+                text: number,
+                onTap: () {
+                  setState(() {
+                    widget.comandaController.text += number;
+                  });
+                },
+              );
+            }),
+            _buildKeyboardButton(
+              icon: Icons.backspace_rounded,
+              onTap: () {
+                if (widget.comandaController.text.isNotEmpty) {
+                  setState(() {
+                    widget.comandaController.text =
+                        widget.comandaController.text.substring(
+                      0,
+                      widget.comandaController.text.length - 1,
+                    );
+                  });
+                }
+              },
+            ),
+            _buildKeyboardButton(
+              text: '0',
+              onTap: () {
+                setState(() {
+                  widget.comandaController.text += '0';
+                });
+              },
+            ),
+            _buildKeyboardButton(
+              icon: Icons.clear_rounded,
+              onTap: () {
+                setState(() {
+                  widget.comandaController.clear();
+                });
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKeyboardButton({
+    String? text,
+    IconData? icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.orange.shade200,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: icon != null
+                ? Icon(
+                    icon,
+                    size: 28,
+                    color: Colors.orange.shade700,
+                  )
+                : Text(
+                    text!,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.brown.shade900,
+                    ),
+                  ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1023,8 +1179,11 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
           final data = jsonDecode(response.body);
 
           if (data['Id'] != 0 && data['Status'] != null) {
+            // Navigator.pop(context, {
+            //   'mesa': widget.mesaController.text,
+            //   'comanda': comanda,
+            // });
             Navigator.pop(context, {
-              'mesa': widget.mesaController.text,
               'comanda': comanda,
             });
           } else {
