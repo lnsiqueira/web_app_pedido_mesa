@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final languageController = Provider.of<LanguageController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final itemWidth = screenWidth / 3 - 24;
+    // final itemWidth = screenWidth / 3 - 24;
     final mesa = context.watch<MesaComandaModel>().mesa;
     final comanda = context.watch<MesaComandaModel>().comanda;
 
@@ -168,166 +168,264 @@ class _HomePageState extends State<HomePage> {
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight,
                 ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      isLoading
-                          ? Expanded(
-                              child: isLoading
-                                  ? Center(
-                                      child: PulsingLogo(
-                                        assetPath: 'images/logodd_clean.png',
-                                        duration: const Duration(seconds: 1),
-                                      ),
-                                    )
-                                  : SizedBox(),
-                            )
-                          : const SizedBox(height: 20),
-                      if (mesa != null && comanda != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 0.0,
-                          ),
-                          child: Column(
-                            children: [
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 16,
-                                children: categorias.map((categoria) {
-                                  return SizedBox(
-                                    height: 160,
-                                    width: itemWidth.clamp(100, 180),
-                                    child: Card(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      elevation: 3,
-                                      clipBehavior: Clip.antiAlias,
-                                      child: InkWell(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => ItensPage(
-                                                nomeCategoria:
-                                                    categoria.desCategoria,
-                                                idCategoria: categoria.id,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Expanded(
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    const BorderRadius.vertical(
-                                                  top: Radius.circular(16),
-                                                ),
-                                                child: Image.network(
-                                                  categoria.imagem,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                          stackTrace) =>
-                                                      Container(
-                                                    color: Colors.grey[200],
-                                                    child: const Icon(
-                                                      Icons.broken_image,
-                                                      size: 40,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(10),
-                                              child: SizedBox(
-                                                height:
-                                                    38, // altura equivalente a 2 linhas
-                                                child: Center(
-                                                  child: Text(
-                                                    categoria.desCategoria,
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.black87,
-                                                      height: 1.2,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                child: Column(
+                  children: [
+                    isLoading
+                        ? Expanded(
+                            child: isLoading
+                                ? Center(
+                                    child: PulsingLogo(
+                                      assetPath: 'images/logodd_clean.png',
+                                      duration: const Duration(seconds: 1),
                                     ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Consumer<MesaComandaModel>(
-                          builder: (context, comanda, _) {
-                        if (comanda.comanda == '') {
-                          return SizedBox(
-                            height: constraints.maxHeight / 1.2,
-                            child: Center(
-                              child: ElevatedButton.icon(
-                                onPressed: _pedirMesaEComanda,
-                                icon: const Icon(Icons.restaurant_menu,
-                                    size: 20, color: Colors.white),
-                                label: Text(
-                                  AppLocalizations.of(context)!
-                                      .placeYourOrder
-                                      .toUpperCase(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange.shade700,
-                                  foregroundColor: Colors.white,
-                                  elevation: 6,
-                                  shadowColor: Colors.orange.withOpacity(0.5),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 28, vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return SizedBox();
-                      }),
-                      const Spacer(),
-                      const Divider(height: 1, thickness: 1),
+                                  )
+                                : SizedBox(),
+                          )
+                        : const SizedBox(height: 20),
+                    if (mesa != null && comanda != null)
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: Text(
-                          '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.92,
                           ),
+                          itemCount: categorias.length,
+                          itemBuilder: (context, index) {
+                            final categoria = categorias[index];
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ItensPage(
+                                      nomeCategoria: categoria.desCategoria,
+                                      idCategoria: categoria.id,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Hero(
+                                tag: categoria.id,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.12),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        /// IMAGEM
+                                        Image.network(
+                                          categoria.imagem,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) {
+                                            return Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.fastfood_rounded,
+                                                  size: 46,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+
+                                        /// OVERLAY ESCURO MODERNO
+                                        Positioned.fill(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.bottomCenter,
+                                                end: Alignment.topCenter,
+                                                colors: [
+                                                  Colors.black
+                                                      .withOpacity(0.82),
+                                                  Colors.black
+                                                      .withOpacity(0.18),
+                                                  Colors.transparent,
+                                                ],
+                                                stops: const [0.0, 0.55, 1],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        /// BRILHO SUPERIOR
+                                        Positioned(
+                                          top: -20,
+                                          right: -20,
+                                          child: Container(
+                                            width: 90,
+                                            height: 90,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.white
+                                                  .withOpacity(0.10),
+                                            ),
+                                          ),
+                                        ),
+
+                                        /// TEXTO
+                                        Positioned(
+                                          left: 16,
+                                          right: 16,
+                                          bottom: 16,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                categoria.desCategoria,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 19,
+                                                  fontWeight: FontWeight.w700,
+                                                  height: 1.15,
+                                                  letterSpacing: -0.3,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.18),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              30),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.18),
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      children: const [
+                                                        Text(
+                                                          'Ver itens',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 6),
+                                                        Icon(
+                                                          Icons
+                                                              .arrow_forward_ios_rounded,
+                                                          color: Colors.white,
+                                                          size: 12,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ],
-                  ),
+                    Consumer<MesaComandaModel>(builder: (context, comanda, _) {
+                      // if (comanda.comanda == '') {
+                      //   return SizedBox(
+                      //     height: constraints.maxHeight / 1.2,
+                      //     child: Center(
+                      //       child: ElevatedButton.icon(
+                      //         onPressed: _pedirMesaEComanda,
+                      //         icon: const Icon(Icons.restaurant_menu,
+                      //             size: 20, color: Colors.white),
+                      //         label: Text(
+                      //           AppLocalizations.of(context)!
+                      //               .placeYourOrder
+                      //               .toUpperCase(),
+                      //           style: const TextStyle(
+                      //             fontWeight: FontWeight.bold,
+                      //             letterSpacing: 1.2,
+                      //             fontSize: 16,
+                      //             color: Colors.white,
+                      //           ),
+                      //         ),
+                      //         style: ElevatedButton.styleFrom(
+                      //           backgroundColor: Colors.orange.shade700,
+                      //           foregroundColor: Colors.white,
+                      //           elevation: 6,
+                      //           shadowColor: Colors.orange.withOpacity(0.5),
+                      //           padding: const EdgeInsets.symmetric(
+                      //               horizontal: 28, vertical: 16),
+                      //           shape: RoundedRectangleBorder(
+                      //             borderRadius: BorderRadius.circular(14),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   );
+                      // }
+                      if (comanda.comanda == '') {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _pedirMesaEComanda();
+                        });
+
+                        return SizedBox(
+                          height: constraints.maxHeight / 1.2,
+                          child: const Center(
+                            child: PulsingLogo(
+                              assetPath: 'images/logodd_clean.png',
+                              width: 150,
+                              duration: Duration(seconds: 1),
+                            ),
+                          ),
+                        );
+                      }
+                      return SizedBox();
+                    }),
+                    // const Spacer(),
+                    const SizedBox(height: 24),
+                    const Divider(height: 1, thickness: 1),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                      child: Text(
+                        '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

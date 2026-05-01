@@ -516,206 +516,187 @@ class _ItensPageState extends State<ItensPage> {
         ],
       ),
       body: isLoading
-          ? Center(
+          ? const Center(
               child: PulsingLogo(
-              assetPath: 'images/logodd_clean.png',
-              width: 150,
-              duration: const Duration(seconds: 1),
-            ))
+                assetPath: 'images/logodd_clean.png',
+                width: 150,
+                duration: Duration(seconds: 1),
+              ),
+            )
           : produtos.isEmpty
-              ? const Center(child: Text('Nenhum produto encontrado.'))
-              : ListView.builder(
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: Colors.orangeAccent.withOpacity(0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'images/sad.png',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Nenhum produto encontrado',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Tente novamente mais tarde.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.black54,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.96,
+                  ),
                   itemCount: produtos.length,
-                  // itemBuilder: (context, index) {
-                  //   final produto = produtos[index];
-                  //   return Padding(
-                  //     padding: const EdgeInsets.symmetric(
-                  //         horizontal: 12, vertical: 0),
-                  //     child: Card(
-                  //       elevation: 2,
-                  //       shape: RoundedRectangleBorder(
-                  //         borderRadius: BorderRadius.circular(16),
-                  //       ),
-                  //       child: InkWell(
-                  //         borderRadius: BorderRadius.circular(16),
-                  //         onTap: () {
-                  //           _mostrarPopupObs(produto);
-                  //         },
-                  //         child: Padding(
-                  //           padding: const EdgeInsets.all(12),
-                  //           child: Row(
-                  //             children: [
-                  //               // Ícone / Imagem
-                  //               Container(
-                  //                 height: 42,
-                  //                 width: 42,
-                  //                 decoration: BoxDecoration(
-                  //                   color: Colors.orange.shade50,
-                  //                   borderRadius: BorderRadius.circular(12),
-                  //                   border: Border.all(
-                  //                     color: Colors.orange.shade300,
-                  //                     width: 1.5,
-                  //                   ),
-                  //                 ),
-                  //                 child: Icon(
-                  //                   Icons.fastfood,
-                  //                   size: 24,
-                  //                   color: Colors.orange.shade600,
-                  //                 ),
-                  //               ),
-                  //               const SizedBox(width: 12),
-
-                  //               // Nome + Preço
-                  //               Expanded(
-                  //                 child: Column(
-                  //                   crossAxisAlignment:
-                  //                       CrossAxisAlignment.start,
-                  //                   children: [
-                  //                     Text(
-                  //                       produto.desProduto ?? '',
-                  //                       style: const TextStyle(
-                  //                         fontSize: 16,
-                  //                         fontWeight: FontWeight.w600,
-                  //                         color: Colors.black87,
-                  //                       ),
-                  //                       maxLines: 1,
-                  //                       overflow: TextOverflow.ellipsis,
-                  //                     ),
-                  //                     const SizedBox(height: 4),
-                  //                     Text(
-                  //                       'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
-                  //                       style: TextStyle(
-                  //                         fontSize: 14,
-                  //                         fontWeight: FontWeight.w500,
-                  //                         color: Colors.grey[700],
-                  //                       ),
-                  //                     ),
-                  //                   ],
-                  //                 ),
-                  //               ),
-
-                  //               const Icon(
-                  //                 Icons.add,
-                  //                 color: Colors.grey,
-                  //               ),
-                  //             ],
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   );
-                  // },
                   itemBuilder: (context, index) {
                     final produto = produtos[index];
-                    final colors = [
-                      Colors.orange,
-                      // Colors.red,
-                      // Colors.green,
-                      // Colors.purple
-                    ];
-                    final bgColor = colors[index % colors.length].shade50;
-                    final iconColor = colors[index % colors.length].shade600;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 5),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => _mostrarPopupObs(produto),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 0.8,
+                    return GestureDetector(
+                      onTap: () => _mostrarPopupObs(produto),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Stack(
+                          children: [
+                            /// IMAGEM
+                            Positioned.fill(
+                              child: produto.imageUrl != null &&
+                                      produto.imageUrl!.isNotEmpty
+                                  ? Image.network(
+                                      produto.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) {
+                                        return Image.asset(
+                                          'images/default.png',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    )
+                                  : Image.asset(
+                                      'images/default.png',
+                                      fit: BoxFit.cover,
+                                    ),
+                            ),
+
+                            /// OVERLAY
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.60),
+                                      Colors.black.withOpacity(0.15),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.0, 0.6, 1],
+                                  ),
+                                ),
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
-                              child: Row(
+
+                            /// BRILHO
+                            Positioned(
+                              top: -20,
+                              right: -20,
+                              child: Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.10),
+                                ),
+                              ),
+                            ),
+
+                            /// CONTEÚDO
+                            Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Ícone com fundo colorido suave
-                                  Container(
-                                    width: 52,
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                      color: bgColor,
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: Icon(
-                                      Icons.fastfood_rounded,
-                                      size: 26,
-                                      color: iconColor,
+                                  const Spacer(),
+                                  Text(
+                                    produto.desProduto ?? '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.15,
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
-
-                                  // Nome + descrição + preço
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          produto.desProduto ?? '',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
-                                            letterSpacing: -0.2,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (produto.desCategoria != null) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            produto.desCategoria!,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade500,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.orange.shade800,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Botão +
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 0.8),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.add,
-                                      size: 18,
-                                      color: Colors.grey.shade700,
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade200,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
+
+                            /// BOTÃO +
+                            Positioned(
+                              bottom: 12,
+                              right: 12,
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.25),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.18),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.add_rounded,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

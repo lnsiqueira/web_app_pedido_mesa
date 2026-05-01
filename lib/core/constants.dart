@@ -8,7 +8,7 @@ bool isQuartoENome = true;
 
 class GlobalKeys {
   static const String idioma = '';
-  static const String codFilial = '8urs76lF1QwjcNpi3CwD';
+  static const String codFilial = '1743445823763';
   static const String descricaoFilial = 'Lapa';
   static const String codEmpresa = '1';
   static const String descricaoEmpresa = 'Dona Deola';

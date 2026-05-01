@@ -74,7 +74,8 @@ class ItemModel {
       tipoProduto: null,
       quantidade: null,
       peso: null,
-      imageUrl: null,
+      // ADICIONEI AQUI A IMAGEM VINDO DA NOSSA API
+      imageUrl: json['imagemProduto'],
       discountpreco: null,
       codigoBarras: null,
       categoria: null,
@@ -102,6 +103,7 @@ class ItemModel {
       dataAtualizacao: dataAtualizacao,
       desCategoria: desCategoria,
       preco: preco ?? this.preco,
+      imageUrl: imageUrl,
       quantidadeDisponivel: quantidadeDisponivel,
       ativo: ativo,
       obs: obs ?? this.obs,
