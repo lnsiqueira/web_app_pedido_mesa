@@ -26,39 +26,52 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // String? _mesa;
   String? _comanda;
+
   List<Categoria> categorias = [];
+
   bool isLoading = false;
+
+  // 🔥 controla se popup já está aberto
+  bool _popupAberto = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔥 abre só depois da tela carregar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pedirMesaEComanda();
+    });
+  }
+
   Future<void> _pedirMesaEComanda() async {
+    // 🔥 impede empilhar popup
+    if (_popupAberto) return;
+
+    _popupAberto = true;
+
     final mesaController = TextEditingController();
+
     final comandaController = TextEditingController();
-    final _formKey = GlobalKey<FormState>();
+
+    final formKey = GlobalKey<FormState>();
 
     final result = await showDialog<Map<String, String>?>(
       context: context,
       barrierDismissible: false,
       builder: (context) => PopupMesaComanda(
-          formKey: _formKey,
-          mesaController: mesaController,
-          comandaController: comandaController),
+        formKey: formKey,
+        mesaController: mesaController,
+        comandaController: comandaController,
+      ),
     );
 
-    // if (result != null) {
-    //   setState(() {
-    //     _mesa = result['mesa'];
-    //     _comanda = result['comanda'];
-    //   });
+    // 🔥 libera novamente
+    _popupAberto = false;
 
-    //   final mesaComanda = Provider.of<MesaComandaModel>(
-    //     context,
-    //     listen: false,
-    //   );
+    if (!mounted) return;
 
-    //   mesaComanda.setMesa(_mesa!);
-    //   mesaComanda.setComanda(_comanda!);
-    //   _carregarCategorias();
-    // }
     if (result != null) {
       setState(() {
         _comanda = result['comanda'];
