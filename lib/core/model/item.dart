@@ -5,6 +5,7 @@ class ItemModel {
   int? idProduto;
   String? plu;
   String? desProduto;
+  String? descricaoProduto;
   String? desIpImpressora;
   bool? apiPropria;
   String? dataCriacao;
@@ -33,6 +34,7 @@ class ItemModel {
     this.idProduto,
     this.plu,
     this.desProduto,
+    this.descricaoProduto,
     this.desIpImpressora,
     this.apiPropria,
     this.dataCriacao,
@@ -63,6 +65,7 @@ class ItemModel {
       idProduto: json['idProduto'],
       plu: json['plu'],
       desProduto: json['desProduto'],
+      descricaoProduto: json['descricaoProduto'],
       desIpImpressora: json['desIpImpressora'],
       apiPropria: json['apiPropria'],
       dataCriacao: json['dataCriacao'],
@@ -97,6 +100,7 @@ class ItemModel {
       idProduto: idProduto,
       plu: plu,
       desProduto: desProduto,
+      descricaoProduto: descricaoProduto,
       desIpImpressora: desIpImpressora,
       apiPropria: apiPropria,
       dataCriacao: dataCriacao,

@@ -632,6 +632,51 @@ class _ItensPageState extends State<ItensPage> {
                           ),
 
                           // TEXOS
+                          // Positioned(
+                          //   left: 20,
+                          //   right: 20,
+                          //   bottom: 22,
+                          //   child: Column(
+                          //     crossAxisAlignment: CrossAxisAlignment.start,
+                          //     children: [
+                          //       Text(
+                          //         produto.desProduto ?? '',
+                          //         maxLines: 2,
+                          //         overflow: TextOverflow.ellipsis,
+                          //         style: const TextStyle(
+                          //           color: Colors.white,
+                          //           fontSize: 28,
+                          //           fontWeight: FontWeight.w800,
+                          //           height: 1.05,
+                          //           letterSpacing: -0.7,
+                          //         ),
+                          //       ),
+                          //       const SizedBox(height: 12),
+                          //       Container(
+                          //         padding: const EdgeInsets.symmetric(
+                          //           horizontal: 14,
+                          //           vertical: 8,
+                          //         ),
+                          //         decoration: BoxDecoration(
+                          //           color: Colors.white.withOpacity(0.14),
+                          //           borderRadius: BorderRadius.circular(99),
+                          //           border: Border.all(
+                          //             color: Colors.white.withOpacity(0.12),
+                          //           ),
+                          //         ),
+                          //         child: Text(
+                          //           'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                          //           style: const TextStyle(
+                          //             color: Colors.white,
+                          //             fontSize: 16,
+                          //             fontWeight: FontWeight.w700,
+                          //           ),
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
+                          // TEXOS
                           Positioned(
                             left: 20,
                             right: 20,
@@ -651,28 +696,52 @@ class _ItensPageState extends State<ItensPage> {
                                     letterSpacing: -0.7,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.14),
-                                    borderRadius: BorderRadius.circular(99),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.12),
+
+                                // DESCRIÇÃO BONITA
+                                if ((produto.descricaoProduto ?? '')
+                                    .trim()
+                                    .isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    produto.descricaoProduto!,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.82),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.4,
                                     ),
                                   ),
-                                  child: Text(
-                                    'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                ],
+
+                                // PREÇO SÓ QUANDO NÃO TIVER DESCRIÇÃO
+                                if ((produto.descricaoProduto ?? '')
+                                    .trim()
+                                    .isEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.14),
+                                      borderRadius: BorderRadius.circular(99),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ),
@@ -698,6 +767,31 @@ class _ItensPageState extends State<ItensPage> {
 
                             const SizedBox(height: 14),
 
+                            // Row(
+                            //   children: [
+                            //     _QtyButton(
+                            //       icon: Icons.remove,
+                            //       onTap: () => setStateSB(() {
+                            //         if (quantidade > 1) quantidade--;
+                            //       }),
+                            //     ),
+                            //     SizedBox(
+                            //       width: 50,
+                            //       child: Text(
+                            //         '$quantidade',
+                            //         textAlign: TextAlign.center,
+                            //         style: const TextStyle(
+                            //           fontSize: 18,
+                            //           fontWeight: FontWeight.w700,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //     _QtyButton(
+                            //       icon: Icons.add,
+                            //       onTap: () => setStateSB(() => quantidade++),
+                            //     ),
+                            //   ],
+                            // ),
                             Row(
                               children: [
                                 _QtyButton(
@@ -706,6 +800,7 @@ class _ItensPageState extends State<ItensPage> {
                                     if (quantidade > 1) quantidade--;
                                   }),
                                 ),
+
                                 SizedBox(
                                   width: 50,
                                   child: Text(
@@ -717,10 +812,39 @@ class _ItensPageState extends State<ItensPage> {
                                     ),
                                   ),
                                 ),
+
                                 _QtyButton(
                                   icon: Icons.add,
                                   onTap: () => setStateSB(() => quantidade++),
                                 ),
+
+                                // PREÇO NO FIM DA LINHA QUANDO EXISTIR DESCRIÇÃO
+                                if ((produto.descricaoProduto ?? '')
+                                    .trim()
+                                    .isNotEmpty) ...[
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: Colors.orange.shade100,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade800,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
 
