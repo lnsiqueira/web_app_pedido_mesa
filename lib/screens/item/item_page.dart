@@ -46,7 +46,7 @@ class _ItensPageState extends State<ItensPage> {
     });
 
     final url =
-        '${Urls.urlApiAzure}/Categorias/categoria-produto-by-filial/${widget.idCategoria}?idFilial=${GlobalKeys.codFilial}';
+        '${Urls.urlApiAzure}/Categorias/categoria-produto-by-filial/${widget.idCategoria}?idFilial=${codFilial}';
 
     try {
       final response = await http.get(Uri.parse(url));

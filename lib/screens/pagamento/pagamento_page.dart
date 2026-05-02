@@ -177,7 +177,7 @@ class _PagamentoPageState extends State<PagamentoPage> {
       PedidoModel pedido = PedidoModel(
         pedidoId: pedidoId,
         codEmpresa: '1',
-        codFilial: GlobalKeys.codFilial,
+        codFilial: codFilial,
         dataHoraPedido: Timestamp.now(),
         deviceToken: "",
         itens: itensFinais,

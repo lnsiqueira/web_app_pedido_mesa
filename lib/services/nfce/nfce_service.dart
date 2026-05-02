@@ -369,9 +369,9 @@ class NfceService {
 
       // final logFirebase = Log(
       //   id: 0,
-      //   idFilial: GlobalKeys.codFilial,
+      //   idFilial: codFilial,
       //   idEmpresa: '1',
-      //   descricaoFilial: GlobalKeys.descricaoFilial,
+      //   descricaoFilial: '',
       //   descricaoEmpresa: "Dona Deola",
       //   dataHora: DateTime.now(),
       //   descricaoAtividade: "CONTINGENCIA",
@@ -389,7 +389,7 @@ class NfceService {
       //   GlobalKeys.numSequencialNfe =
       //       (await nfeService.obterAtualizaProximoNumeroNfe(
       //     logFirebase,
-      //     filialId: GlobalKeys.codFilial,
+      //     filialId: codFilial,
       //     serie: GlobalKeys.serieNfe.toString(),
       //   ))
       //           .toString();
@@ -398,7 +398,7 @@ class NfceService {
       //   GlobalKeys.numSequencialNfe =
       //       (await nfeServiceUAT.obterAtualizaProximoNumeroNfe(
       //     logFirebase,
-      //     filialId: GlobalKeys.codFilial,
+      //     filialId: codFilial,
       //     serie: GlobalKeys.serieNfe.toString(),
       //   ))
       //           .toString();
@@ -412,9 +412,9 @@ class NfceService {
 
       // final log = Log(
       //   id: 0,
-      //   idFilial: GlobalKeys.codFilial,
+      //   idFilial: codFilial,
       //   idEmpresa: '1',
-      //   descricaoFilial: GlobalKeys.descricaoFilial,
+      //   descricaoFilial: '',
       //   descricaoEmpresa: "Dona Deola",
       //   dataHora: DateTime.now(),
       //   descricaoAtividade: "CONTINGENCIA",
@@ -442,9 +442,9 @@ class NfceService {
 
       // final logA = Log(
       //   id: 0,
-      //   idFilial: GlobalKeys.codFilial,
+      //   idFilial: codFilial,
       //   idEmpresa: '1',
-      //   descricaoFilial: GlobalKeys.descricaoFilial,
+      //   descricaoFilial: '',
       //   descricaoEmpresa: "Dona Deola",
       //   dataHora: DateTime.now(),
       //   descricaoAtividade: "ERRO API-AZURE",
@@ -507,8 +507,8 @@ class NfceService {
 
         // GlobalKeys.base64Nfe = await EmissaoNfce().enviarNFe(
         //   nfe,
-        //   GlobalKeys.descricaoFilial,
-        //   GlobalKeys.codFilial,
+        //   '',
+        //   codFilial,
         //   GlobalKeys.ambienteNfe,
         //   GlobalKeys.serieNfe.toString(),
         //   pedido,
@@ -525,9 +525,9 @@ class NfceService {
 
         final logN = Log(
           id: 0,
-          idFilial: GlobalKeys.codFilial,
+          idFilial: codFilial,
           idEmpresa: '1',
-          descricaoFilial: GlobalKeys.descricaoFilial,
+          descricaoFilial: '',
           descricaoEmpresa: "Dona Deola",
           dataHora: DateTime.now(),
           descricaoAtividade: "CONTINGENCIA",
@@ -568,9 +568,9 @@ class NfceService {
 
       final logE = Log(
         id: 0,
-        idFilial: GlobalKeys.codFilial,
+        idFilial: codFilial,
         idEmpresa: '1',
-        descricaoFilial: GlobalKeys.descricaoFilial,
+        descricaoFilial: '',
         descricaoEmpresa: "Dona Deola",
         dataHora: DateTime.now(),
         descricaoAtividade: "ERRO catch",
@@ -938,9 +938,9 @@ class NfceService {
 
       final logFirebase = Log(
         id: 0,
-        idFilial: GlobalKeys.codFilial,
+        idFilial: codFilial,
         idEmpresa: '1',
-        descricaoFilial: GlobalKeys.descricaoFilial,
+        descricaoFilial: '',
         descricaoEmpresa: "Dona Deola",
         dataHora: DateTime.now(),
         descricaoAtividade: "CONTINGENCIA",
@@ -958,7 +958,7 @@ class NfceService {
         GlobalKeys.numSequencialNfe =
             (await nfeService.obterAtualizaProximoNumeroNfe(
           logFirebase,
-          filialId: GlobalKeys.codFilial,
+          filialId: codFilial,
           serie: GlobalKeys.serieNfe.toString(),
         ))
                 .toString();
@@ -967,7 +967,7 @@ class NfceService {
         GlobalKeys.numSequencialNfe =
             (await nfeServiceUAT.obterAtualizaProximoNumeroNfe(
           logFirebase,
-          filialId: GlobalKeys.codFilial,
+          filialId: codFilial,
           serie: GlobalKeys.serieNfe.toString(),
         ))
                 .toString();
@@ -981,9 +981,9 @@ class NfceService {
 
       final log = Log(
         id: 0,
-        idFilial: GlobalKeys.codFilial,
+        idFilial: codFilial,
         idEmpresa: '1',
-        descricaoFilial: GlobalKeys.descricaoFilial,
+        descricaoFilial: '',
         descricaoEmpresa: "Dona Deola",
         dataHora: DateTime.now(),
         descricaoAtividade: "CONTINGENCIA",
@@ -1011,9 +1011,9 @@ class NfceService {
 
       final logA = Log(
         id: 0,
-        idFilial: GlobalKeys.codFilial,
+        idFilial: codFilial,
         idEmpresa: '1',
-        descricaoFilial: GlobalKeys.descricaoFilial,
+        descricaoFilial: '',
         descricaoEmpresa: "Dona Deola",
         dataHora: DateTime.now(),
         descricaoAtividade: "ERRO API-AZURE",
@@ -1041,8 +1041,8 @@ class NfceService {
       try {
         GlobalKeys.base64Nfe = await EmissaoNfce().enviarNFe(
           nfe,
-          GlobalKeys.descricaoFilial,
-          GlobalKeys.codFilial,
+          '',
+          codFilial,
           GlobalKeys.ambienteNfe,
           GlobalKeys.serieNfe.toString(),
           pedido,
@@ -1056,12 +1056,11 @@ class NfceService {
 
         // Gravar log local
         //await uploadPedidoContigencia();
-
         final logN = Log(
           id: 0,
-          idFilial: GlobalKeys.codFilial,
+          idFilial: codFilial,
           idEmpresa: '1',
-          descricaoFilial: GlobalKeys.descricaoFilial,
+          descricaoFilial: '',
           descricaoEmpresa: "Dona Deola",
           dataHora: DateTime.now(),
           descricaoAtividade: "CONTINGENCIA",
@@ -1084,9 +1083,9 @@ class NfceService {
 
         final logN = Log(
           id: 0,
-          idFilial: GlobalKeys.codFilial,
+          idFilial: codFilial,
           idEmpresa: '1',
-          descricaoFilial: GlobalKeys.descricaoFilial,
+          descricaoFilial: '',
           descricaoEmpresa: "Dona Deola",
           dataHora: DateTime.now(),
           descricaoAtividade: "GERACAO_NFCE",
@@ -1128,9 +1127,9 @@ class NfceService {
 
       final logE = Log(
         id: 0,
-        idFilial: GlobalKeys.codFilial,
+        idFilial: codFilial,
         idEmpresa: '1',
-        descricaoFilial: GlobalKeys.descricaoFilial,
+        descricaoFilial: '',
         descricaoEmpresa: "Dona Deola",
         dataHora: DateTime.now(),
         descricaoAtividade: "ERRO catch",

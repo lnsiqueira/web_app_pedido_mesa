@@ -71,8 +71,8 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
   }
 
   Map<String, dynamic> _pixRequestBody() => {
-        "descricaoFilial": GlobalKeys.descricaoFilial,
-        "idFilial": GlobalKeys.codFilial,
+        "descricaoFilial": '',
+        "idFilial": codFilial,
         "idEmpresa": GlobalKeys.codEmpresa,
         "descricaoEmpresa": GlobalKeys.descricaoEmpresa,
         "ambiente": GlobalKeys.ambienteNfe,
@@ -230,7 +230,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
     try {
       Map<String, dynamic> _pixRequestBody() => {
             "id": _idInvoice,
-            "idFilial": GlobalKeys.codFilial,
+            "idFilial": codFilial,
             "tipoTransacao": "pixCashin",
             "pix": {
               "pagamento": {
@@ -554,7 +554,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
 
     try {
       final body = jsonEncode({
-        "idFilial": GlobalKeys.codFilial,
+        "idFilial": codFilial,
         "idInvoicePix": idInvoice.toString(), // ou pode deixar como int
         "ambiente": GlobalKeys.ambienteNfe,
       });
@@ -706,7 +706,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
       PedidoModel pedido = PedidoModel(
           pedidoId: pedidoId,
           codEmpresa: '1',
-          codFilial: GlobalKeys.codFilial,
+          codFilial: codFilial,
           dataHoraPedido: Timestamp.now(),
           deviceToken: "",
           itens: itensFinais,
@@ -759,7 +759,7 @@ class _PagamentoPixPageState extends State<PagamentoPixPage> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Dona Deola  ${GlobalKeys.descricaoFilial}',
+                  'Dona Deola ',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),

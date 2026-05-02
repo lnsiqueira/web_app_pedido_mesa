@@ -105,8 +105,7 @@ class _HomePageState extends State<HomePage> {
       isLoading = true;
     });
 
-    const url =
-        '${Urls.urlApiAzure}/Categorias/categoria-by-filial/${GlobalKeys.codFilial}';
+    var url = '${Urls.urlApiAzure}/Categorias/categoria-by-filial/$codFilial';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -565,7 +564,7 @@ class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
 
     try {
       final body = jsonEncode({
-        "idFilial": GlobalKeys.codFilial,
+        "idFilial": codFilial,
         "idInvoicePix": idInvoice.toString(),
         "ambiente": GlobalKeys.ambienteNfe,
       });
