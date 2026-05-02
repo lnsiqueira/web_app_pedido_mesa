@@ -74,6 +74,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Future<void> _carregarCategorias() async {
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   const url =
+  //       '${Urls.urlApiAzure}/Categorias/categoria-by-filial/${GlobalKeys.codFilial}';
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> data = json.decode(response.body);
+  //       setState(() {
+  //         categorias = data.map((e) => Categoria.fromJson(e)).toList();
+  //       });
+  //     } else {
+  //       print('Erro ao carregar categorias: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Erro: $e');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
   Future<void> _carregarCategorias() async {
     setState(() {
       isLoading = true;
@@ -81,12 +106,46 @@ class _HomePageState extends State<HomePage> {
 
     const url =
         '${Urls.urlApiAzure}/Categorias/categoria-by-filial/${GlobalKeys.codFilial}';
+
     try {
       final response = await http.get(Uri.parse(url));
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+
+        final agora = TimeOfDay.now();
+
+        final categoriasFiltradas =
+            data.map((e) => Categoria.fromJson(e)).where((categoria) {
+          final inicio = categoria.horaInicio;
+          final fim = categoria.horaFim;
+
+          // Sem horário = sempre disponível
+          if (inicio == null || fim == null) {
+            return true;
+          }
+
+          final horaInicio = _parseHorario(inicio);
+          final horaFim = _parseHorario(fim);
+
+          final agoraMin = agora.hour * 60 + agora.minute;
+
+          final inicioMin = horaInicio.hour * 60 + horaInicio.minute;
+
+          final fimMin = horaFim.hour * 60 + horaFim.minute;
+
+          // Horário normal (08h -> 18h)
+          if (inicioMin <= fimMin) {
+            return agoraMin >= inicioMin && agoraMin <= fimMin;
+          }
+
+          // Horário virando madrugada
+          // Ex: 18h -> 02h
+          return agoraMin >= inicioMin || agoraMin <= fimMin;
+        }).toList();
+
         setState(() {
-          categorias = data.map((e) => Categoria.fromJson(e)).toList();
+          categorias = categoriasFiltradas;
         });
       } else {
         print('Erro ao carregar categorias: ${response.statusCode}');
@@ -98,6 +157,15 @@ class _HomePageState extends State<HomePage> {
         isLoading = false;
       });
     }
+  }
+
+  TimeOfDay _parseHorario(String hora) {
+    final partes = hora.split(':');
+
+    return TimeOfDay(
+      hour: int.parse(partes[0]),
+      minute: int.parse(partes[1]),
+    );
   }
 
   @override

@@ -97,15 +97,70 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         // },
         "split": [],
       };
+
   Future<void> _pagarCaixa() async {
     if (_pagando) return;
+
     setState(() => _pagando = true);
 
-    // ... sua lógica de pagamento aqui ...
+    try {
+      GlobalKeys.pagtoPIX = false;
 
-    // Após pagamento bem-sucedido, abre o dialog de avaliação
-    await _mostrarAvaliacaoDialog();
+      final carrinho = Provider.of<CarrinhoModel>(
+        context,
+        listen: false,
+      );
+
+      /// 🔥 1. GERA COMANDA
+      final String comanda = await gerarComandaLivreWebApp();
+
+      /// 🧾 2. SALVA PEDIDO NO FIREBASE
+      await enviarPedidoFireBase(
+        comanda: comanda,
+        carrinho: carrinho,
+        context: context,
+      );
+      final produtos = carrinho.itens.map((itemCarrinho) {
+        final produto = itemCarrinho.produto;
+        produto.quantidade = itemCarrinho.quantidade;
+        return produto;
+      }).toList();
+
+      final sucesso = await baixarQuantidadeProdutos(
+        produtos: produtos,
+      );
+
+      if (!sucesso) {
+        throw Exception('Erro ao baixar quantidade dos produtos');
+      }
+
+      carrinho.limpar();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SenhaComandaPage(
+            senha: int.parse(comanda),
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Erro ao pagar no caixa: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _pagando = false);
+      }
+    }
   }
+  // Future<void> _pagarCaixa() async {
+  //   if (_pagando) return;
+  //   setState(() => _pagando = true);
+
+  //   // ... sua lógica de pagamento aqui ...
+
+  //   // Após pagamento bem-sucedido, abre o dialog de avaliação
+  //   await _mostrarAvaliacaoDialog();
+  // }
 
   Future<void> _mostrarAvaliacaoDialog() async {
     int notaSelecionada = 0;
@@ -1561,128 +1616,377 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 8),
                         if (_qrCodeBase64 == null)
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.8,
+                            height: MediaQuery.of(context).size.height * 0.82,
                             child: Stack(
                               children: [
-                                // Conteúdo centralizado
+                                // Background glow
+                                Positioned(
+                                  top: -120,
+                                  right: -80,
+                                  child: Container(
+                                    width: 240,
+                                    height: 240,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.orange.withOpacity(0.10),
+                                    ),
+                                  ),
+                                ),
+
+                                Positioned(
+                                  bottom: -100,
+                                  left: -80,
+                                  child: Container(
+                                    width: 220,
+                                    height: 220,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.amber.withOpacity(0.08),
+                                    ),
+                                  ),
+                                ),
+
+                                // Conteúdo
                                 Center(
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 24.0),
+                                        horizontal: 26),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
                                       children: [
+                                        // Ícone
+                                        Container(
+                                          width: 92,
+                                          height: 92,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(30),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.orange.shade400,
+                                                Colors.orange.shade200,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.orange
+                                                    .withOpacity(0.25),
+                                                blurRadius: 30,
+                                                offset: const Offset(0, 12),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.payments_rounded,
+                                            size: 44,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 18),
+
+                                        // Título
                                         const Text(
-                                          'Opções de Pagamento',
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          'Finalizar compra',
                                           textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 40),
-                                        ElevatedButton.icon(
-                                          icon: const Icon(Icons.payments,
-                                              size: 26),
-                                          onPressed: () {},
-                                          // _gerarPix,
-                                          label: const Text(
-                                            'Pagar Agora',
-                                            style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.green[700],
-                                            foregroundColor: Colors.white,
-                                            minimumSize:
-                                                const Size.fromHeight(55),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
+                                          style: TextStyle(
+                                            fontSize: 30,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.8,
+                                            color: Color(0xFF1F1F1F),
                                           ),
                                         ),
+
+                                        const SizedBox(height: 10),
+
+                                        Text(
+                                          'Finalize seu pedido escolhendo\ncomo deseja realizar o pagamento',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            height: 1.5,
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+
                                         const SizedBox(height: 20),
-                                        Row(
-                                          children: const [
-                                            Expanded(
-                                                child: Divider(thickness: 1)),
-                                            Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: 10),
-                                              child: Text("OU"),
+
+                                        // Botão PIX (opcional)
+                                        // _buildPaymentButton(...)
+
+                                        // Botão Caixa
+                                        AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 280),
+                                          curve: Curves.easeOutCubic,
+                                          width: double.infinity,
+                                          height: 78,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(26),
+                                            gradient: const LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                Color(0xFF1F2937),
+                                                Color(0xFF374151),
+                                              ],
                                             ),
-                                            Expanded(
-                                                child: Divider(thickness: 1)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        ElevatedButton(
-                                          onPressed:
-                                              _pagando ? null : _pagarCaixa,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.blueGrey[700],
-                                            foregroundColor: Colors.white,
-                                            minimumSize:
-                                                const Size.fromHeight(55),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: Colors.white
+                                                  .withOpacity(0.08),
+                                              width: 1.2,
                                             ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.22),
+                                                blurRadius: 28,
+                                                offset: const Offset(0, 14),
+                                              ),
+                                              BoxShadow(
+                                                color: Colors.white
+                                                    .withOpacity(0.03),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, -2),
+                                              ),
+                                            ],
                                           ),
-                                          child: _pagando
-                                              ? const SizedBox(
-                                                  height: 26,
-                                                  width: 26,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 3,
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                                Color>(
-                                                            Colors.white),
-                                                  ),
-                                                )
-                                              : Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: const [
-                                                    Icon(Icons.store, size: 26),
-                                                    SizedBox(width: 10),
-                                                    Text(
-                                                      'Pagar no Caixa',
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(26),
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              child: InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(26),
+                                                splashColor: Colors.white
+                                                    .withOpacity(0.05),
+                                                highlightColor: Colors.white
+                                                    .withOpacity(0.03),
+                                                onTap: _pagando
+                                                    ? null
+                                                    : _pagarCaixa,
+                                                child: Stack(
+                                                  children: [
+                                                    Positioned(
+                                                      top: -20,
+                                                      right: -10,
+                                                      child: Container(
+                                                        width: 90,
+                                                        height: 90,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          color: Colors.white
+                                                              .withOpacity(
+                                                                  0.04),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 18,
+                                                        vertical: 14,
+                                                      ),
+                                                      child: Center(
+                                                        child: _pagando
+                                                            ? const SizedBox(
+                                                                height: 28,
+                                                                width: 28,
+                                                                child:
+                                                                    CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      3,
+                                                                  valueColor: AlwaysStoppedAnimation<
+                                                                          Color>(
+                                                                      Colors
+                                                                          .white),
+                                                                ),
+                                                              )
+                                                            : Row(
+                                                                children: [
+                                                                  Container(
+                                                                    width: 48,
+                                                                    height: 48,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              16),
+                                                                      gradient:
+                                                                          LinearGradient(
+                                                                        colors: [
+                                                                          Colors
+                                                                              .white
+                                                                              .withOpacity(0.16),
+                                                                          Colors
+                                                                              .white
+                                                                              .withOpacity(0.08),
+                                                                        ],
+                                                                      ),
+                                                                      border:
+                                                                          Border
+                                                                              .all(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withOpacity(0.10),
+                                                                      ),
+                                                                    ),
+                                                                    child:
+                                                                        const Icon(
+                                                                      Icons
+                                                                          .storefront_rounded,
+                                                                      color: Colors
+                                                                          .white,
+                                                                      size: 24,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          16),
+                                                                  Expanded(
+                                                                    child:
+                                                                        Column(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .center,
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        const Text(
+                                                                          'Pagar no caixa',
+                                                                          maxLines:
+                                                                              1,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                          style:
+                                                                              TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            fontSize:
+                                                                                17,
+                                                                            fontWeight:
+                                                                                FontWeight.w800,
+                                                                            letterSpacing:
+                                                                                -0.4,
+                                                                            height:
+                                                                                1,
+                                                                          ),
+                                                                        ),
+                                                                        const SizedBox(
+                                                                            height:
+                                                                                6),
+                                                                        Text(
+                                                                          'Enviar pedido para a comanda',
+                                                                          maxLines:
+                                                                              1,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                          style:
+                                                                              TextStyle(
+                                                                            color:
+                                                                                Colors.white.withOpacity(0.68),
+                                                                            fontSize:
+                                                                                12.5,
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
+                                                                            height:
+                                                                                1,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          12),
+                                                                  Container(
+                                                                    width: 36,
+                                                                    height: 36,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      color: Colors
+                                                                          .white
+                                                                          .withOpacity(
+                                                                              0.08),
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              14),
+                                                                    ),
+                                                                    child:
+                                                                        const Icon(
+                                                                      Icons
+                                                                          .arrow_forward_ios_rounded,
+                                                                      size: 16,
+                                                                      color: Colors
+                                                                          .white70,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                        )
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // const SizedBox(height: 18),
+
+                                        // Text(
+                                        //   'Você poderá concluir o pagamento diretamente no atendimento.',
+                                        //   textAlign: TextAlign.center,
+                                        //   style: TextStyle(
+                                        //     fontSize: 13,
+                                        //     color: Colors.grey.shade500,
+                                        //     fontWeight: FontWeight.w500,
+                                        //   ),
+                                        // ),
                                       ],
                                     ),
                                   ),
                                 ),
 
-                                // Botão de voltar
+                                // Voltar
                                 Positioned(
                                   top: 0,
-                                  left: 0,
+                                  left: 4,
                                   child: SafeArea(
-                                    child: IconButton(
-                                      icon: const Icon(Icons.arrow_back,
-                                          size: 28),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
+                                    child: Container(
+                                      margin: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.85),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.06),
+                                            blurRadius: 14,
+                                          ),
+                                        ],
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.arrow_back_ios_new_rounded,
+                                          size: 22,
+                                          color: Colors.black87,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ),

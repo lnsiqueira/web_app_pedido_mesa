@@ -1539,7 +1539,9 @@ class _ItensPageState extends State<ItensPage> {
                           final produto = produtos[index];
 
                           return GestureDetector(
-                            onTap: () => _mostrarPopupObs(produto),
+                            onTap: produto.preco == null
+                                ? null
+                                : () => _mostrarPopupObs(produto),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(18),
                               child: Stack(

@@ -252,7 +252,17 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final carrinho = Provider.of<CarrinhoModel>(context);
 
     return Scaffold(
-        appBar: AppBar(title: const Text('')),
+        appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            title: const Text('')),
         body: carrinho.itens.isEmpty
             ? Center(
                 child: Column(
@@ -382,10 +392,10 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                     }).toList(),
                                   ),
 
-                                const SizedBox(height: 12),
-                                Text(
-                                    'qtd disponivel: ${item.produto.quantidadeDisponivel.toString()}'),
-                                Text('id : ${item.produto.id.toString()}'),
+                                // const SizedBox(height: 12),
+                                // Text(
+                                //     'qtd disponivel: ${item.produto.quantidadeDisponivel.toString()}'),
+                                // Text('id : ${item.produto.id.toString()}'),
 
                                 /// Quantidade
                                 Row(
