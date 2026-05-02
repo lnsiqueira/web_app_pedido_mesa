@@ -16,7 +16,7 @@ dependencies:
   cloud_firestore: 5.6.12
   firebase_core: 3.15.2
   firebase_storage: 12.4.10
-  intl: 0.20.2
+  intl: 
   provider: 6.1.5
   uuid: 3.0.7
   http: 1.4.0
