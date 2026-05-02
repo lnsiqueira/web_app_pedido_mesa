@@ -658,24 +658,6 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
 
                       SizedBox(height: isSmallScreen ? 24 : 36),
 
-                      // Campo Mesa
-                      // _buildModernTextField(
-                      //   label: AppLocalizations.of(context)!.table,
-                      //   controller: widget.mesaController,
-                      //   hintText:
-                      //       AppLocalizations.of(context)!.enterTableNumber,
-                      //   icon: Icons.table_restaurant,
-                      //   isSmallScreen: isSmallScreen,
-                      //   validator: (value) {
-                      //     if (value == null || value.isEmpty) {
-                      //       return AppLocalizations.of(context)!
-                      //           .enterTableNumber;
-                      //     }
-                      //     return null;
-                      //   },
-                      // ),
-
-                      // SizedBox(height: isSmallScreen ? 20 : 28),
                       _buildComandaInput(isSmallScreen),
 
                       SizedBox(height: isSmallScreen ? 28 : 36),
@@ -774,109 +756,273 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
     );
   }
 
+  // Widget _buildComandaInput(bool isSmallScreen) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         'Comanda',
+  //         style: TextStyle(
+  //           fontSize: isSmallScreen ? 15 : 17,
+  //           fontWeight: FontWeight.w700,
+  //           color: Colors.brown.shade900,
+  //           letterSpacing: -0.3,
+  //         ),
+  //       ),
+
+  //       SizedBox(height: isSmallScreen ? 14 : 18),
+
+  //       // DISPLAY
+  //       Container(
+  //         width: double.infinity,
+  //         padding: EdgeInsets.symmetric(
+  //           horizontal: 20,
+  //           vertical: isSmallScreen ? 18 : 22,
+  //         ),
+  //         decoration: BoxDecoration(
+  //           color: Colors.orange.shade50,
+  //           borderRadius: BorderRadius.circular(20),
+  //           border: Border.all(
+  //             color: Colors.orange.shade200,
+  //             width: 2,
+  //           ),
+  //         ),
+  //         child: Text(
+  //           widget.comandaController.text.isEmpty
+  //               ? 'Digite a comanda'
+  //               : widget.comandaController.text,
+  //           textAlign: TextAlign.center,
+  //           style: TextStyle(
+  //             fontSize: isSmallScreen ? 28 : 34,
+  //             fontWeight: FontWeight.w800,
+  //             color: widget.comandaController.text.isEmpty
+  //                 ? Colors.orange.shade300
+  //                 : Colors.brown.shade900,
+  //             letterSpacing: 2,
+  //           ),
+  //         ),
+  //       ),
+
+  //       SizedBox(height: isSmallScreen ? 18 : 24),
+
+  //       // TECLADO
+  //       GridView.count(
+  //         crossAxisCount: 3,
+  //         shrinkWrap: true,
+  //         physics: const NeverScrollableScrollPhysics(),
+  //         mainAxisSpacing: 12,
+  //         crossAxisSpacing: 12,
+  //         childAspectRatio: 1.2,
+  //         children: [
+  //           ...List.generate(9, (index) {
+  //             final number = '${index + 1}';
+
+  //             return _buildKeyboardButton(
+  //               text: number,
+  //               onTap: () {
+  //                 setState(() {
+  //                   widget.comandaController.text += number;
+  //                 });
+  //               },
+  //             );
+  //           }),
+  //           _buildKeyboardButton(
+  //             icon: Icons.backspace_rounded,
+  //             onTap: () {
+  //               if (widget.comandaController.text.isNotEmpty) {
+  //                 setState(() {
+  //                   widget.comandaController.text =
+  //                       widget.comandaController.text.substring(
+  //                     0,
+  //                     widget.comandaController.text.length - 1,
+  //                   );
+  //                 });
+  //               }
+  //             },
+  //           ),
+  //           _buildKeyboardButton(
+  //             text: '0',
+  //             onTap: () {
+  //               setState(() {
+  //                 widget.comandaController.text += '0';
+  //               });
+  //             },
+  //           ),
+  //           _buildKeyboardButton(
+  //             icon: Icons.clear_rounded,
+  //             onTap: () {
+  //               setState(() {
+  //                 widget.comandaController.clear();
+  //               });
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
   Widget _buildComandaInput(bool isSmallScreen) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Comanda',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 15 : 17,
-            fontWeight: FontWeight.w700,
-            color: Colors.brown.shade900,
-            letterSpacing: -0.3,
-          ),
-        ),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-        SizedBox(height: isSmallScreen ? 14 : 18),
+    // Responsividade real
+    final isVerySmall = screenWidth <= 350;
+    final isCompactHeight = screenHeight <= 700;
 
-        // DISPLAY
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: isSmallScreen ? 18 : 22,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.orange.shade200,
-              width: 2,
-            ),
-          ),
-          child: Text(
-            widget.comandaController.text.isEmpty
-                ? 'Digite a comanda'
-                : widget.comandaController.text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 28 : 34,
-              fontWeight: FontWeight.w800,
-              color: widget.comandaController.text.isEmpty
-                  ? Colors.orange.shade300
-                  : Colors.brown.shade900,
-              letterSpacing: 2,
-            ),
-          ),
-        ),
+    // Tamanhos adaptativos
+    final titleSize = isVerySmall ? 14.0 : 17.0;
+    final displayFont = isVerySmall ? 24.0 : 34.0;
+    final keyboardSpacing = isVerySmall ? 8.0 : 12.0;
+    final keyboardAspect = isVerySmall
+        ? 1.05
+        : isCompactHeight
+            ? 1.12
+            : 1.2;
 
-        SizedBox(height: isSmallScreen ? 18 : 24),
-
-        // TECLADO
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.2,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ...List.generate(9, (index) {
-              final number = '${index + 1}';
+            // Text(
+            //   'Comanda',
+            //   style: TextStyle(
+            //     fontSize: titleSize,
+            //     fontWeight: FontWeight.w700,
+            //     color: Colors.brown.shade900,
+            //     letterSpacing: -0.3,
+            //   ),
+            // ),
 
-              return _buildKeyboardButton(
-                text: number,
-                onTap: () {
-                  setState(() {
-                    widget.comandaController.text += number;
-                  });
-                },
-              );
-            }),
-            _buildKeyboardButton(
-              icon: Icons.backspace_rounded,
-              onTap: () {
-                if (widget.comandaController.text.isNotEmpty) {
-                  setState(() {
-                    widget.comandaController.text =
-                        widget.comandaController.text.substring(
-                      0,
-                      widget.comandaController.text.length - 1,
-                    );
-                  });
+            // SizedBox(height: isVerySmall ? 10 : 16),
+
+            // DISPLAY
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: double.infinity,
+              constraints: BoxConstraints(
+                minHeight: isVerySmall ? 78 : 92,
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: isVerySmall ? 14 : 20,
+                vertical: isVerySmall ? 16 : 20,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange.shade50,
+                    Colors.orange.shade100.withOpacity(0.55),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(
+                  isVerySmall ? 18 : 22,
+                ),
+                border: Border.all(
+                  color: Colors.orange.shade200,
+                  width: 1.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  widget.comandaController.text.isEmpty
+                      ? 'Digite a comanda'
+                      : widget.comandaController.text,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: displayFont,
+                    fontWeight: FontWeight.w800,
+                    color: widget.comandaController.text.isEmpty
+                        ? Colors.orange.shade300
+                        : Colors.brown.shade900,
+                    letterSpacing:
+                        widget.comandaController.text.length > 6 ? 1 : 2,
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: isVerySmall ? 14 : 22),
+
+            // TECLADO
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 12,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: keyboardSpacing,
+                crossAxisSpacing: keyboardSpacing,
+                childAspectRatio: keyboardAspect,
+              ),
+              itemBuilder: (context, index) {
+                if (index < 9) {
+                  final number = '${index + 1}';
+
+                  return _buildKeyboardButton(
+                    text: number,
+                    isVerySmall: isVerySmall,
+                    onTap: () {
+                      setState(() {
+                        widget.comandaController.text += number;
+                      });
+                    },
+                  );
                 }
-              },
-            ),
-            _buildKeyboardButton(
-              text: '0',
-              onTap: () {
-                setState(() {
-                  widget.comandaController.text += '0';
-                });
-              },
-            ),
-            _buildKeyboardButton(
-              icon: Icons.clear_rounded,
-              onTap: () {
-                setState(() {
-                  widget.comandaController.clear();
-                });
+
+                if (index == 9) {
+                  return _buildKeyboardButton(
+                    icon: Icons.backspace_rounded,
+                    isVerySmall: isVerySmall,
+                    onTap: () {
+                      if (widget.comandaController.text.isNotEmpty) {
+                        setState(() {
+                          widget.comandaController.text =
+                              widget.comandaController.text.substring(
+                            0,
+                            widget.comandaController.text.length - 1,
+                          );
+                        });
+                      }
+                    },
+                  );
+                }
+
+                if (index == 10) {
+                  return _buildKeyboardButton(
+                    text: '0',
+                    isVerySmall: isVerySmall,
+                    onTap: () {
+                      setState(() {
+                        widget.comandaController.text += '0';
+                      });
+                    },
+                  );
+                }
+
+                return _buildKeyboardButton(
+                  icon: Icons.clear_rounded,
+                  isVerySmall: isVerySmall,
+                  onTap: () {
+                    setState(() {
+                      widget.comandaController.clear();
+                    });
+                  },
+                );
               },
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -884,48 +1030,108 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
     String? text,
     IconData? icon,
     required VoidCallback onTap,
+    bool isVerySmall = false,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          isVerySmall ? 18 : 22,
+        ),
         onTap: onTap,
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(
+              isVerySmall ? 18 : 22,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                Colors.orange.shade50,
+              ],
+            ),
             border: Border.all(
-              color: Colors.orange.shade200,
-              width: 1.5,
+              color: Colors.orange.shade100,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
+                color: Colors.orange.withOpacity(0.06),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Center(
-            child: icon != null
-                ? Icon(
-                    icon,
-                    size: 28,
-                    color: Colors.orange.shade700,
-                  )
-                : Text(
-                    text!,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.brown.shade900,
+            child: text != null
+                ? FittedBox(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: isVerySmall ? 24 : 30,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.brown.shade900,
+                      ),
                     ),
+                  )
+                : Icon(
+                    icon,
+                    size: isVerySmall ? 24 : 30,
+                    color: Colors.brown.shade900,
                   ),
           ),
         ),
       ),
     );
   }
+
+  // Widget _buildKeyboardButton({
+  //   String? text,
+  //   IconData? icon,
+  //   required VoidCallback onTap,
+  // }) {
+  //   return Material(
+  //     color: Colors.transparent,
+  //     child: InkWell(
+  //       borderRadius: BorderRadius.circular(20),
+  //       onTap: onTap,
+  //       child: Ink(
+  //         decoration: BoxDecoration(
+  //           color: Colors.white,
+  //           borderRadius: BorderRadius.circular(20),
+  //           border: Border.all(
+  //             color: Colors.orange.shade200,
+  //             width: 1.5,
+  //           ),
+  //           boxShadow: [
+  //             BoxShadow(
+  //               color: Colors.black.withOpacity(0.04),
+  //               blurRadius: 10,
+  //               offset: const Offset(0, 4),
+  //             ),
+  //           ],
+  //         ),
+  //         child: Center(
+  //           child: icon != null
+  //               ? Icon(
+  //                   icon,
+  //                   size: 28,
+  //                   color: Colors.orange.shade700,
+  //                 )
+  //               : Text(
+  //                   text!,
+  //                   style: TextStyle(
+  //                     fontSize: 28,
+  //                     fontWeight: FontWeight.w800,
+  //                     color: Colors.brown.shade900,
+  //                   ),
+  //                 ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildModernTextField({
     required String label,
@@ -1039,13 +1245,13 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
             isLoading: _isLoading,
             isSmallScreen: isSmallScreen,
           ),
-          const SizedBox(height: 12),
-          _buildModernButton(
-            text: AppLocalizations.of(context)!.cancel,
-            onPressed: () => Navigator.pop(context),
-            isPrimary: false,
-            isSmallScreen: isSmallScreen,
-          ),
+          // const SizedBox(height: 12),
+          // _buildModernButton(
+          //   text: AppLocalizations.of(context)!.cancel,
+          //   onPressed: () => Navigator.pop(context),
+          //   isPrimary: false,
+          //   isSmallScreen: isSmallScreen,
+          // ),
         ],
       );
     } else {
@@ -1053,13 +1259,13 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          _buildModernButton(
-            text: AppLocalizations.of(context)!.cancel,
-            onPressed: () => Navigator.pop(context),
-            isPrimary: false,
-            isSmallScreen: isSmallScreen,
-          ),
-          const SizedBox(width: 20),
+          // _buildModernButton(
+          //   text: AppLocalizations.of(context)!.cancel,
+          //   onPressed: () => Navigator.pop(context),
+          //   isPrimary: false,
+          //   isSmallScreen: isSmallScreen,
+          // ),
+          // const SizedBox(width: 20),
           _buildModernButton(
             text: AppLocalizations.of(context)!.confirm,
             onPressed: _isLoading ? null : _handleConfirm,
@@ -1177,6 +1383,9 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
+          debugPrint('STATUS CODE: ${response.statusCode}');
+          debugPrint('BODY: ${response.body}');
+          debugPrint('DATA: $data');
 
           if (data['Id'] != 0 && data['Status'] != null) {
             // Navigator.pop(context, {

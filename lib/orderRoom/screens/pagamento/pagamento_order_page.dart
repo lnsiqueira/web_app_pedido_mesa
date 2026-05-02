@@ -98,54 +98,256 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         "split": [],
       };
 
+  // Future<void> _pagarCaixa() async {
+  //   if (_pagando) return;
+
+  //   setState(() => _pagando = true);
+
+  //   try {
+  //     // var idPedido = await uploadPedido();
+
+  //     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+  //     final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
+
+  //     List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
+  //       List<Map<String, dynamic>> observacoesJson = [];
+
+  //       if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+  //         for (var obsItem in item.produto.obs!) {
+  //           if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+  //             observacoesJson.add({
+  //               "Obs": obsItem.titulo,
+  //               "Preco": 0.0,
+  //               "PluAdd": obsItem.pluAdd ?? 0,
+  //               "Modificador": 'COM',
+  //             });
+  //           } else if (obsItem.modificador != null &&
+  //               (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+  //             observacoesJson.add({
+  //               "Obs": obsItem.titulo,
+  //               "Preco": obsItem.preco ?? 0.0,
+  //               "PluAdd": obsItem.pluAdd ?? 0,
+  //               "Modificador": obsItem.modificador,
+  //             });
+  //           }
+  //         }
+  //       }
+
+  //       return {
+  //         "IdProduto": item.produto.plu,
+  //         "Preco": item.produto.preco,
+  //         "Qtde": item.quantidade,
+  //         "Observacoes": observacoesJson,
+  //       };
+  //     }).toList();
+
+  //     var urlBratter = Urls.urlApiBratter;
+  //     final encodedUrl = Uri.encodeComponent(urlBratter);
+
+  //     final url =
+  //         '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+
+  //     var request = http.Request('POST', Uri.parse(url));
+  //     request.headers.addAll({
+  //       'Content-Type': 'application/json',
+  //       'Accept': 'application/json',
+  //     });
+
+  //     request.body = json.encode({
+  //       "IdComanda": int.parse(mesaComanda.comanda),
+  //       "IdMesa": int.parse(mesaComanda.mesa),
+  //       "usuario": '',
+  //       "Itens": itemsJson,
+  //       "Uuid": '123',
+  //       "Terminal": 301,
+  //     });
+
+  //     final response = await request.send();
+  //     if (response.statusCode == 200) {}
+  //   } catch (e) {
+  //     debugPrint('Erro ao pagar no caixa: $e');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _pagando = false);
+  //     }
+  //   }
+  // }
   Future<void> _pagarCaixa() async {
     if (_pagando) return;
 
     setState(() => _pagando = true);
 
     try {
-      GlobalKeys.pagtoPIX = false;
+      final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
 
-      final carrinho = Provider.of<CarrinhoModel>(
-        context,
-        listen: false,
+      final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
+
+      debugPrint('MESA: ${mesaComanda.mesa}');
+      debugPrint('COMANDA: ${mesaComanda.comanda}');
+
+      // final idMesa = int.tryParse(
+      //   mesaComanda.mesa.toString(),
+      // );
+      final idMesa = 2;
+
+      final idComanda = int.tryParse(
+        mesaComanda.comanda.toString(),
       );
 
-      /// 🔥 1. GERA COMANDA
-      final String comanda = await gerarComandaLivreWebApp();
-
-      /// 🧾 2. SALVA PEDIDO NO FIREBASE
-      await enviarPedidoFireBase(
-        comanda: comanda,
-        carrinho: carrinho,
-        context: context,
-      );
-      final produtos = carrinho.itens.map((itemCarrinho) {
-        final produto = itemCarrinho.produto;
-        produto.quantidade = itemCarrinho.quantidade;
-        return produto;
-      }).toList();
-
-      final sucesso = await baixarQuantidadeProdutos(
-        produtos: produtos,
-      );
-
-      if (!sucesso) {
-        throw Exception('Erro ao baixar quantidade dos produtos');
+      if (idMesa == null || idComanda == null) {
+        throw Exception(
+          'Mesa ou comanda inválida',
+        );
       }
 
-      carrinho.limpar();
+      List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
+        // List<Map<String, dynamic>> observacoesJson = [];
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SenhaComandaPage(
-            senha: int.parse(comanda),
-          ),
-        ),
+        // if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+        //   for (var obsItem in item.produto.obs!) {
+        //     if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+        //       observacoesJson.add({
+        //         "Obs": obsItem.titulo,
+        //         "Preco": 0.0,
+        //         "PluAdd": obsItem.pluAdd ?? 0,
+        //         "Modificador": 'COM',
+        //       });
+        //     } else if (obsItem.modificador != null &&
+        //         (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+        //       observacoesJson.add({
+        //         "Obs": obsItem.titulo,
+        //         "Preco": obsItem.preco ?? 0.0,
+        //         "PluAdd": obsItem.pluAdd ?? 0,
+        //         "Modificador": obsItem.modificador,
+        //       });
+        //     }
+        //   }
+        // }
+        List<Map<String, dynamic>> observacoesJson = [];
+
+// flag para saber se já adicionou
+        bool adicionouPedidoSite = false;
+
+        if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+          for (var obsItem in item.produto.obs!) {
+            if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+              // texto original
+              observacoesJson.add({
+                "Obs": obsItem.titulo,
+                "Preco": 0.0,
+                "PluAdd": obsItem.pluAdd ?? 0,
+                "Modificador": 'COM',
+              });
+
+              // adiciona apenas uma vez
+              if (!adicionouPedidoSite) {
+                observacoesJson.add({
+                  "Obs": 'Pedido feito pelo site',
+                  "Preco": 0.0,
+                  "PluAdd": 0,
+                  "Modificador": 'COM',
+                });
+
+                adicionouPedidoSite = true;
+              }
+            } else if (obsItem.modificador != null &&
+                (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+              observacoesJson.add({
+                "Obs": obsItem.titulo,
+                "Preco": obsItem.preco ?? 0.0,
+                "PluAdd": obsItem.pluAdd ?? 0,
+                "Modificador": obsItem.modificador,
+              });
+            }
+          }
+        }
+
+// se não tinha nenhuma observação de texto,
+// adiciona mesmo assim
+        if (!adicionouPedidoSite) {
+          observacoesJson.add({
+            "Obs": 'Pedido feito pelo site',
+            "Preco": 0.0,
+            "PluAdd": 0,
+            "Modificador": 'COM',
+          });
+        }
+        // if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
+        //   for (var obsItem in item.produto.obs!) {
+        //     if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
+        //       // texto original
+        //       observacoesJson.add({
+        //         "Obs": obsItem.titulo,
+        //         "Preco": 0.0,
+        //         "PluAdd": obsItem.pluAdd ?? 0,
+        //         "Modificador": 'COM',
+        //       });
+
+        //       // texto fixo para teste
+        //       observacoesJson.add({
+        //         "Obs": 'Pedido feito pelo site',
+        //         "Preco": 0.0,
+        //         "PluAdd": obsItem.pluAdd ?? 0,
+        //         "Modificador": 'COM',
+        //       });
+        //     } else if (obsItem.modificador != null &&
+        //         (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
+        //       observacoesJson.add({
+        //         "Obs": obsItem.titulo,
+        //         "Preco": obsItem.preco ?? 0.0,
+        //         "PluAdd": obsItem.pluAdd ?? 0,
+        //         "Modificador": obsItem.modificador,
+        //       });
+        //     }
+        //   }
+        // }
+        return {
+          "IdProduto": item.produto.plu,
+          "Preco": item.produto.preco,
+          "Qtde": item.quantidade,
+          "Observacoes": observacoesJson,
+        };
+      }).toList();
+
+      var urlBratter = Urls.urlApiBratter;
+      final encodedUrl = Uri.encodeComponent(urlBratter);
+
+      final url =
+          '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+
+      final body = {
+        "IdComanda": idComanda,
+        "IdMesa": idMesa,
+        "usuario": '',
+        "Itens": itemsJson,
+        "Uuid": const Uuid().v4(),
+        "Terminal": 301,
+      };
+
+      debugPrint('BODY ENVIO: ${jsonEncode(body)}');
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
       );
-    } catch (e) {
+
+      debugPrint('STATUS: ${response.statusCode}');
+      debugPrint('RESPONSE: ${response.body}');
+
+      if (response.statusCode == 200) {
+        debugPrint('Pedido enviado com sucesso');
+      } else {
+        throw Exception(
+          'Erro API: ${response.statusCode}',
+        );
+      }
+    } catch (e, stack) {
       debugPrint('Erro ao pagar no caixa: $e');
+      debugPrintStack(stackTrace: stack);
     } finally {
       if (mounted) {
         setState(() => _pagando = false);

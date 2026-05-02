@@ -402,8 +402,15 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
+                                    // Text(
+                                    //   'Qtd: ${item.quantidade}',
+                                    //   style: TextStyle(
+                                    //     fontSize: 14,
+                                    //     color: Colors.grey.shade700,
+                                    //   ),
+                                    // ),
                                     Text(
-                                      'Qtd: ${item.quantidade}',
+                                      '',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey.shade700,
