@@ -97,81 +97,39 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         // },
         "split": [],
       };
+  Future<void> _salvarPedidoFirebase({
+    required int nota,
+    required List<String> tags,
+    required String observacao,
+  }) async {
+    final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+    final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
 
-  // Future<void> _pagarCaixa() async {
-  //   if (_pagando) return;
+    final itens = carrinho.itens.map((item) {
+      return {
+        "produto": item.produto.desProduto,
+        "plu": item.produto.plu,
+        "preco": item.produto.preco,
+        "quantidade": item.quantidade,
+      };
+    }).toList();
 
-  //   setState(() => _pagando = true);
+    await _firestore.collection('Pedidos_Web').add({
+      "codFilial": GlobalKeys.codFilial,
+      // "descricaoFilial": GlobalKeys.descricaoFilial,
+      "mesa": numeroMesa,
+      "comanda": mesaComanda.comanda,
+      "itens": itens,
+      "avaliacao": {
+        "nota": nota,
+        "tags": tags,
+        "observacao": observacao,
+      },
+      "total": carrinho.totalGeral,
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+  }
 
-  //   try {
-  //     // var idPedido = await uploadPedido();
-
-  //     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-  //     final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
-
-  //     List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
-  //       List<Map<String, dynamic>> observacoesJson = [];
-
-  //       if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
-  //         for (var obsItem in item.produto.obs!) {
-  //           if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
-  //             observacoesJson.add({
-  //               "Obs": obsItem.titulo,
-  //               "Preco": 0.0,
-  //               "PluAdd": obsItem.pluAdd ?? 0,
-  //               "Modificador": 'COM',
-  //             });
-  //           } else if (obsItem.modificador != null &&
-  //               (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
-  //             observacoesJson.add({
-  //               "Obs": obsItem.titulo,
-  //               "Preco": obsItem.preco ?? 0.0,
-  //               "PluAdd": obsItem.pluAdd ?? 0,
-  //               "Modificador": obsItem.modificador,
-  //             });
-  //           }
-  //         }
-  //       }
-
-  //       return {
-  //         "IdProduto": item.produto.plu,
-  //         "Preco": item.produto.preco,
-  //         "Qtde": item.quantidade,
-  //         "Observacoes": observacoesJson,
-  //       };
-  //     }).toList();
-
-  //     var urlBratter = Urls.urlApiBratter;
-  //     final encodedUrl = Uri.encodeComponent(urlBratter);
-
-  //     final url =
-  //         '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
-
-  //     var request = http.Request('POST', Uri.parse(url));
-  //     request.headers.addAll({
-  //       'Content-Type': 'application/json',
-  //       'Accept': 'application/json',
-  //     });
-
-  //     request.body = json.encode({
-  //       "IdComanda": int.parse(mesaComanda.comanda),
-  //       "IdMesa": int.parse(mesaComanda.mesa),
-  //       "usuario": '',
-  //       "Itens": itemsJson,
-  //       "Uuid": '123',
-  //       "Terminal": 301,
-  //     });
-
-  //     final response = await request.send();
-  //     if (response.statusCode == 200) {}
-  //   } catch (e) {
-  //     debugPrint('Erro ao pagar no caixa: $e');
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _pagando = false);
-  //     }
-  //   }
-  // }
   Future<void> _pagarCaixa() async {
     if (_pagando) return;
 
@@ -188,7 +146,10 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       // final idMesa = int.tryParse(
       //   mesaComanda.mesa.toString(),
       // );
-      final idMesa = 2;
+      final idMesa = int.tryParse(
+        numeroMesa.toString(),
+      );
+      // final idMesa = 2;
 
       final idComanda = int.tryParse(
         mesaComanda.comanda.toString(),
@@ -201,28 +162,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       }
 
       List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
-        // List<Map<String, dynamic>> observacoesJson = [];
-
-        // if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
-        //   for (var obsItem in item.produto.obs!) {
-        //     if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
-        //       observacoesJson.add({
-        //         "Obs": obsItem.titulo,
-        //         "Preco": 0.0,
-        //         "PluAdd": obsItem.pluAdd ?? 0,
-        //         "Modificador": 'COM',
-        //       });
-        //     } else if (obsItem.modificador != null &&
-        //         (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
-        //       observacoesJson.add({
-        //         "Obs": obsItem.titulo,
-        //         "Preco": obsItem.preco ?? 0.0,
-        //         "PluAdd": obsItem.pluAdd ?? 0,
-        //         "Modificador": obsItem.modificador,
-        //       });
-        //     }
-        //   }
-        // }
         List<Map<String, dynamic>> observacoesJson = [];
 
 // flag para saber se já adicionou
@@ -262,8 +201,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           }
         }
 
-// se não tinha nenhuma observação de texto,
-// adiciona mesmo assim
+        // adiciona mesmo assim
         if (!adicionouPedidoSite) {
           observacoesJson.add({
             "Obs": 'Pedido feito pelo site',
@@ -272,35 +210,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
             "Modificador": 'COM',
           });
         }
-        // if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
-        //   for (var obsItem in item.produto.obs!) {
-        //     if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
-        //       // texto original
-        //       observacoesJson.add({
-        //         "Obs": obsItem.titulo,
-        //         "Preco": 0.0,
-        //         "PluAdd": obsItem.pluAdd ?? 0,
-        //         "Modificador": 'COM',
-        //       });
 
-        //       // texto fixo para teste
-        //       observacoesJson.add({
-        //         "Obs": 'Pedido feito pelo site',
-        //         "Preco": 0.0,
-        //         "PluAdd": obsItem.pluAdd ?? 0,
-        //         "Modificador": 'COM',
-        //       });
-        //     } else if (obsItem.modificador != null &&
-        //         (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
-        //       observacoesJson.add({
-        //         "Obs": obsItem.titulo,
-        //         "Preco": obsItem.preco ?? 0.0,
-        //         "PluAdd": obsItem.pluAdd ?? 0,
-        //         "Modificador": obsItem.modificador,
-        //       });
-        //     }
-        //   }
-        // }
         return {
           "IdProduto": item.produto.plu,
           "Preco": item.produto.preco,
@@ -339,6 +249,21 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       debugPrint('RESPONSE: ${response.body}');
 
       if (response.statusCode == 200) {
+        await _mostrarAvaliacaoDialog();
+        if (!mounted) return;
+
+        final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
+
+        carrinho.limpar();
+
+        Provider.of<MesaComandaModel>(
+          context,
+          listen: false,
+        ).limpar();
+
+        Navigator.of(context).popUntil(
+          (route) => route.isFirst,
+        );
         debugPrint('Pedido enviado com sucesso');
       } else {
         throw Exception(
@@ -640,10 +565,15 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                           child: ElevatedButton(
                             onPressed: notaSelecionada == 0
                                 ? null
-                                : () {
+                                : () async {
+                                    await _salvarPedidoFirebase(
+                                      nota: notaSelecionada,
+                                      tags: tagsSelecionadas,
+                                      observacao: obsController.text,
+                                    );
+
                                     setStateSB(() => enviado = true);
-                                    // Salvar avaliação aqui:
-                                    // _salvarAvaliacao(notaSelecionada, tagsSelecionadas, obsController.text);
+
                                     Future.delayed(const Duration(seconds: 2),
                                         () {
                                       if (context.mounted)

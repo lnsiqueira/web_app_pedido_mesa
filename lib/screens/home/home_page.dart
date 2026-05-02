@@ -37,6 +37,7 @@ class _HomePageState extends State<HomePage> {
 
     final result = await showDialog<Map<String, String>?>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => PopupMesaComanda(
           formKey: _formKey,
           mesaController: mesaController,

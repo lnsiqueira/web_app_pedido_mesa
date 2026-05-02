@@ -4,6 +4,7 @@ import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
 FilialNFModel? globalFilialData;
 
 String codFilial = '';
+String numeroMesa = '';
 bool isQuartoENome = true;
 
 class GlobalKeys {

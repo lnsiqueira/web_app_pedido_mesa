@@ -33,25 +33,51 @@ Future<void> main() async {
   globalFilialData = await getFilial();
 
   CarrinhoStorage.limparCarrinho();
-
   final params = Uri.base.queryParameters;
 
-  if (params.containsKey('filialId')) {
-    codFilial = params['filialId']!;
-    if (codFilial.isEmpty || codFilial == '0') {
-      ErrorApp(
-        message: 'Parâmetros Numero do Apartamenro é obrigatórios na URL',
-      );
-      return;
-    }
-    runApp(const MyOrderRoom());
-    return;
-  } else if (params.containsKey('admin')) {
+  final filialId = params['filialId'];
+  final mesa = params['mesa'];
+  final admin = params['admin'];
+
+// ADMIN
+  if (admin != null) {
     runApp(const MyAdmin());
     return;
-  } else {
-    runApp(const MyApp());
   }
+
+// VALIDA FILIAL
+  if (filialId == null || filialId.isEmpty) {
+    runApp(ErrorApp(message: 'filialId é obrigatório na URL'));
+    return;
+  }
+
+// SALVA FILIAL GLOBAL
+  codFilial = filialId;
+  numeroMesa = mesa ?? '';
+  runApp(const MyApp());
+
+  // runApp(const MyOrderRoom());
+  return;
+  // final params = Uri.base.queryParameters;
+  // final filialId = params['filialId'];
+  // final mesa = params['mesa'];
+  // final admin = params['admin'];
+  // if (params.containsKey('filialId')) {
+  //   codFilial = params['filialId']!;
+  //   if (codFilial.isEmpty || codFilial == '0') {
+  //     ErrorApp(
+  //       message: 'Parâmetros Numero do Apartamenro é obrigatórios na URL',
+  //     );
+  //     return;
+  //   }
+  //   runApp(const MyOrderRoom());
+  //   return;
+  // } else if (params.containsKey('admin')) {
+  //   runApp(const MyAdmin());
+  //   return;
+  // } else {
+  //   runApp(const MyApp());
+  // }
   try {
     runApp(const MyApp());
   } catch (e) {
