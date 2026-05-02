@@ -560,11 +560,15 @@ class _ItensPageState extends State<ItensPage> {
                                 errorBuilder: (_, __, ___) {
                                   return Container(
                                     color: Colors.orange.shade100,
-                                    child: Icon(
-                                      Icons.fastfood_rounded,
-                                      size: 72,
-                                      color: Colors.orange.shade300,
+                                    child: Image.asset(
+                                      'images/default_logo.png',
+                                      fit: BoxFit.cover,
                                     ),
+                                    // child: Icon(
+                                    //   Icons.fastfood_rounded,
+                                    //   size: 72,
+                                    //   color: Colors.orange.shade300,
+                                    // ),
                                   );
                                 },
                               ),
@@ -1554,7 +1558,7 @@ class _ItensPageState extends State<ItensPage> {
                                             fit: BoxFit.cover,
                                           )
                                         : Image.asset(
-                                            'images/default.png',
+                                            'images/default_logo.png',
                                             fit: BoxFit.cover,
                                           ),
                                   ),

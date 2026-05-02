@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -249,7 +250,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       debugPrint('RESPONSE: ${response.body}');
 
       if (response.statusCode == 200) {
-        await _mostrarAvaliacaoDialog();
+        final nota = await _mostrarAvaliacaoDialog();
         if (!mounted) return;
 
         final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
@@ -260,10 +261,18 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           context,
           listen: false,
         ).limpar();
+        if (nota == 5 && mounted) {
+          await abrirLink(
+            'https://www.google.com/maps/search/?api=1&query=Dona+De%C3%B4la+Higien%C3%B3polis',
+          );
+        }
+
+        if (!mounted) return;
 
         Navigator.of(context).popUntil(
           (route) => route.isFirst,
         );
+
         debugPrint('Pedido enviado com sucesso');
       } else {
         throw Exception(
@@ -279,17 +288,28 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       }
     }
   }
-  // Future<void> _pagarCaixa() async {
-  //   if (_pagando) return;
-  //   setState(() => _pagando = true);
 
-  //   // ... sua lógica de pagamento aqui ...
+  Future<void> abrirLink(String url) async {
+    if (kIsWeb) {
+      html.window.open(url, "_blank");
+      return;
+    }
 
-  //   // Após pagamento bem-sucedido, abre o dialog de avaliação
-  //   await _mostrarAvaliacaoDialog();
-  // }
+    final uri = Uri.parse(url);
 
-  Future<void> _mostrarAvaliacaoDialog() async {
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  Future<void> _abrirGoogleReview() async {
+    await abrirLink(
+      'https://www.google.com/search?q=Dona+De%C3%B4la+-+Higien%C3%B3polis+Cr%C3%ADticas',
+    );
+  }
+
+  Future<int?> _mostrarAvaliacaoDialog() async {
     int notaSelecionada = 0;
     final List<String> tagsSelecionadas = [];
     final TextEditingController obsController = TextEditingController();
@@ -577,7 +597,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                     Future.delayed(const Duration(seconds: 2),
                                         () {
                                       if (context.mounted)
-                                        Navigator.pop(context);
+                                        Navigator.pop(context, notaSelecionada);
                                     });
                                   },
                             style: ElevatedButton.styleFrom(
