@@ -29,8 +29,6 @@ Future<void> main() async {
   GestureBinding.instance.resamplingEnabled = false;
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await tokenApiBratter();
-  globalFilialData = await getFilial();
 
   CarrinhoStorage.limparCarrinho();
   final params = Uri.base.queryParameters;
@@ -53,7 +51,10 @@ Future<void> main() async {
 
 // SALVA FILIAL GLOBAL
   codFilial = filialId;
+  setUrlApiBratterPorFilial(codFilial);
   numeroMesa = mesa ?? '';
+  await tokenApiBratter();
+  globalFilialData = await getFilial();
   runApp(const MyApp());
 
   // runApp(const MyOrderRoom());

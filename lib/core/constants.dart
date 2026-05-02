@@ -43,12 +43,26 @@ class Urls {
 
   static const String urlApiPagtoAzure =
       'https://webapi-sispagamento-hnabgfa6h9h7hrg3.brazilsouth-01.azurewebsites.net/api/';
-
-  static const String urlApiBratter =
-      'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';
+  static String urlApiBratter = '';
+  // static const String urlApiBratter =
+  //     'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';
   // 'http://dd-hsjos.ddns.com.br:1974/DeolaApi/api/';
   // 'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
   static String urlApimEmissaoNFe = GlobalKeys.ambienteNfe == "P"
       ? 'http://helpmachine.ddns.com.br:9006/nfe'
       : 'http://192.168.0.100:9005/nfe';
+}
+
+void setUrlApiBratterPorFilial(String filialId) {
+  if (filialId == '1743445823763') {
+    Urls.urlApiBratter =
+        'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';
+  } else if (filialId == '8urs76lF1QwjcNpi3CwD') {
+    Urls.urlApiBratter = 'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
+  } else if (filialId == '3') {
+    Urls.urlApiBratter = 'http://dd-hsjos.ddns.com.br:1974/DeolaApi/api/';
+  } else {
+    Urls.urlApiBratter =
+        'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';
+  }
 }
