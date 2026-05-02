@@ -15,7 +15,7 @@ import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
 import 'package:webapp_pedido_mesa/core/provider/produtos_cache_provider.dart';
 import 'package:webapp_pedido_mesa/firebase_options.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:webapp_pedido_mesa/l10n/app_localizations.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
 import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:http/http.dart' as http;

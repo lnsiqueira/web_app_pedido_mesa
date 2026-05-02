@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/core/model/quarto_nome_model.dart';
+import 'package:webapp_pedido_mesa/l10n/app_localizations.dart';
 import 'package:webapp_pedido_mesa/orderRoom/oder_service.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
