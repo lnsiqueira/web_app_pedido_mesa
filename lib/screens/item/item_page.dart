@@ -37,7 +37,6 @@ class _ItensPageState extends State<ItensPage> {
       listen: false,
     );
 
-    // Se já existe cache e não for atualização forçada, usa ele
     if (produtosProvider.contemCategoria(widget.idCategoria) && !forceRefresh) {
       return;
     }
@@ -59,35 +58,122 @@ class _ItensPageState extends State<ItensPage> {
           data.map((json) => ItemModel.fromJson(json)),
         );
 
-        final listaComPrecoEObs = await Future.wait(
-          lista.map((p) async {
-            try {
-              final info = await _buscarPrecoProduto(p.plu!);
-              return p.copyWith(
-                preco: info.preco,
-                obs: info.obs,
-              );
-            } catch (e) {
-              print('Erro ao processar produto ${p.plu}: $e');
-              return p;
-            }
-          }),
-        );
-
-        // Atualiza no provider
+        // PRIMEIRO mostra os produtos SEM preço
         produtosProvider.atualizarProdutos(
-            widget.idCategoria, listaComPrecoEObs);
-      } else {
-        print('Erro ao carregar produtos: ${response.statusCode}');
+          widget.idCategoria,
+          lista,
+        );
+        setState(() {
+          isLoading = false;
+        });
+
+        // Processa de 10 em 10
+        const int lote = 10;
+
+        for (int i = 0; i < lista.length; i += lote) {
+          final fim = (i + lote < lista.length) ? i + lote : lista.length;
+
+          final subLista = lista.sublist(i, fim);
+
+          final atualizados = await Future.wait(
+            subLista.map((p) async {
+              try {
+                final info = await _buscarPrecoProduto(p.plu!);
+
+                return p.copyWith(
+                  preco: info.preco,
+                  obs: info.obs,
+                );
+              } catch (e) {
+                print('Erro produto ${p.plu}: $e');
+                return p;
+              }
+            }),
+          );
+
+          // Atualiza apenas os itens do lote
+          for (final itemAtualizado in atualizados) {
+            final index = lista.indexWhere(
+              (x) => x.plu == itemAtualizado.plu,
+            );
+
+            if (index != -1) {
+              lista[index] = itemAtualizado;
+            }
+          }
+
+          // Atualiza provider a cada lote
+          produtosProvider.atualizarProdutos(
+            widget.idCategoria,
+            List<ItemModel>.from(lista),
+          );
+        }
       }
     } catch (e) {
       print('Erro: $e');
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      // setState(() {
+      //   isLoading = false;
+      // });
     }
   }
+  // Future<void> _carregarProdutos({bool forceRefresh = false}) async {
+  //   final produtosProvider = Provider.of<ProdutosCacheProvider>(
+  //     context,
+  //     listen: false,
+  //   );
+
+  //   // Se já existe cache e não for atualização forçada, usa ele
+  //   if (produtosProvider.contemCategoria(widget.idCategoria) && !forceRefresh) {
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   final url =
+  //       '${Urls.urlApiAzure}/Categorias/categoria-produto-by-filial/${widget.idCategoria}?idFilial=${GlobalKeys.codFilial}';
+
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+
+  //       List<ItemModel> lista = List<ItemModel>.from(
+  //         data.map((json) => ItemModel.fromJson(json)),
+  //       );
+
+  //       final listaComPrecoEObs = await Future.wait(
+  //         lista.map((p) async {
+  //           try {
+  //             final info = await _buscarPrecoProduto(p.plu!);
+  //             return p.copyWith(
+  //               preco: info.preco,
+  //               obs: info.obs,
+  //             );
+  //           } catch (e) {
+  //             print('Erro ao processar produto ${p.plu}: $e');
+  //             return p;
+  //           }
+  //         }),
+  //       );
+
+  //       // Atualiza no provider
+  //       produtosProvider.atualizarProdutos(
+  //           widget.idCategoria, listaComPrecoEObs);
+  //     } else {
+  //       print('Erro ao carregar produtos: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Erro: $e');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
 
   Future<ProdutoInfo> _buscarPrecoProduto(String plu) async {
     try {
@@ -906,6 +992,52 @@ class _ItensPageState extends State<ItensPage> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Image.asset(
+                'images/sad.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Nenhum produto encontrado',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Tente novamente mais tarde.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.black54,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _adicionarAoCarrinho(ItemModel produto) {
     Provider.of<CarrinhoModel>(context, listen: false).adicionar(produto);
   }
@@ -980,11 +1112,281 @@ class _ItensPageState extends State<ItensPage> {
           ),
         ],
       ),
+      // body: Stack(
+      //   children: [
+      //     // CONTEÚDO PRINCIPAL
+      //     Positioned.fill(
+      //       child: isLoading
+      //           ? const Center(
+      //               child: PulsingLogo(
+      //                 assetPath: 'images/logodd_clean.png',
+      //                 width: 150,
+      //                 duration: Duration(seconds: 1),
+      //               ),
+      //             )
+      //           : produtos.isEmpty
+      //               ? Center(
+      //                   child: Padding(
+      //                     padding: const EdgeInsets.all(32),
+      //                     child: Column(
+      //                       mainAxisAlignment: MainAxisAlignment.center,
+      //                       children: [
+      //                         Container(
+      //                           padding: const EdgeInsets.all(22),
+      //                           decoration: BoxDecoration(
+      //                             color: Colors.orangeAccent.withOpacity(0.08),
+      //                             shape: BoxShape.circle,
+      //                           ),
+      //                           child: Image.asset(
+      //                             'images/sad.png',
+      //                             width: 120,
+      //                             height: 120,
+      //                             fit: BoxFit.contain,
+      //                           ),
+      //                         ),
+      //                         const SizedBox(height: 24),
+      //                         const Text(
+      //                           'Nenhum produto encontrado',
+      //                           textAlign: TextAlign.center,
+      //                           style: TextStyle(
+      //                             fontSize: 20,
+      //                             fontWeight: FontWeight.w600,
+      //                             color: Colors.black87,
+      //                           ),
+      //                         ),
+      //                         const SizedBox(height: 12),
+      //                         const Text(
+      //                           'Tente novamente mais tarde.',
+      //                           textAlign: TextAlign.center,
+      //                           style: TextStyle(
+      //                             fontSize: 15,
+      //                             color: Colors.black54,
+      //                             height: 1.4,
+      //                           ),
+      //                         ),
+      //                       ],
+      //                     ),
+      //                   ),
+      //                 )
+      //               : GridView.builder(
+      //                   padding: const EdgeInsets.fromLTRB(
+      //                     16,
+      //                     16,
+      //                     16,
+      //                     120, // espaço pro botão flutuante
+      //                   ),
+      //                   gridDelegate:
+      //                       const SliverGridDelegateWithFixedCrossAxisCount(
+      //                     crossAxisCount: 2,
+      //                     mainAxisSpacing: 16,
+      //                     crossAxisSpacing: 16,
+      //                     childAspectRatio: 0.96,
+      //                   ),
+      //                   itemCount: produtos.length,
+      //                   itemBuilder: (context, index) {
+      //                     final produto = produtos[index];
+
+      //                     return GestureDetector(
+      //                       onTap: () => _mostrarPopupObs(produto),
+      //                       child: ClipRRect(
+      //                         borderRadius: BorderRadius.circular(18),
+      //                         child: Stack(
+      //                           children: [
+      //                             Positioned.fill(
+      //                               child: produto.imageUrl != null &&
+      //                                       produto.imageUrl!.isNotEmpty
+      //                                   ? Image.network(
+      //                                       produto.imageUrl!,
+      //                                       fit: BoxFit.cover,
+      //                                     )
+      //                                   : Image.asset(
+      //                                       'images/default.png',
+      //                                       fit: BoxFit.cover,
+      //                                     ),
+      //                             ),
+      //                             Positioned.fill(
+      //                               child: Container(
+      //                                 decoration: BoxDecoration(
+      //                                   gradient: LinearGradient(
+      //                                     begin: Alignment.bottomCenter,
+      //                                     end: Alignment.topCenter,
+      //                                     colors: [
+      //                                       Colors.black.withOpacity(0.60),
+      //                                       Colors.black.withOpacity(0.15),
+      //                                       Colors.transparent,
+      //                                     ],
+      //                                   ),
+      //                                 ),
+      //                               ),
+      //                             ),
+      //                             Padding(
+      //                               padding: const EdgeInsets.all(14),
+      //                               child: Column(
+      //                                 crossAxisAlignment:
+      //                                     CrossAxisAlignment.start,
+      //                                 children: [
+      //                                   const Spacer(),
+      //                                   Text(
+      //                                     produto.desProduto ?? '',
+      //                                     maxLines: 2,
+      //                                     overflow: TextOverflow.ellipsis,
+      //                                     style: const TextStyle(
+      //                                       color: Colors.white,
+      //                                       fontSize: 16,
+      //                                       fontWeight: FontWeight.w700,
+      //                                     ),
+      //                                   ),
+      //                                   const SizedBox(height: 6),
+      //                                   Text(
+      //                                     'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
+      //                                     style: TextStyle(
+      //                                       color: Colors.orange.shade200,
+      //                                       fontSize: 16,
+      //                                       fontWeight: FontWeight.w700,
+      //                                     ),
+      //                                   ),
+      //                                 ],
+      //                               ),
+      //                             ),
+      //                           ],
+      //                         ),
+      //                       ),
+      //                     );
+      //                   },
+      //                 ),
+      //     ),
+
+      //     // BOTÃO FLUTUANTE
+      //     // Consumer<CarrinhoModel>(
+      //     //   builder: (context, carrinho, _) {
+      //     //     if (carrinho.totalItens == 0) {
+      //     //       return const SizedBox.shrink();
+      //     //     }
+
+      //     //     return Positioned(
+      //     //       left: 16,
+      //     //       right: 16,
+      //     //       bottom: 18,
+      //     //       child: SafeArea(
+      //     //         child: Material(
+      //     //           color: Colors.transparent,
+      //     //           child: InkWell(
+      //     //             borderRadius: BorderRadius.circular(22),
+      //     //             onTap: () {
+      //     //               Navigator.push(
+      //     //                 context,
+      //     //                 MaterialPageRoute(
+      //     //                   builder: (_) => const CarrinhoPage(),
+      //     //                 ),
+      //     //               );
+      //     //             },
+      //     //             child: Ink(
+      //     //               decoration: BoxDecoration(
+      //     //                 borderRadius: BorderRadius.circular(22),
+      //     //                 gradient: LinearGradient(
+      //     //                   colors: [
+      //     //                     Colors.orange.shade600,
+      //     //                     Colors.orange.shade800,
+      //     //                   ],
+      //     //                 ),
+      //     //                 boxShadow: [
+      //     //                   BoxShadow(
+      //     //                     color: Colors.orange.withOpacity(0.25),
+      //     //                     blurRadius: 18,
+      //     //                     offset: const Offset(0, 8),
+      //     //                   ),
+      //     //                 ],
+      //     //               ),
+      //     //               child: Padding(
+      //     //                 padding: const EdgeInsets.symmetric(
+      //     //                   horizontal: 18,
+      //     //                   vertical: 16,
+      //     //                 ),
+      //     //                 child: Row(
+      //     //                   children: [
+      //     //                     Container(
+      //     //                       width: 46,
+      //     //                       height: 46,
+      //     //                       decoration: BoxDecoration(
+      //     //                         color: Colors.white.withOpacity(0.14),
+      //     //                         borderRadius: BorderRadius.circular(14),
+      //     //                       ),
+      //     //                       child: const Icon(
+      //     //                         Icons.shopping_bag_rounded,
+      //     //                         color: Colors.white,
+      //     //                         size: 24,
+      //     //                       ),
+      //     //                     ),
+      //     //                     const SizedBox(width: 14),
+      //     //                     Expanded(
+      //     //                       child: Column(
+      //     //                         crossAxisAlignment: CrossAxisAlignment.start,
+      //     //                         mainAxisSize: MainAxisSize.min,
+      //     //                         children: [
+      //     //                           const Text(
+      //     //                             'Ver pedido',
+      //     //                             style: TextStyle(
+      //     //                               color: Colors.white,
+      //     //                               fontSize: 16,
+      //     //                               fontWeight: FontWeight.w700,
+      //     //                             ),
+      //     //                           ),
+      //     //                           const SizedBox(height: 2),
+      //     //                           Text(
+      //     //                             '${carrinho.totalItens} itens adicionados',
+      //     //                             style: TextStyle(
+      //     //                               color: Colors.white.withOpacity(0.85),
+      //     //                               fontSize: 12,
+      //     //                             ),
+      //     //                           ),
+      //     //                         ],
+      //     //                       ),
+      //     //                     ),
+      //     //                     Container(
+      //     //                       padding: const EdgeInsets.symmetric(
+      //     //                         horizontal: 14,
+      //     //                         vertical: 10,
+      //     //                       ),
+      //     //                       decoration: BoxDecoration(
+      //     //                         color: Colors.white.withOpacity(0.14),
+      //     //                         borderRadius: BorderRadius.circular(999),
+      //     //                       ),
+      //     //                       child: Row(
+      //     //                         children: const [
+      //     //                           Text(
+      //     //                             'Abrir',
+      //     //                             style: TextStyle(
+      //     //                               color: Colors.white,
+      //     //                               fontWeight: FontWeight.w700,
+      //     //                               fontSize: 13,
+      //     //                             ),
+      //     //                           ),
+      //     //                           SizedBox(width: 6),
+      //     //                           Icon(
+      //     //                             Icons.arrow_forward_ios_rounded,
+      //     //                             color: Colors.white,
+      //     //                             size: 12,
+      //     //                           ),
+      //     //                         ],
+      //     //                       ),
+      //     //                     ),
+      //     //                   ],
+      //     //                 ),
+      //     //               ),
+      //     //             ),
+      //     //           ),
+      //     //         ),
+      //     //       ),
+      //     //     );
+      //     //   },
+      //     // ),
+      //     BotaoPagamentoFlutuante(),
+      //   ],
+      // ),
       body: Stack(
         children: [
-          // CONTEÚDO PRINCIPAL
           Positioned.fill(
-            child: isLoading
+            child: produtos.isEmpty && isLoading
                 ? const Center(
                     child: PulsingLogo(
                       assetPath: 'images/logodd_clean.png',
@@ -993,55 +1395,13 @@ class _ItensPageState extends State<ItensPage> {
                     ),
                   )
                 : produtos.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(22),
-                                decoration: BoxDecoration(
-                                  color: Colors.orangeAccent.withOpacity(0.08),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Image.asset(
-                                  'images/sad.png',
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              const Text(
-                                'Nenhum produto encontrado',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Tente novamente mais tarde.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black54,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
+                    ? _buildEmptyState()
                     : GridView.builder(
                         padding: const EdgeInsets.fromLTRB(
                           16,
                           16,
                           16,
-                          120, // espaço pro botão flutuante
+                          120,
                         ),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1094,6 +1454,7 @@ class _ItensPageState extends State<ItensPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         const Spacer(),
+
                                         Text(
                                           produto.desProduto ?? '',
                                           maxLines: 2,
@@ -1104,15 +1465,29 @@ class _ItensPageState extends State<ItensPage> {
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
+
                                         const SizedBox(height: 6),
-                                        Text(
-                                          'R\$ ${produto.preco?.toStringAsFixed(2) ?? '--'}',
-                                          style: TextStyle(
-                                            color: Colors.orange.shade200,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
+
+                                        // PREÇO CARREGANDO
+                                        produto.preco == null
+                                            ? Container(
+                                                width: 70,
+                                                height: 18,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white24,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          999),
+                                                ),
+                                              )
+                                            : Text(
+                                                'R\$ ${produto.preco!.toStringAsFixed(2)}',
+                                                style: TextStyle(
+                                                  color: Colors.orange.shade200,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                       ],
                                     ),
                                   ),
@@ -1123,131 +1498,6 @@ class _ItensPageState extends State<ItensPage> {
                         },
                       ),
           ),
-
-          // BOTÃO FLUTUANTE
-          // Consumer<CarrinhoModel>(
-          //   builder: (context, carrinho, _) {
-          //     if (carrinho.totalItens == 0) {
-          //       return const SizedBox.shrink();
-          //     }
-
-          //     return Positioned(
-          //       left: 16,
-          //       right: 16,
-          //       bottom: 18,
-          //       child: SafeArea(
-          //         child: Material(
-          //           color: Colors.transparent,
-          //           child: InkWell(
-          //             borderRadius: BorderRadius.circular(22),
-          //             onTap: () {
-          //               Navigator.push(
-          //                 context,
-          //                 MaterialPageRoute(
-          //                   builder: (_) => const CarrinhoPage(),
-          //                 ),
-          //               );
-          //             },
-          //             child: Ink(
-          //               decoration: BoxDecoration(
-          //                 borderRadius: BorderRadius.circular(22),
-          //                 gradient: LinearGradient(
-          //                   colors: [
-          //                     Colors.orange.shade600,
-          //                     Colors.orange.shade800,
-          //                   ],
-          //                 ),
-          //                 boxShadow: [
-          //                   BoxShadow(
-          //                     color: Colors.orange.withOpacity(0.25),
-          //                     blurRadius: 18,
-          //                     offset: const Offset(0, 8),
-          //                   ),
-          //                 ],
-          //               ),
-          //               child: Padding(
-          //                 padding: const EdgeInsets.symmetric(
-          //                   horizontal: 18,
-          //                   vertical: 16,
-          //                 ),
-          //                 child: Row(
-          //                   children: [
-          //                     Container(
-          //                       width: 46,
-          //                       height: 46,
-          //                       decoration: BoxDecoration(
-          //                         color: Colors.white.withOpacity(0.14),
-          //                         borderRadius: BorderRadius.circular(14),
-          //                       ),
-          //                       child: const Icon(
-          //                         Icons.shopping_bag_rounded,
-          //                         color: Colors.white,
-          //                         size: 24,
-          //                       ),
-          //                     ),
-          //                     const SizedBox(width: 14),
-          //                     Expanded(
-          //                       child: Column(
-          //                         crossAxisAlignment: CrossAxisAlignment.start,
-          //                         mainAxisSize: MainAxisSize.min,
-          //                         children: [
-          //                           const Text(
-          //                             'Ver pedido',
-          //                             style: TextStyle(
-          //                               color: Colors.white,
-          //                               fontSize: 16,
-          //                               fontWeight: FontWeight.w700,
-          //                             ),
-          //                           ),
-          //                           const SizedBox(height: 2),
-          //                           Text(
-          //                             '${carrinho.totalItens} itens adicionados',
-          //                             style: TextStyle(
-          //                               color: Colors.white.withOpacity(0.85),
-          //                               fontSize: 12,
-          //                             ),
-          //                           ),
-          //                         ],
-          //                       ),
-          //                     ),
-          //                     Container(
-          //                       padding: const EdgeInsets.symmetric(
-          //                         horizontal: 14,
-          //                         vertical: 10,
-          //                       ),
-          //                       decoration: BoxDecoration(
-          //                         color: Colors.white.withOpacity(0.14),
-          //                         borderRadius: BorderRadius.circular(999),
-          //                       ),
-          //                       child: Row(
-          //                         children: const [
-          //                           Text(
-          //                             'Abrir',
-          //                             style: TextStyle(
-          //                               color: Colors.white,
-          //                               fontWeight: FontWeight.w700,
-          //                               fontSize: 13,
-          //                             ),
-          //                           ),
-          //                           SizedBox(width: 6),
-          //                           Icon(
-          //                             Icons.arrow_forward_ios_rounded,
-          //                             color: Colors.white,
-          //                             size: 12,
-          //                           ),
-          //                         ],
-          //                       ),
-          //                     ),
-          //                   ],
-          //                 ),
-          //               ),
-          //             ),
-          //           ),
-          //         ),
-          //       ),
-          //     );
-          //   },
-          // ),
           BotaoPagamentoFlutuante(),
         ],
       ),
