@@ -266,9 +266,17 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               title: 'Dona Deola',
               theme: ThemeData(
+                scaffoldBackgroundColor: Colors.white,
                 textTheme: GoogleFonts.nunitoTextTheme(), // Fonte padrão global
-
-                colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Colors.white,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 0,
+                ),
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.orange,
+                  background: Colors.white,
+                ),
               ),
               localizationsDelegates: [
                 AppLocalizations.delegate,
