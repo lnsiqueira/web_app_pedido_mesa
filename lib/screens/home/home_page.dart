@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,11 +8,16 @@ import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
+import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/l10n/app_localizations.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
+import 'package:webapp_pedido_mesa/screens/home/categorias_grid.dart';
+import 'package:webapp_pedido_mesa/screens/home/grid_buscar_itens.dart';
+import 'package:webapp_pedido_mesa/screens/home/search_bar_widget.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
+import 'package:webapp_pedido_mesa/screens/item/popup_produto.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
 import 'package:webapp_pedido_mesa/widgets/botao_pagamento_flutuante.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
@@ -27,7 +34,14 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String? _comanda;
+  final TextEditingController _searchController = TextEditingController();
 
+  List<ItemModel> resultadosBusca = [];
+
+  bool modoBusca = false;
+  bool isSearching = false;
+
+  Timer? _debounce;
   List<Categoria> categorias = [];
 
   bool isLoading = false;
@@ -88,31 +102,141 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Future<void> _carregarCategorias() async {
+  void _adicionarAoCarrinho(ItemModel produto) {
+    Provider.of<CarrinhoModel>(context, listen: false).adicionar(produto);
+  }
+
+  // Future<void> _buscarProduto(String query) async {
+  //   if (query.isEmpty) {
+  //     setState(() {
+  //       modoBusca = false;
+  //       resultadosBusca.clear();
+  //     });
+  //     return;
+  //   }
+
   //   setState(() {
-  //     isLoading = true;
+  //     modoBusca = true;
+  //     isSearching = true;
   //   });
 
-  //   const url =
-  //       '${Urls.urlApiAzure}/Categorias/categoria-by-filial/${GlobalKeys.codFilial}';
+  //   final url = Uri.parse(
+  //     '${Urls.urlApiAzure}Categorias/produto-by-categoria-filial'
+  //     '?idFilial=$codFilial'
+  //     '&nomeProduto=$query',
+  //   );
+
   //   try {
-  //     final response = await http.get(Uri.parse(url));
+  //     final response = await http.get(url);
+
   //     if (response.statusCode == 200) {
-  //       final List<dynamic> data = json.decode(response.body);
+  //       final list = json.decode(response.body) as List;
+
   //       setState(() {
-  //         categorias = data.map((e) => Categoria.fromJson(e)).toList();
+  //         resultadosBusca = list.map((e) => ItemModel.fromJson(e)).toList();
   //       });
-  //     } else {
-  //       print('Erro ao carregar categorias: ${response.statusCode}');
   //     }
   //   } catch (e) {
-  //     print('Erro: $e');
+  //     debugPrint('Erro busca: $e');
   //   } finally {
-  //     setState(() {
-  //       isLoading = false;
-  //     });
+  //     setState(() => isSearching = false);
   //   }
   // }
+  Future<void> _buscarProduto(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        modoBusca = false;
+        resultadosBusca.clear();
+      });
+      return;
+    }
+
+    setState(() {
+      modoBusca = true;
+      isSearching = true;
+    });
+
+    final url = Uri.parse(
+      '${Urls.urlApiAzure}Categorias/produto-by-categoria-filial'
+      '?idFilial=$codFilial'
+      '&nomeProduto=$query',
+    );
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final list = json.decode(response.body) as List;
+
+        // 🔥 base
+        final produtos = list.map((e) => ItemModel.fromJson(e)).toList();
+
+        // 🔥 busca preço + obs em paralelo
+        final produtosCompletos = await Future.wait(
+          produtos.map((p) async {
+            final info = await _buscarPrecoProduto(p.plu ?? '');
+
+            return p.copyWith(
+              preco: info.preco ?? p.preco,
+              obs: info.obs ?? [],
+            );
+          }),
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          resultadosBusca = produtosCompletos;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro busca: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isSearching = false);
+      }
+    }
+  }
+
+  Future<ProdutoInfo> _buscarPrecoProduto(String plu) async {
+    try {
+      var urlBratter = Urls.urlApiBratter;
+      final encodedUrl = Uri.encodeComponent(urlBratter);
+
+      final url =
+          '${Urls.urlApiAzure}Proxy/mercadoriafiscal?codigoproduto=$plu&imagens=false&urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        double? preco = double.tryParse(data['preco'].toString());
+
+        List<ItemObsModel> obs = (data['obs'] as List?)
+                ?.map((o) => ItemObsModel.fromJson(o))
+                .toList() ??
+            [];
+
+        return ProdutoInfo(preco: preco, obs: obs);
+      } else {
+        print(
+            'Erro ao buscar preço/obs do produto $plu: ${response.statusCode}');
+        return ProdutoInfo();
+      }
+    } catch (e) {
+      print('Erro ao buscar preço/obs: $e');
+      return ProdutoInfo();
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      _buscarProduto(value);
+    });
+  }
+
   Future<void> _carregarCategorias() async {
     setState(() {
       isLoading = true;
@@ -184,9 +308,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final languageController = Provider.of<LanguageController>(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    // final itemWidth = screenWidth / 3 - 24;
-    final mesa = context.watch<MesaComandaModel>().mesa;
+    // final screenWidth = MediaQuery.of(context).size.width;
+    // // final itemWidth = screenWidth / 3 - 24;
+    // final mesa = context.watch<MesaComandaModel>().mesa;
     final comanda = context.watch<MesaComandaModel>().comanda;
 
     return SafeArea(
@@ -272,238 +396,33 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: Column(
                       children: [
-                        isLoading
-                            ? SizedBox(
-                                height: constraints.maxHeight * 0.7,
-                                child: Center(
-                                  child: PulsingLogo(
-                                    assetPath: 'images/logodd_clean.png',
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                ),
-                              )
-                            : const SizedBox(height: 20),
-
-                        /// GRID DE CATEGORIAS
                         if (comanda != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: const EdgeInsets.only(bottom: 16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                                childAspectRatio: 0.92,
-                              ),
-                              itemCount: categorias.length,
-                              itemBuilder: (context, index) {
-                                final categoria = categorias[index];
-
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
+                          SearchBarWidget(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            onClear: () {
+                              _searchController.clear();
+                              _buscarProduto('');
+                            },
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: modoBusca
+                              ? GridBuscaWidget(
+                                  produtos: resultadosBusca,
+                                  isLoading: isSearching,
+                                  onTap: (produto) {
+                                    ProdutoPopup.show(
                                       context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ItensPage(
-                                          nomeCategoria: categoria.desCategoria,
-                                          idCategoria: categoria.id,
-                                        ),
-                                      ),
+                                      produto: produto,
+                                      onAdd: _adicionarAoCarrinho,
                                     );
                                   },
-                                  child: Hero(
-                                    tag: categoria.id,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(24),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.12),
-                                            blurRadius: 14,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(24),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: [
-                                            /// IMAGEM
-                                            Image.network(
-                                              categoria.imagem,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) {
-                                                return Container(
-                                                  color: Colors.grey.shade300,
-                                                  child: const Center(
-                                                    child: Icon(
-                                                      Icons.fastfood_rounded,
-                                                      size: 46,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-
-                                            /// OVERLAY
-                                            Positioned.fill(
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    begin:
-                                                        Alignment.bottomCenter,
-                                                    end: Alignment.topCenter,
-                                                    colors: [
-                                                      Colors.black
-                                                          .withOpacity(0.82),
-                                                      Colors.black
-                                                          .withOpacity(0.18),
-                                                      Colors.transparent,
-                                                    ],
-                                                    stops: const [0.0, 0.55, 1],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-
-                                            /// BRILHO
-                                            Positioned(
-                                              top: -20,
-                                              right: -20,
-                                              child: Container(
-                                                width: 90,
-                                                height: 90,
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  color: Colors.white
-                                                      .withOpacity(0.10),
-                                                ),
-                                              ),
-                                            ),
-
-                                            /// TEXTO
-                                            Positioned(
-                                              left: 16,
-                                              right: 16,
-                                              bottom: 16,
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    categoria.desCategoria,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 19,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      height: 1.15,
-                                                      letterSpacing: -0.3,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 10),
-                                                  Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 6,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white
-                                                          .withOpacity(0.18),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30),
-                                                      border: Border.all(
-                                                        color: Colors.white
-                                                            .withOpacity(0.18),
-                                                      ),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: const [
-                                                        Text(
-                                                          'Ver itens',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                        SizedBox(width: 6),
-                                                        Icon(
-                                                          Icons
-                                                              .arrow_forward_ios_rounded,
-                                                          color: Colors.white,
-                                                          size: 12,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                        /// POPUP COMANDA
-                        Consumer<MesaComandaModel>(
-                          builder: (context, comanda, _) {
-                            if (comanda.comanda == '') {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                _pedirMesaEComanda();
-                              });
-
-                              return SizedBox(
-                                height: constraints.maxHeight / 1.2,
-                                child: const Center(
-                                  child: PulsingLogo(
-                                    assetPath: 'images/logodd_clean.png',
-                                    width: 150,
-                                    duration: Duration(seconds: 1),
-                                  ),
+                                )
+                              : GridCategoriasWidget(
+                                  categorias: categorias,
                                 ),
-                              );
-                            }
-
-                            return const SizedBox();
-                          },
                         ),
-
-                        // const SizedBox(height: 24),
-
-                        // /// FOOTER
-                        // const Divider(height: 1, thickness: 1),
-
-                        // Padding(
-                        //   padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        //   child: Text(
-                        //     '© ${DateTime.now().year} BakeryFood. Todos os direitos reservados. Version: 1.2.0',
-                        //     style: const TextStyle(
-                        //       fontSize: 12,
-                        //       color: Colors.grey,
-                        //     ),
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),
@@ -511,39 +430,27 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            /// BOTÃO FLUTUANTE
             const BotaoPagamentoFlutuante(),
+
+            /// 🔴 LOADING OVERLAY (SEMPRE POR CIMA)
+            if (isLoading || isSearching)
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: false,
+                  child: Container(
+                    color: Colors.white.withOpacity(0.6), // leve blur visual
+                    child: const Center(
+                      child: PulsingLogo(
+                        assetPath: 'images/logodd_clean.png',
+                        width: 150,
+                        duration: const Duration(seconds: 1),
+                      ), // seu logo animado
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
-        // bottomNavigationBar: Consumer<CarrinhoModel>(
-        //   builder: (context, carrinho, _) {
-        //     if (carrinho.totalItens == 0) return const SizedBox.shrink();
-
-        //     return Padding(
-        //       padding: const EdgeInsets.all(12.0),
-        //       child: ElevatedButton(
-        //         style: ElevatedButton.styleFrom(
-        //           padding: const EdgeInsets.symmetric(vertical: 16),
-        //           shape: RoundedRectangleBorder(
-        //             borderRadius: BorderRadius.circular(12),
-        //           ),
-        //         ),
-        //         onPressed: () {
-        //           Navigator.push(
-        //             context,
-        //             MaterialPageRoute(
-        //               builder: (_) => const CarrinhoPage(),
-        //             ),
-        //           );
-        //         },
-        //         child: Text(
-        //           "Prosseguir (${carrinho.totalItens} itens)",
-        //           style: const TextStyle(fontSize: 18),
-        //         ),
-        //       ),
-        //     );
-        //   },
-        // ),
       ),
     );
   }

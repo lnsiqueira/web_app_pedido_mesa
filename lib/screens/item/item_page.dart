@@ -309,7 +309,7 @@ class _ItensPageState extends State<ItensPage> {
                 //             const SizedBox(height: 12),
                 //             Row(
                 //               children: [
-                //                 _QtyButton(
+                //                 QtyButton(
                 //                   icon: Icons.remove,
                 //                   onTap: () => setStateSB(() {
                 //                     if (quantidade > 1) quantidade--;
@@ -325,7 +325,7 @@ class _ItensPageState extends State<ItensPage> {
                 //                         fontWeight: FontWeight.w600),
                 //                   ),
                 //                 ),
-                //                 _QtyButton(
+                //                 QtyButton(
                 //                   icon: Icons.add,
                 //                   onTap: () => setStateSB(() => quantidade++),
                 //                 ),
@@ -773,7 +773,7 @@ class _ItensPageState extends State<ItensPage> {
 
                             // Row(
                             //   children: [
-                            //     _QtyButton(
+                            //     QtyButton(
                             //       icon: Icons.remove,
                             //       onTap: () => setStateSB(() {
                             //         if (quantidade > 1) quantidade--;
@@ -790,7 +790,7 @@ class _ItensPageState extends State<ItensPage> {
                             //         ),
                             //       ),
                             //     ),
-                            //     _QtyButton(
+                            //     QtyButton(
                             //       icon: Icons.add,
                             //       onTap: () => setStateSB(() => quantidade++),
                             //     ),
@@ -798,7 +798,7 @@ class _ItensPageState extends State<ItensPage> {
                             // ),
                             Row(
                               children: [
-                                _QtyButton(
+                                QtyButton(
                                   icon: Icons.remove,
                                   onTap: () => setStateSB(() {
                                     if (quantidade > 1) quantidade--;
@@ -817,7 +817,7 @@ class _ItensPageState extends State<ItensPage> {
                                   ),
                                 ),
 
-                                _QtyButton(
+                                QtyButton(
                                   icon: Icons.add,
                                   onTap: () => setStateSB(() => quantidade++),
                                 ),
@@ -1804,10 +1804,10 @@ class _ItensPageState extends State<ItensPage> {
 // }
 
 // Widget auxiliar para os botões de quantidade
-class _QtyButton extends StatelessWidget {
+class QtyButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  const _QtyButton({required this.icon, required this.onTap});
+  const QtyButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
