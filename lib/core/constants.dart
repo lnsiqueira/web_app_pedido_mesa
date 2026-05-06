@@ -5,6 +5,7 @@ FilialNFModel? globalFilialData;
 
 String codFilial = '';
 String numeroMesa = '';
+String numeroComanda = '';
 bool isQuartoENome = true;
 
 class GlobalKeys {

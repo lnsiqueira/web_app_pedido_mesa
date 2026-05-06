@@ -141,21 +141,18 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
       final mesaComanda = Provider.of<MesaComandaModel>(context, listen: false);
 
-      debugPrint('MESA: ${mesaComanda.mesa}');
-      debugPrint('COMANDA: ${mesaComanda.comanda}');
-
-      // final idMesa = int.tryParse(
-      //   mesaComanda.mesa.toString(),
-      // );
       final idMesa = int.tryParse(
         numeroMesa.toString(),
       );
-      // final idMesa = 2;
 
+      // final idComanda = int.tryParse(
+      //   mesaComanda.comanda.toString(),
+      // );
       final idComanda = int.tryParse(
-        mesaComanda.comanda.toString(),
+        numeroComanda.toString(),
       );
-
+      print(idComanda);
+      print(idMesa);
       if (idMesa == null || idComanda == null) {
         throw Exception(
           'Mesa ou comanda inválida',
@@ -563,7 +560,17 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                       Expanded(
                         flex: 1,
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () async {
+                            await _salvarPedidoFirebase(
+                              nota: 0,
+                              tags: [],
+                              observacao: '',
+                            );
+
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 48),
                             side: BorderSide(
@@ -580,26 +587,24 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                       Expanded(
                         flex: 2,
                         child: AnimatedOpacity(
-                          opacity: notaSelecionada > 0 ? 1.0 : 0.45,
+                          opacity: 1.0, // pode manter sempre ativo
                           duration: const Duration(milliseconds: 200),
                           child: ElevatedButton(
-                            onPressed: notaSelecionada == 0
-                                ? null
-                                : () async {
-                                    await _salvarPedidoFirebase(
-                                      nota: notaSelecionada,
-                                      tags: tagsSelecionadas,
-                                      observacao: obsController.text,
-                                    );
+                            onPressed: () async {
+                              await _salvarPedidoFirebase(
+                                nota: notaSelecionada, // agora pode ser 0
+                                tags: tagsSelecionadas,
+                                observacao: obsController.text,
+                              );
 
-                                    setStateSB(() => enviado = true);
+                              setStateSB(() => enviado = true);
 
-                                    Future.delayed(const Duration(seconds: 2),
-                                        () {
-                                      if (context.mounted)
-                                        Navigator.pop(context, notaSelecionada);
-                                    });
-                                  },
+                              Future.delayed(const Duration(seconds: 2), () {
+                                if (context.mounted) {
+                                  Navigator.pop(context, notaSelecionada);
+                                }
+                              });
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange.shade800,
                               disabledBackgroundColor: Colors.orange.shade800,

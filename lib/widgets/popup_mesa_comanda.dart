@@ -533,6 +533,7 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
           debugPrint('DATA: $data');
 
           if (data['Id'] != 0 && data['Status'] != null) {
+            numeroComanda = comanda ?? '4500';
             Navigator.pop(context, {
               'comanda': comanda,
             });
