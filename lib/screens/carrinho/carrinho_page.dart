@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
+import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
+import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
+import 'package:webapp_pedido_mesa/widgets/popup_mesa_comanda.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/pagamento/pagamento_order_page.dart';
@@ -314,7 +317,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                       itemCount: carrinho.itens.length,
                       itemBuilder: (context, index) {
                         final item = carrinho.itens[index];
-                        final totalItem = item.quantidade * item.produto.preco!;
+                        final totalItem =
+                            item.quantidade * item.produto.precoComAcrescimos;
                         final observacoesSelecionadas =
                             item.produto.obs?.where((obs) {
                           if (obs.tipo == 'escolha') {
@@ -326,136 +330,160 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                           return false;
                         }).toList();
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// Nome + total do item
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        item.produto.desProduto!,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      'R\$ ${totalItem.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                        // tocar no item reabre o produto para editar
+                        return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => abrirProdutoPopup(
+                                context, item.produto,
+                                editando: item),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(18),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.06),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
                                     ),
                                   ],
                                 ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    /// Nome + total do item
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.produto.desProduto!,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          'R\$ ${totalItem.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
 
-                                const SizedBox(height: 6),
-
-                                /// Observações
-                                if (observacoesSelecionadas != null &&
-                                    observacoesSelecionadas.isNotEmpty)
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children:
-                                        observacoesSelecionadas.map((obs) {
-                                      return Padding(
+                                    for (final a in item.produto.acrescimos)
+                                      Padding(
                                         padding: const EdgeInsets.only(top: 2),
                                         child: Text(
-                                          obs.tipo == 'escolha'
-                                              ? '• ${obs.titulo} (${obs.modificador == 'C' ? 'Com' : 'Sem'})'
-                                              : '• ${obs.titulo}',
+                                          '+ ${a.nome}',
                                           style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.orange.shade800,
                                           ),
                                         ),
-                                      );
-                                    }).toList(),
-                                  ),
+                                      ),
 
-                                // const SizedBox(height: 12),
-                                // Text(
-                                //     'qtd disponivel: ${item.produto.quantidadeDisponivel.toString()}'),
-                                // Text('id : ${item.produto.id.toString()}'),
+                                    const SizedBox(height: 6),
 
-                                /// Quantidade
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
+                                    /// Observações
+                                    if (observacoesSelecionadas != null &&
+                                        observacoesSelecionadas.isNotEmpty)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children:
+                                            observacoesSelecionadas.map((obs) {
+                                          return Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              obs.tipo == 'escolha'
+                                                  ? '• ${obs.titulo} (${obs.modificador == 'C' ? 'Com' : 'Sem'})'
+                                                  : '• ${obs.titulo}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+
+                                    // const SizedBox(height: 12),
                                     // Text(
-                                    //   'Qtd: ${item.quantidade}',
-                                    //   style: TextStyle(
-                                    //     fontSize: 14,
-                                    //     color: Colors.grey.shade700,
-                                    //   ),
-                                    // ),
-                                    Text(
-                                      '',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove,
-                                                size: 18),
-                                            onPressed: () {
-                                              if (item.quantidade > 1) {
-                                                item.quantidade--;
-                                              } else {
-                                                carrinho.remover(item.produto);
-                                              }
-                                              carrinho.notifyListeners();
-                                            },
+                                    //     'qtd disponivel: ${item.produto.quantidadeDisponivel.toString()}'),
+                                    // Text('id : ${item.produto.id.toString()}'),
+
+                                    /// Quantidade
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Text(
+                                        //   'Qtd: ${item.quantidade}',
+                                        //   style: TextStyle(
+                                        //     fontSize: 14,
+                                        //     color: Colors.grey.shade700,
+                                        //   ),
+                                        // ),
+                                        Text(
+                                          '',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade700,
                                           ),
-                                          Text(
-                                            item.quantidade.toString(),
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                        ),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade100,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
-                                          IconButton(
-                                            icon:
-                                                const Icon(Icons.add, size: 18),
-                                            onPressed: () {
-                                              carrinho.adicionar(item.produto);
-                                            },
+                                          child: Row(
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove,
+                                                    size: 18),
+                                                onPressed: () {
+                                                  if (item.quantidade > 1) {
+                                                    item.quantidade--;
+                                                  } else {
+                                                    carrinho
+                                                        .remover(item.produto);
+                                                  }
+                                                  carrinho.notifyListeners();
+                                                },
+                                              ),
+                                              Text(
+                                                item.quantidade.toString(),
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.add,
+                                                    size: 18),
+                                                onPressed: () {
+                                                  carrinho
+                                                      .adicionar(item.produto);
+                                                },
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
+                              ),
+                            ));
                       },
                     ),
                   ),
@@ -512,11 +540,39 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                               borderRadius: BorderRadius.circular(18),
                               onTap: () async {
                                 if (isQuartoENome) {
+                                  // sugestões (bebida / sobremesa), se
+                                  // ainda não ofereceu
+                                  await oferecerSugestoesAntesDeEnviar(
+                                      context);
+                                  if (!context.mounted) return;
+                                  final mc = Provider.of<MesaComandaModel>(
+                                      context,
+                                      listen: false);
+                                  if (mc.comanda.isEmpty) {
+                                    final r =
+                                        await showDialog<Map<String, String>?>(
+                                      context: context,
+                                      builder: (_) => PopupMesaComanda(
+                                        formKey: GlobalKey<FormState>(),
+                                        mesaController: TextEditingController(),
+                                        comandaController:
+                                            TextEditingController(),
+                                      ),
+                                    );
+                                    final comanda = r?['comanda'] ?? '';
+                                    if (comanda.isEmpty || !context.mounted) {
+                                      return;
+                                    }
+                                    mc.setComanda(comanda);
+                                  }
+                                  // comanda válida: envia direto
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const PagamentoOrderPage(),
+                                    PageRouteBuilder(
+                                      transitionDuration: Duration.zero,
+                                      pageBuilder: (_, __, ___) =>
+                                          const PagamentoOrderPage(
+                                              enviarAoAbrir: true),
                                     ),
                                   );
                                   return;
@@ -563,9 +619,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                   horizontal: 36,
                                   vertical: 16,
                                 ),
-                                child: const Text(
-                                  'Pagar',
-                                  style: TextStyle(
+                                child: Text(
+                                  isQuartoENome ? 'Enviar pedido' : 'Pagar',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

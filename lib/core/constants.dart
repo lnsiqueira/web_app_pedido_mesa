@@ -4,6 +4,15 @@ import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
 FilialNFModel? globalFilialData;
 
 String codFilial = '';
+
+/// Filial cujo cardápio (categorias/produtos) é exibido: a própria filial
+/// ou, se ela ainda não tiver cardápio, a padrão (Higienópolis).
+const filialCardapioPadrao = '1743445823763';
+String codFilialCardapio = '';
+
+/// Documento Filial/{codFilial} do Firestore (urlApiBratter, categorias
+/// ocultas etc.), lido ao abrir o site.
+Map<String, dynamic> dadosFilialFirestore = {};
 String numeroMesa = '';
 String numeroComanda = '';
 bool isQuartoENome = true;
@@ -55,6 +64,21 @@ class Urls {
 }
 
 void setUrlApiBratterPorFilial(String filialId) {
+  // URL da Bratter cadastrada no Firestore: vale para qualquer filial nova,
+  // sem mexer no código. Usa a externa (Filial/{id}.urlApiBratterExterna);
+  // a urlApiBratter (dos tablets) só se não for de rede interna.
+  String campo(String nome) =>
+      (dadosFilialFirestore[nome] ?? '').toString().trim();
+  final interna = RegExp(
+      r'//(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)');
+  var cadastrada = campo('urlApiBratterExterna');
+  if (cadastrada.isEmpty && !interna.hasMatch(campo('urlApiBratter'))) {
+    cadastrada = campo('urlApiBratter');
+  }
+  if (cadastrada.isNotEmpty) {
+    Urls.urlApiBratter = cadastrada.endsWith('/') ? cadastrada : '$cadastrada/';
+    return;
+  }
   if (filialId == '1743445823763') {
     Urls.urlApiBratter =
         'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';

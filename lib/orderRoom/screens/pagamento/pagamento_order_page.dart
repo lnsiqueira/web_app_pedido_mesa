@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webapp_pedido_mesa/admin/services/cardapio_admin_service.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
+import 'package:webapp_pedido_mesa/services/kds_service.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
@@ -36,7 +37,11 @@ import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 import '../../oder_service.dart'; // para abrir no browser
 
 class PagamentoOrderPage extends StatefulWidget {
-  const PagamentoOrderPage({super.key});
+  const PagamentoOrderPage({super.key, this.enviarAoAbrir = false});
+
+  /// Comanda já confirmada no carrinho: envia direto para a comanda, sem
+  /// mostrar a tela de escolha (só "Enviando seu pedido...")
+  final bool enviarAoAbrir;
 
   @override
   State<PagamentoOrderPage> createState() => _PagamentoOrderPageState();
@@ -74,6 +79,9 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
     print(valorEmCentavos);
     super.initState();
+    if (widget.enviarAoAbrir) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _pagarCaixa());
+    }
   }
 
   Map<String, dynamic> _pixRequestBody() => {
@@ -159,7 +167,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         );
       }
 
-      List<Map<String, dynamic>> itemsJson = carrinho.itens.map((item) {
+      List<Map<String, dynamic>> itemsJson = carrinho.itens.expand((item) {
         List<Map<String, dynamic>> observacoesJson = [];
 
 // flag para saber se já adicionou
@@ -209,12 +217,29 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           });
         }
 
-        return {
-          "IdProduto": item.produto.plu,
-          "Preco": item.produto.preco,
-          "Qtde": item.quantidade,
-          "Observacoes": observacoesJson,
-        };
+        return [
+          {
+            "IdProduto": item.produto.plu,
+            "Preco": item.produto.preco,
+            "Qtde": item.quantidade,
+            "Observacoes": observacoesJson,
+          },
+          // acréscimo vai como produto próprio, logo abaixo (como no tablet)
+          for (final a in item.produto.acrescimos)
+            {
+              "IdProduto": a.plu,
+              "Preco": a.preco,
+              "Qtde": item.quantidade,
+              "Observacoes": [
+                {
+                  "Obs": a.observacao,
+                  "Preco": 0.0,
+                  "PluAdd": 0,
+                  "Modificador": 'COM',
+                },
+              ],
+            },
+        ];
       }).toList();
 
       var urlBratter = Urls.urlApiBratter;
@@ -247,6 +272,11 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       debugPrint('RESPONSE: ${response.body}');
 
       if (response.statusCode == 200) {
+        registrarPedidoKds(
+          comanda: idComanda.toString(),
+          mesa: idMesa.toString(),
+          itens: Provider.of<CarrinhoModel>(context, listen: false).itens,
+        );
         final nota = await _mostrarAvaliacaoDialog();
         if (!mounted) return;
 
@@ -279,6 +309,15 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
     } catch (e, stack) {
       debugPrint('Erro ao pagar no caixa: $e');
       debugPrintStack(stackTrace: stack);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Não foi possível enviar o pedido. Tente de novo '
+              'ou chame um atendente.'),
+          backgroundColor: Colors.red,
+        ));
+        // envio direto: volta para o carrinho (o pedido continua lá)
+        if (widget.enviarAoAbrir) Navigator.of(context).pop();
+      }
     } finally {
       if (mounted) {
         setState(() => _pagando = false);
@@ -1403,6 +1442,24 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.enviarAoAbrir) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Color(0xFFE8710A)),
+              SizedBox(height: 18),
+              Text(
+                'Enviando seu pedido...',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     String _formatarTempo(int segundos) {
       if (segundos >= 60) {
         int minutos = segundos ~/ 60;
@@ -1839,7 +1896,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                             ],
                                           ),
                                           child: const Icon(
-                                            Icons.payments_rounded,
+                                            Icons.room_service_rounded,
                                             size: 44,
                                             color: Colors.white,
                                           ),
@@ -1849,7 +1906,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
                                         // Título
                                         const Text(
-                                          'Finalizar compra',
+                                          'Enviar pedido',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 30,
@@ -1862,7 +1919,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                         const SizedBox(height: 10),
 
                                         Text(
-                                          'Finalize seu pedido escolhendo\ncomo deseja realizar o pagamento',
+                                          'Seu pedido vai direto para a sua comanda\ne a gente leva até a sua mesa',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 15,
@@ -2001,7 +2058,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                                                     child:
                                                                         const Icon(
                                                                       Icons
-                                                                          .storefront_rounded,
+                                                                          .receipt_long_rounded,
                                                                       color: Colors
                                                                           .white,
                                                                       size: 24,
@@ -2021,7 +2078,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                                                               .start,
                                                                       children: [
                                                                         const Text(
-                                                                          'Pagar no caixa',
+                                                                          'Enviar para a comanda',
                                                                           maxLines:
                                                                               1,
                                                                           overflow:
@@ -2044,7 +2101,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                                                                             height:
                                                                                 6),
                                                                         Text(
-                                                                          'Enviar pedido para a comanda',
+                                                                          'Entregamos na mesa · pague no caixa ao sair',
                                                                           maxLines:
                                                                               1,
                                                                           overflow:

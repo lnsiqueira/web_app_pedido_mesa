@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,17 @@ Future<void> main() async {
 
 // SALVA FILIAL GLOBAL
   codFilial = filialId;
+  codFilialCardapio = filialId;
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('Filial')
+        .doc(filialId)
+        .get()
+        .timeout(const Duration(seconds: 8));
+    dadosFilialFirestore = doc.data() ?? {};
+  } catch (e) {
+    debugPrint('Filial no Firestore: $e');
+  }
   setUrlApiBratterPorFilial(codFilial);
   numeroMesa = mesa ?? '';
   await tokenApiBratter();

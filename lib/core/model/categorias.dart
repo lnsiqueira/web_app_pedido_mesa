@@ -16,8 +16,8 @@ class Categoria {
   factory Categoria.fromJson(Map<String, dynamic> json) {
     return Categoria(
       id: json['id'],
-      desCategoria: json['desCategoria'],
-      imagem: json['imagem'],
+      desCategoria: (json['desCategoria'] ?? '').toString().trim(),
+      imagem: json['imagem'] ?? '',
 
       // NOVOS CAMPOS
       horaInicio: json['horaInicio'],

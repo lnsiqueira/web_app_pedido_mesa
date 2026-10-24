@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
+import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
+import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
@@ -54,8 +56,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     // 🔥 abre só depois da tela carregar
+    // a comanda é pedida só no fim, ao enviar o pedido (carrinho)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _pedirMesaEComanda();
+      _carregarCategorias();
     });
   }
 
@@ -158,7 +161,7 @@ class _HomePageState extends State<HomePage> {
 
     final url = Uri.parse(
       '${Urls.urlApiAzure}Categorias/produto-by-categoria-filial'
-      '?idFilial=$codFilial'
+      '?idFilial=$codFilialCardapio'
       '&nomeProduto=$query',
     );
 
@@ -242,57 +245,22 @@ class _HomePageState extends State<HomePage> {
       isLoading = true;
     });
 
-    var url = '${Urls.urlApiAzure}/Categorias/categoria-by-filial/$codFilial';
-
     try {
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-
-        final agora = TimeOfDay.now();
-
-        final categoriasFiltradas =
-            data.map((e) => Categoria.fromJson(e)).where((categoria) {
-          final inicio = categoria.horaInicio;
-          final fim = categoria.horaFim;
-
-          // Sem horário = sempre disponível
-          if (inicio == null || fim == null) {
-            return true;
-          }
-
-          final horaInicio = _parseHorario(inicio);
-          final horaFim = _parseHorario(fim);
-
-          final agoraMin = agora.hour * 60 + agora.minute;
-
-          final inicioMin = horaInicio.hour * 60 + horaInicio.minute;
-
-          final fimMin = horaFim.hour * 60 + horaFim.minute;
-
-          // Horário normal (08h -> 18h)
-          if (inicioMin <= fimMin) {
-            return agoraMin >= inicioMin && agoraMin <= fimMin;
-          }
-
-          // Horário virando madrugada
-          // Ex: 18h -> 02h
-          return agoraMin >= inicioMin || agoraMin <= fimMin;
-        }).toList();
-
-        setState(() {
-          categorias = categoriasFiltradas;
-        });
-      } else {
-        print('Erro ao carregar categorias: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Erro: $e');
-    } finally {
+      final lista = await CardapioService.categorias();
+      if (!mounted) return;
       setState(() {
-        isLoading = false;
+        categorias = lista;
       });
+      // sugestões (bebida / sobremesa) já carregam em segundo plano
+      preCarregarSugestoes();
+    } catch (e) {
+      debugPrint('Erro ao carregar categorias: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 

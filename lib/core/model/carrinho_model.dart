@@ -9,7 +9,11 @@ class CarrinhoModel extends ChangeNotifier {
   List<ItemCarrinho> get itens => _itens;
 
   void adicionar(ItemModel produto) {
-    final index = _itens.indexWhere((item) => item.produto.plu == produto.plu);
+    // mesmo produto com acréscimos diferentes fica em linha separada
+    String chave(ItemModel p) =>
+        '${p.plu}|${p.acrescimos.map((a) => a.plu).join(',')}';
+    final index =
+        _itens.indexWhere((item) => chave(item.produto) == chave(produto));
 
     if (index >= 0) {
       _itens[index].quantidade++;
@@ -22,9 +26,22 @@ class CarrinhoModel extends ChangeNotifier {
   }
 
   void remover(ItemModel produto) {
-    _itens.removeWhere((item) => item.produto.plu == produto.plu);
+    _itens.removeWhere((item) => identical(item.produto, produto));
     notifyListeners();
     CarrinhoStorage.salvarCarrinho(itens); // salva automaticamente
+  }
+
+  /// Item editado pelo cliente (reaberto no carrinho): fica na mesma posição
+  void substituir(ItemCarrinho antigo, ItemModel novo, int quantidade) {
+    final index = _itens.indexOf(antigo);
+    final item = ItemCarrinho(produto: novo, quantidade: quantidade);
+    if (index >= 0) {
+      _itens[index] = item;
+    } else {
+      _itens.add(item);
+    }
+    CarrinhoStorage.salvarCarrinho(itens);
+    notifyListeners();
   }
 
   void limpar() {
@@ -38,7 +55,8 @@ class CarrinhoModel extends ChangeNotifier {
   double get totalGeral {
     return _itens.fold(
       0.0,
-      (total, item) => total + (item.produto.preco! * item.quantidade),
+      (total, item) =>
+          total + (item.produto.precoComAcrescimos * item.quantidade),
     );
   }
 }

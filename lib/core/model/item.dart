@@ -27,6 +27,18 @@ class ItemModel {
   int? quantidadeDisponivel;
   bool? ativo;
 
+  /// Acréscimos escolhidos (Dashboard): vão para a comanda como itens
+  /// próprios, logo abaixo do produto
+  List<AcrescimoEscolhido> acrescimos;
+
+  /// Opções do produto como vieram da Bratter (o carrinho guarda só as
+  /// escolhidas); usadas para reabrir o produto e editar
+  List<ItemObsModel>? obsOriginais;
+
+  /// Preço do produto + acréscimos (por unidade)
+  double get precoComAcrescimos =>
+      (preco ?? 0) + acrescimos.fold(0.0, (t, a) => t + a.preco);
+
   ItemModel({
     this.id,
     this.idFilial,
@@ -55,6 +67,8 @@ class ItemModel {
     this.quantidadeDisponivel,
     this.ativo,
     this.obs,
+    this.acrescimos = const [],
+    this.obsOriginais,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) {
@@ -92,7 +106,12 @@ class ItemModel {
           [],
     );
   }
-  ItemModel copyWith({double? preco, List<ItemObsModel>? obs}) {
+  ItemModel copyWith({
+    double? preco,
+    List<ItemObsModel>? obs,
+    List<AcrescimoEscolhido>? acrescimos,
+    List<ItemObsModel>? obsOriginais,
+  }) {
     return ItemModel(
       id: id,
       idFilial: idFilial,
@@ -111,6 +130,8 @@ class ItemModel {
       quantidadeDisponivel: quantidadeDisponivel,
       ativo: ativo,
       obs: obs ?? this.obs,
+      acrescimos: acrescimos ?? this.acrescimos,
+      obsOriginais: obsOriginais ?? this.obsOriginais,
     );
   }
 
@@ -126,6 +147,26 @@ class ItemModel {
       'peso': peso,
       'quantidade': quantidade,
     };
+  }
+}
+
+/// Acréscimo escolhido no produto (ex.: "Queijo extra"), com o preço da
+/// Bratter
+class AcrescimoEscolhido {
+  const AcrescimoEscolhido({
+    required this.plu,
+    required this.nome,
+    required this.preco,
+  });
+
+  final String plu;
+  final String nome;
+  final double preco;
+
+  /// Observação na comanda (a comanda guarda só 30 letras)
+  String get observacao {
+    final t = '+ $nome'.trim();
+    return t.length <= 30 ? t : t.substring(0, 30);
   }
 }
 
