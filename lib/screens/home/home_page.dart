@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
+import 'package:webapp_pedido_mesa/widgets/sobre_bakeryfood.dart';
+import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
@@ -145,59 +147,60 @@ class _HomePageState extends State<HomePage> {
   //     setState(() => isSearching = false);
   //   }
   // }
+  /// Minúsculas e sem acento ("Pão" -> "pao")
+  static String _normalizar(String s) {
+    const de = 'áàâãäéèêëíìîïóòôõöúùûüç';
+    const para = 'aaaaaeeeeiiiiooooouuuuc';
+    final b = StringBuffer();
+    for (final ch in s.toLowerCase().split('')) {
+      final i = de.indexOf(ch);
+      b.write(i >= 0 ? para[i] : ch);
+    }
+    return b.toString();
+  }
+
+  static bool _casa(List<String> palavras, String nome) {
+    final doNome = nome.split(RegExp(r'[^a-z0-9]+'));
+    return palavras.every((b) => doNome.any((w) => w.startsWith(b)));
+  }
+
+  /// Busca no cardápio que está aparecendo (mesmas categorias e filial),
+  /// sem ligar para acentos: "pao de quei" acha "Pão de Queijo"
   Future<void> _buscarProduto(String query) async {
-    if (query.isEmpty) {
+    final termo = _normalizar(query.trim());
+    if (termo.isEmpty) {
       setState(() {
         modoBusca = false;
         resultadosBusca.clear();
       });
       return;
     }
-
     setState(() {
       modoBusca = true;
       isSearching = true;
     });
-
-    final url = Uri.parse(
-      '${Urls.urlApiAzure}Categorias/produto-by-categoria-filial'
-      '?idFilial=$codFilialCardapio'
-      '&nomeProduto=$query',
-    );
-
     try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final list = json.decode(response.body) as List;
-
-        // 🔥 base
-        final produtos = list.map((e) => ItemModel.fromJson(e)).toList();
-
-        // 🔥 busca preço + obs em paralelo
-        final produtosCompletos = await Future.wait(
-          produtos.map((p) async {
-            final info = await _buscarPrecoProduto(p.plu ?? '');
-
-            return p.copyWith(
-              preco: info.preco ?? p.preco,
-              obs: info.obs ?? [],
-            );
-          }),
-        );
-
-        if (!mounted) return;
-
-        setState(() {
-          resultadosBusca = produtosCompletos;
-        });
-      }
+      final listas = await Future.wait(
+          categorias.map((c) => CardapioService.produtosDe(c.id)));
+      final palavras = termo.split(RegExp(r'\s+'));
+      final vistos = <String>{};
+      final achados = [
+        for (final p in listas.expand((l) => l))
+          // cada palavra buscada é o começo de uma palavra do nome
+          if (_casa(palavras, _normalizar(p.desProduto ?? '')) &&
+              vistos.add(p.plu ?? ''))
+            p,
+      ];
+      final completos =
+          await Future.wait(achados.take(30).map(Complementos.completar));
+      if (!mounted || _searchController.text.trim() != query.trim()) return;
+      setState(() {
+        resultadosBusca = completos.where((p) => p.preco != null).toList();
+      });
     } catch (e) {
       debugPrint('Erro busca: $e');
     } finally {
-      if (mounted) {
-        setState(() => isSearching = false);
-      }
+      if (mounted) setState(() => isSearching = false);
     }
   }
 
@@ -283,11 +286,18 @@ class _HomePageState extends State<HomePage> {
 
     return SafeArea(
       child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: AppBar(
-            automaticallyImplyLeading: false, // Oculta botão "voltar"
-            title: Row(
+        body: Stack(
+          children: [
+            ConexaoWrapper(
+              // a barra de cima some ao rolar para baixo e volta ao subir
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    floating: true,
+                    snap: true,
+                    automaticallyImplyLeading: false,
+                    toolbarHeight: 60,
+                    title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // LOGO
@@ -350,18 +360,10 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-          ),
-        ),
-        body: Stack(
-          children: [
-            ConexaoWrapper(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 120),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: 120),
+                    sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
                         if (comanda != null)
@@ -379,22 +381,49 @@ class _HomePageState extends State<HomePage> {
                               ? GridBuscaWidget(
                                   produtos: resultadosBusca,
                                   isLoading: isSearching,
-                                  onTap: (produto) {
-                                    ProdutoPopup.show(
-                                      context,
-                                      produto: produto,
-                                      onAdd: _adicionarAoCarrinho,
-                                    );
-                                  },
+                                  onTap: (produto) =>
+                                      abrirProdutoPopup(context, produto),
                                 )
                               : GridCategoriasWidget(
                                   categorias: categorias,
                                 ),
                         ),
+                        if (!modoBusca && categorias.isNotEmpty)
+                          // toque: "Sobre a BakeryFood"
+                          Center(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () => mostrarSobreBakeryFood(context),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                                child: Text.rich(
+                                  TextSpan(children: [
+                                    const TextSpan(text: 'Desenvolvido por '),
+                                    TextSpan(
+                                      text: 'BakeryFood',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey.shade700,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                    const TextSpan(text: ' · 2026'),
+                                  ]),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                ),
+                  ),
+                ],
               ),
             ),
 

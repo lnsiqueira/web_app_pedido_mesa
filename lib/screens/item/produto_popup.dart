@@ -8,6 +8,13 @@ import 'package:webapp_pedido_mesa/screens/item/item_page.dart' show QtyButton;
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 
+/// Nome no detalhe/opções: só a primeira letra maiúscula ("PAO DE QUEIJO"
+/// -> "Pao de queijo"). Nos cards da grade o nome vai todo em maiúsculas.
+String textoFrase(String s) {
+  final t = s.trim().toLowerCase();
+  return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
+}
+
 String _reaisPopup(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 
 /// Escolha da opção de um grupo (ex.: Fatia / Inteira); depois abre o
@@ -37,7 +44,7 @@ Future<void> escolherOpcaoGrupo(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              grupo.nome,
+              textoFrase(grupo.nome),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
@@ -65,7 +72,7 @@ Future<void> escolherOpcaoGrupo(
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text(o.value,
+                                  child: Text(textoFrase(o.value),
                                       style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700)),
@@ -636,7 +643,7 @@ Future<void> abrirProdutoPopup(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                produto.desProduto ?? '',
+                                textoFrase(produto.desProduto ?? ''),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -913,7 +920,7 @@ Future<void> abrirProdutoPopup(
                                           // const SizedBox(width: 8),
                                         ],
                                         Text(
-                                          o.titulo ?? '',
+                                          textoFrase(o.titulo),
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,

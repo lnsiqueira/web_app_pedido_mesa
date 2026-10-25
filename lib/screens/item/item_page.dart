@@ -177,7 +177,7 @@ class _ItensPageState extends State<ItensPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    nome,
+                    nome.toUpperCase(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -812,17 +812,18 @@ class _ItensPageState extends State<ItensPage> {
                 : produtos.isEmpty
                     ? _buildEmptyState()
                     : GridView.builder(
+                        // margens e espaço entre os cards menores
                         padding: const EdgeInsets.fromLTRB(
-                          16,
-                          16,
-                          16,
+                          10,
+                          10,
+                          10,
                           120,
                         ),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
                           childAspectRatio: 0.96,
                         ),
                         itemCount: exibicao.length,

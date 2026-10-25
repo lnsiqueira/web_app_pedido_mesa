@@ -446,7 +446,7 @@ class _SugestoesSheetState extends State<_SugestoesSheet> {
             SizedBox(
               height: 34,
               child: Text(
-                nome,
+                nome.toUpperCase(),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(

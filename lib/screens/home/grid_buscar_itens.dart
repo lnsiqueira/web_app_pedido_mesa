@@ -119,7 +119,7 @@ class GridBuscaWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        produto.desProduto ?? '',
+                        (produto.desProduto ?? '').toUpperCase(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
