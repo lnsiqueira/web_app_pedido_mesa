@@ -47,7 +47,17 @@ bool _ehDoce(Categoria c) => _posicao(c, _palavrasDoce) >= 0;
 /// Produtos escolhidos na Dashboard para uma etapa (bebida / sobremesa)
 class _Config {
   const _Config(
-      {this.ids = const [], this.plus = const [], this.somente = false});
+      {this.ids = const [],
+      this.plus = const [],
+      this.categorias = const [],
+      this.titulo = '',
+      this.somente = false});
+
+  /// categorias inteiras escolhidas na Dashboard (ids), na ordem
+  final List<int> categorias;
+
+  /// texto do popup definido na Dashboard (vazio = padrão)
+  final String titulo;
 
   final List<int> ids;
   final List<String> plus;
@@ -56,7 +66,9 @@ class _Config {
   final bool somente;
 
   bool contem(ItemModel p) =>
-      (p.id != null && ids.contains(p.id)) || plus.contains(p.plu);
+      (p.id != null && ids.contains(p.id)) ||
+      plus.contains(p.plu) ||
+      categorias.contains(p.idCategoriaFilial);
 
   static _Config ler(dynamic m) {
     if (m is! Map) return const _Config();
@@ -64,6 +76,11 @@ class _Config {
     return _Config(
       ids: [for (final p in produtos) (p['id'] as num?)?.toInt() ?? 0],
       plus: [for (final p in produtos) p['plu']?.toString() ?? ''],
+      categorias: [
+        for (final c in ((m['categorias'] as List?) ?? []).whereType<Map>())
+          if ((c['id'] as num?) != null) (c['id'] as num).toInt(),
+      ],
+      titulo: m['titulo']?.toString().trim() ?? '',
       somente: m['somente'] == true,
     );
   }
@@ -145,8 +162,21 @@ Future<List<Object>> _produtosEtapa({required bool bebida}) =>
           if (p != null && !todos.any((x) => x.plu == p.plu)) todos.add(p);
         }
       }
+      // categorias escolhidas (só as que aparecem agora, pelo horário)
+      final escolhidas = [
+        for (final id in cfg.categorias)
+          ...categorias.where((c) => c.id == id),
+      ];
+      final listasEscolhidas = await Future.wait(
+          escolhidas.map((c) => CardapioService.produtosDe(c.id)));
+      for (final p in listasEscolhidas.expand((l) => l)) {
+        if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
+      }
       if (!cfg.somente || todos.isEmpty) {
-        final cats = categorias.where(filtro).toList()
+        final cats = categorias
+            .where(filtro)
+            .where((c) => !cfg.categorias.contains(c.id))
+            .toList()
           ..sort(
               (a, b) => _posicao(a, palavras).compareTo(_posicao(b, palavras)));
         // categorias em paralelo
@@ -173,6 +203,8 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   if (carrinho.itens.isEmpty || categorias.isEmpty) return;
   final porId = {for (final c in categorias) c.id: c};
   final (cfgBebida, cfgDoce) = await (_config ??= _carregarConfig());
+  String texto(_Config cfg, String padrao) =>
+      cfg.titulo.isNotEmpty ? cfg.titulo : padrao;
 
   bool bebida(ItemModel p) {
     final c = porId[p.idCategoriaFilial];
@@ -206,14 +238,14 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
     if (oferecerBebida)
       _Etapa(
         Icons.local_drink_rounded,
-        'Que tal uma bebida?',
+        texto(cfgBebida, 'Que tal uma bebida?'),
         'Pra acompanhar o seu ${capitalizar(nomePrato)}',
         _produtosEtapa(bebida: true),
       ),
     if (!temDoce)
       _Etapa(
         Icons.icecream_rounded,
-        'Vai uma sobremesa?',
+        texto(cfgDoce, 'Vai uma sobremesa?'),
         'Pra fechar a refeição com chave de ouro',
         _produtosEtapa(bebida: false),
       ),

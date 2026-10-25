@@ -187,7 +187,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
               // adiciona apenas uma vez
               if (!adicionouPedidoSite) {
                 observacoesJson.add({
-                  "Obs": 'Pedido feito pelo site',
+                  "Obs": 'Pedido feito pelo QrCode',
                   "Preco": 0.0,
                   "PluAdd": 0,
                   "Modificador": 'COM',
@@ -210,7 +210,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         // adiciona mesmo assim
         if (!adicionouPedidoSite) {
           observacoesJson.add({
-            "Obs": 'Pedido feito pelo site',
+            "Obs": 'Pedido feito pelo QrCode',
             "Preco": 0.0,
             "PluAdd": 0,
             "Modificador": 'COM',

@@ -18,6 +18,9 @@ Future<void> escolherOpcaoGrupo(
   List<MapEntry<ItemModel, String>> opcoes, {
   bool sugerir = true,
 }) async {
+  // selos para marcar as opções veganas/vegetarianas
+  final selos = await Complementos.selos();
+  if (!context.mounted) return;
   final escolhido = await showModalBottomSheet<ItemModel>(
     context: context,
     isScrollControlled: true,
@@ -67,6 +70,13 @@ Future<void> escolherOpcaoGrupo(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700)),
                                 ),
+                                if ((selos[o.key.id]?.vegano ?? false) ||
+                                    (selos[o.key.id]?.vegetariano ?? false))
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 8),
+                                    child: Icon(Icons.eco_rounded,
+                                        size: 18, color: Color(0xFF2E7D32)),
+                                  ),
                                 Text(
                                   o.key.preco == null
                                       ? '...'

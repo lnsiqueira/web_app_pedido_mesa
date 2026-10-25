@@ -66,6 +66,7 @@ class _ItensPageState extends State<ItensPage> {
     required double? preco,
     String? selo,
     List<String> selosVeg = const [],
+    bool iconeVeg = false,
     bool aPartirDe = false,
     VoidCallback? onTap,
   }) {
@@ -117,6 +118,22 @@ class _ItensPageState extends State<ItensPage> {
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFFE8710A))),
+                ),
+              ),
+            // grupo com alguma opção vegana/vegetariana: só o ícone, no canto
+            // oposto ao "N opções" (como no tablet)
+            if (iconeVeg)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.eco_rounded,
+                      size: 16, color: Color(0xFF2E7D32)),
                 ),
               ),
             if (selosVeg.isNotEmpty)
@@ -832,7 +849,8 @@ class _ItensPageState extends State<ItensPage> {
                                   ? null
                                   : precos.reduce((a, b) => a < b ? a : b),
                               selo: '${opcoes.length} opções',
-                              selosVeg: _selosDe(opcoes.map((o) => o.key)),
+                              iconeVeg: opcoes
+                                  .any((o) => _selosDe([o.key]).isNotEmpty),
                               aPartirDe: precos.toSet().length > 1,
                               onTap: () => escolherOpcaoGrupo(context, grupo, opcoes),
                             );
