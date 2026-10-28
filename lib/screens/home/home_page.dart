@@ -298,57 +298,126 @@ class _HomePageState extends State<HomePage> {
                     automaticallyImplyLeading: false,
                     toolbarHeight: 60,
                     title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // LOGO
-                Image.asset('images/logodd_clean.png', height: 40),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // LOGO
+                        Image.asset('images/logodd_clean.png', height: 40),
 
-                // FLAGS + CARRINHO
-                Row(
-                  children: [
-                    _buildFlag('images/br.png', 'pt', languageController),
-                    const SizedBox(width: 6),
-                    _buildFlag('images/en.png', 'en', languageController),
-                    const SizedBox(width: 6),
-                    _buildFlag('images/es.png', 'es', languageController),
-                    const SizedBox(width: 8),
-                    MeusPedidosWidget(),
+                        // FLAGS + CARRINHO
+                        Row(
+                          children: [
+                            _buildFlag(
+                                'images/br.png', 'pt', languageController),
+                            const SizedBox(width: 6),
+                            _buildFlag(
+                                'images/en.png', 'en', languageController),
+                            const SizedBox(width: 6),
+                            _buildFlag(
+                                'images/es.png', 'es', languageController),
+                            const SizedBox(width: 8),
+                            MeusPedidosWidget(),
 
-                    // const SizedBox(width: 4),
-                    // // Carrinho com badge
-                    Consumer<CarrinhoModel>(
-                      builder: (context, carrinho, _) => Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.shopping_cart_outlined,
-                              color: Colors.black54,
+                            // const SizedBox(width: 4),
+                            // // Carrinho com badge
+                            Consumer<CarrinhoModel>(
+                              builder: (context, carrinho, _) => Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.shopping_cart_outlined,
+                                      color: Colors.black54,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const CarrinhoPage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  if (carrinho.totalItens > 0)
+                                    Positioned(
+                                      right: 4,
+                                      top: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          carrinho.totalItens.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const CarrinhoPage(),
-                                ),
-                              );
-                            },
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: 120),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          if (comanda != null)
+                            SearchBarWidget(
+                              controller: _searchController,
+                              onChanged: _onSearchChanged,
+                              onClear: () {
+                                _searchController.clear();
+                                _buscarProduto('');
+                              },
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: modoBusca
+                                ? GridBuscaWidget(
+                                    produtos: resultadosBusca,
+                                    isLoading: isSearching,
+                                    onTap: (produto) =>
+                                        abrirProdutoPopup(context, produto),
+                                  )
+                                : GridCategoriasWidget(
+                                    categorias: categorias,
+                                  ),
                           ),
-                          if (carrinho.totalItens > 0)
-                            Positioned(
-                              right: 4,
-                              top: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  carrinho.totalItens.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
+                          if (!modoBusca && categorias.isNotEmpty)
+                            // toque: "Sobre a BakeryFood"
+                            Center(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () => mostrarSobreBakeryFood(context),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                                  child: Text.rich(
+                                    TextSpan(children: [
+                                      const TextSpan(text: 'Desenvolvido por '),
+                                      TextSpan(
+                                        text: 'BakeryFood',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.grey.shade700,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                      const TextSpan(text: ' · 2026'),
+                                    ]),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -356,72 +425,6 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.only(bottom: 120),
-                    sliver: SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        if (comanda != null)
-                          SearchBarWidget(
-                            controller: _searchController,
-                            onChanged: _onSearchChanged,
-                            onClear: () {
-                              _searchController.clear();
-                              _buscarProduto('');
-                            },
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: modoBusca
-                              ? GridBuscaWidget(
-                                  produtos: resultadosBusca,
-                                  isLoading: isSearching,
-                                  onTap: (produto) =>
-                                      abrirProdutoPopup(context, produto),
-                                )
-                              : GridCategoriasWidget(
-                                  categorias: categorias,
-                                ),
-                        ),
-                        if (!modoBusca && categorias.isNotEmpty)
-                          // toque: "Sobre a BakeryFood"
-                          Center(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () => mostrarSobreBakeryFood(context),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                                child: Text.rich(
-                                  TextSpan(children: [
-                                    const TextSpan(text: 'Desenvolvido por '),
-                                    TextSpan(
-                                      text: 'BakeryFood',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey.shade700,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                    const TextSpan(text: ' · 2026'),
-                                  ]),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
                   ),
                 ],
               ),

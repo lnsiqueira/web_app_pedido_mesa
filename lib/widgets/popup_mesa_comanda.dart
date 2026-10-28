@@ -532,8 +532,15 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
           debugPrint('BODY: ${response.body}');
           debugPrint('DATA: $data');
 
-          if (data['Id'] != 0 && data['Status'] != null) {
-            numeroComanda = comanda ?? '4500';
+          // aceita comanda livre (o Bratter devolve Id 0 e sem status) ou
+          // aberta (00/01/02), como o tablet; recusa bloqueada etc.
+          final status = data['Status']?.toString();
+          final id = int.tryParse('${data['Id'] ?? 0}') ?? 0;
+          final livre = id == 0 && status == null;
+          final valida =
+              livre || status == '00' || status == '01' || status == '02';
+          if (comanda.trim().isNotEmpty && valida) {
+            numeroComanda = comanda.trim();
             Navigator.pop(context, {
               'comanda': comanda,
             });

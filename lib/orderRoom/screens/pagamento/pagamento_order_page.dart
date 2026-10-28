@@ -19,6 +19,7 @@ import 'package:uuid/uuid.dart';
 import 'package:webapp_pedido_mesa/admin/services/cardapio_admin_service.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/services/kds_service.dart';
+import 'package:webapp_pedido_mesa/services/cardapio_service.dart' show renovarTokenBratter;
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
@@ -170,9 +171,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       List<Map<String, dynamic>> itemsJson = carrinho.itens.expand((item) {
         List<Map<String, dynamic>> observacoesJson = [];
 
-// flag para saber se já adicionou
-        bool adicionouPedidoSite = false;
-
         if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
           for (var obsItem in item.produto.obs!) {
             if (obsItem.tipo == "texto" && obsItem.titulo.trim().isNotEmpty) {
@@ -184,17 +182,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                 "Modificador": 'COM',
               });
 
-              // adiciona apenas uma vez
-              if (!adicionouPedidoSite) {
-                observacoesJson.add({
-                  "Obs": 'Pedido feito pelo QrCode',
-                  "Preco": 0.0,
-                  "PluAdd": 0,
-                  "Modificador": 'COM',
-                });
-
-                adicionouPedidoSite = true;
-              }
             } else if (obsItem.modificador != null &&
                 (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
               observacoesJson.add({
@@ -207,29 +194,37 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           }
         }
 
-        // adiciona mesmo assim
-        if (!adicionouPedidoSite) {
-          observacoesJson.add({
-            "Obs": 'Pedido feito pelo QrCode',
-            "Preco": 0.0,
-            "PluAdd": 0,
-            "Modificador": 'COM',
-          });
-        }
 
+        // mesmo formato do cardápio de mesa (tablet), que lança certo
+        final preco = item.produto.preco ?? 0.0;
+        final agora = DateTime.now().toString();
         return [
           {
-            "IdProduto": item.produto.plu,
-            "Preco": item.produto.preco,
-            "Qtde": item.quantidade,
+            "IdProduto": int.tryParse(item.produto.plu ?? '') ?? 0,
+            "Preco": preco,
+            "Qtde": item.quantidade.toDouble(),
+            "Total":
+                double.parse((preco * item.quantidade).toStringAsFixed(2)),
+            "descricao": (item.produto.desProduto ?? '').trim(),
+            "id": 0,
+            "dataHora": agora,
+            "user": 'Site QR Code',
+            "Pesavel": 'NÃO',
             "Observacoes": observacoesJson,
           },
           // acréscimo vai como produto próprio, logo abaixo (como no tablet)
           for (final a in item.produto.acrescimos)
             {
-              "IdProduto": a.plu,
+              "IdProduto": int.tryParse(a.plu) ?? 0,
               "Preco": a.preco,
-              "Qtde": item.quantidade,
+              "Qtde": item.quantidade.toDouble(),
+              "Total":
+                  double.parse((a.preco * item.quantidade).toStringAsFixed(2)),
+              "descricao": a.nome,
+              "id": 0,
+              "dataHora": agora,
+              "user": 'Site QR Code',
+              "Pesavel": 'NÃO',
               "Observacoes": [
                 {
                   "Obs": a.observacao,
@@ -245,13 +240,14 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       var urlBratter = Urls.urlApiBratter;
       final encodedUrl = Uri.encodeComponent(urlBratter);
 
-      final url =
-          '${Urls.urlApiAzure}Proxy/AddComanda?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
+      // repassa o pedido completo à Bratter (rota que não corta campos)
+      String url() =>
+          '${Urls.urlApiAzure}Proxy/AddComandaCompleta?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}';
 
       final body = {
-        "IdComanda": idComanda,
+        "IdComanda": idComanda.toString(),
         "IdMesa": idMesa,
-        "usuario": '',
+        "usuario": 'Site QR Code',
         "Itens": itemsJson,
         "Uuid": const Uuid().v4(),
         "Terminal": 301,
@@ -259,14 +255,23 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
       debugPrint('BODY ENVIO: ${jsonEncode(body)}');
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
+      Future<http.Response> enviar() => http
+          .post(
+            Uri.parse(url()),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 45));
+      var response = await enviar();
+      // token da Bratter vencido (site aberto há muito tempo): renova e
+      // tenta de novo uma vez
+      if (response.statusCode == 401) {
+        await renovarTokenBratter();
+        response = await enviar();
+      }
 
       debugPrint('STATUS: ${response.statusCode}');
       debugPrint('RESPONSE: ${response.body}');

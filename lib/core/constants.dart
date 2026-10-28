@@ -84,6 +84,9 @@ void setUrlApiBratterPorFilial(String filialId) {
         'http://dd-higienopolis.ddns.com.br:1974/DeolaApi/api/';
   } else if (filialId == '8urs76lF1QwjcNpi3CwD') {
     Urls.urlApiBratter = 'http://dd-lapa.ddns.com.br:1974/DeolaApi/api/';
+  } else if (filialId == '1743443888148') {
+    // Saúde (no Firestore a urlApiBratter é a da rede interna, dos tablets)
+    Urls.urlApiBratter = 'http://dd-saude.ddns.com.br:1974/DeolaApi/api/';
   } else if (filialId == '3') {
     Urls.urlApiBratter = 'http://dd-hsjos.ddns.com.br:1974/DeolaApi/api/';
   } else {

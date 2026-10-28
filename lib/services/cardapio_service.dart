@@ -320,3 +320,21 @@ List<Object> agruparProdutos(
   }
   return r;
 }
+
+/// Renova o token da Bratter pelo Proxy (o site pode ficar aberto muito
+/// tempo e o token vence).
+Future<void> renovarTokenBratter() async {
+  try {
+    final url = '${Urls.urlApiAzure}Proxy/token'
+        '?username=${GlobalKeys.userApiBratter}'
+        '&password=${GlobalKeys.passwordApiBratter}'
+        '&urlBratter=${Uri.encodeComponent('${Urls.urlApiBratter}User')}';
+    final r =
+        await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+    if (r.statusCode != 200) return;
+    final t = jsonDecode(r.body)['token']?.toString() ?? '';
+    if (t.isNotEmpty) GlobalKeys.tokenBratter = t;
+  } catch (e) {
+    debugPrint('Renovar token Bratter: $e');
+  }
+}
