@@ -49,9 +49,18 @@ class _Config {
   const _Config(
       {this.ids = const [],
       this.plus = const [],
+      this.fora = const [],
       this.categorias = const [],
       this.titulo = '',
       this.somente = false});
+
+  /// Produto fora do cardápio (cadastrado só na sugestão, com nome e foto
+  /// próprios); null = produto do cardápio. Mesma posição de [plus].
+  final List<ItemModel?> fora;
+
+  /// Configurada na Dashboard (produtos, categorias ou texto)
+  bool get definida =>
+      plus.isNotEmpty || categorias.isNotEmpty || titulo.isNotEmpty;
 
   /// categorias inteiras escolhidas na Dashboard (ids), na ordem
   final List<int> categorias;
@@ -72,10 +81,23 @@ class _Config {
 
   static _Config ler(dynamic m) {
     if (m is! Map) return const _Config();
-    final produtos = ((m['produtos'] as List?) ?? []).whereType<Map>().toList();
+    final produtos = ((m['produtos'] as List?) ?? [])
+        .whereType<Map>()
+        .where((p) => (p['plu']?.toString() ?? '').isNotEmpty)
+        .toList();
     return _Config(
       ids: [for (final p in produtos) (p['id'] as num?)?.toInt() ?? 0],
       plus: [for (final p in produtos) p['plu']?.toString() ?? ''],
+      fora: [
+        for (final p in produtos)
+          p['fora'] == true
+              ? ItemModel(
+                  plu: p['plu'].toString(),
+                  desProduto: p['nome']?.toString().trim() ?? '',
+                  imageUrl: p['imagem']?.toString().trim() ?? '',
+                )
+              : null,
+      ],
       categorias: [
         for (final c in ((m['categorias'] as List?) ?? []).whereType<Map>())
           if ((c['id'] as num?) != null) (c['id'] as num).toInt(),
@@ -86,7 +108,9 @@ class _Config {
   }
 }
 
-Future<(_Config, _Config)> _carregarConfig() async {
+/// Chaves: 'bebida'/'sobremesa' (geral) e 'idCategoria/bebida' etc.
+/// (sugestão própria de uma categoria, campo porCategoria).
+Future<Map<String, _Config>> _carregarConfig() async {
   try {
     final dados = codFilialCardapio == codFilial
         ? dadosFilialFirestore
@@ -98,10 +122,19 @@ Future<(_Config, _Config)> _carregarConfig() async {
                 .data() ??
             {};
     final s = dados['cardapioMesaSugestoes'];
-    if (s is! Map) return (const _Config(), const _Config());
-    return (_Config.ler(s['bebida']), _Config.ler(s['sobremesa']));
+    if (s is! Map) return const {};
+    final porCategoria = s['porCategoria'];
+    return {
+      'bebida': _Config.ler(s['bebida']),
+      'sobremesa': _Config.ler(s['sobremesa']),
+      if (porCategoria is Map)
+        for (final e in porCategoria.entries)
+          if (e.value is Map)
+            for (final etapa in const ['bebida', 'sobremesa'])
+              '${e.key}/$etapa': _Config.ler(e.value[etapa]),
+    };
   } catch (_) {
-    return (const _Config(), const _Config());
+    return const {};
   }
 }
 
@@ -129,8 +162,15 @@ class _Etapa {
   final Future<List<Object>> produtos;
 }
 
-Future<(_Config, _Config)>? _config;
-final _etapas = <bool, Future<List<Object>>>{};
+Future<Map<String, _Config>>? _config;
+final _etapas = <String, Future<List<Object>>>{};
+
+/// Config da etapa: a própria da categoria do prato (se definida) ou a geral
+_Config _cfgEtapa(Map<String, _Config> config, String etapa, int? idCategoria) {
+  final propria = config['$idCategoria/$etapa'];
+  if (propria != null && propria.definida) return propria;
+  return config[etapa] ?? const _Config();
+}
 
 /// Carrega as sugestões em segundo plano assim que o cardápio abre: na hora
 /// de mostrar, bebidas e sobremesas já estão prontas (sem espera).
@@ -141,60 +181,70 @@ void preCarregarSugestoes() {
 
 /// Produtos de uma etapa (bebida / sobremesa), com preço; não dependem do
 /// carrinho, então ficam guardados para a sessão.
-Future<List<Object>> _produtosEtapa({required bool bebida}) =>
-    _etapas[bebida] ??= () async {
-      final categorias = CardapioService.ultimas;
-      final (cfgBebida, cfgDoce) = await (_config ??= _carregarConfig());
-      final cfg = bebida ? cfgBebida : cfgDoce;
-      final palavras = bebida ? _palavrasBebida : _palavrasDoce;
-      final filtro = bebida ? _ehBebida : _ehDoce;
-      final todos = <ItemModel>[];
-      // escolhidos na Dashboard: podem estar em qualquer categoria
-      if (cfg.ids.isNotEmpty || cfg.plus.isNotEmpty) {
-        final listas = await Future.wait(
-            categorias.map((c) => CardapioService.produtosDe(c.id)));
-        final tudo = listas.expand((l) => l).toList();
-        for (var i = 0; i < cfg.ids.length; i++) {
-          final p = tudo.where((x) => x.id == cfg.ids[i]).firstOrNull ??
-              (i < cfg.plus.length
-                  ? tudo.where((x) => x.plu == cfg.plus[i]).firstOrNull
-                  : null);
-          if (p != null && !todos.any((x) => x.plu == p.plu)) todos.add(p);
-        }
+Future<List<Object>> _produtosEtapa(
+    {required bool bebida, int? idCategoria}) async {
+  final config = await (_config ??= _carregarConfig());
+  final etapa = bebida ? 'bebida' : 'sobremesa';
+  // categoria sem sugestão própria usa a lista da geral
+  final chave = config['$idCategoria/$etapa']?.definida == true
+      ? '$idCategoria/$etapa'
+      : etapa;
+  return _etapas[chave] ??= () async {
+    final categorias = CardapioService.ultimas;
+    final cfg = _cfgEtapa(config, etapa, idCategoria);
+    final palavras = bebida ? _palavrasBebida : _palavrasDoce;
+    final filtro = bebida ? _ehBebida : _ehDoce;
+    final todos = <ItemModel>[];
+    // escolhidos na Dashboard: podem estar em qualquer categoria
+    if (cfg.ids.isNotEmpty || cfg.plus.isNotEmpty) {
+      final listas = await Future.wait(
+          categorias.map((c) => CardapioService.produtosDe(c.id)));
+      final tudo = listas.expand((l) => l).toList();
+      for (var i = 0; i < cfg.ids.length; i++) {
+        final extra = i < cfg.fora.length ? cfg.fora[i] : null;
+        // fora do cardápio: usa o do cardápio se ele estiver lá também
+        final p = extra != null
+            ? (tudo.where((x) => x.plu == extra.plu).firstOrNull ?? extra)
+            : tudo.where((x) => x.id == cfg.ids[i]).firstOrNull ??
+                (i < cfg.plus.length
+                    ? tudo.where((x) => x.plu == cfg.plus[i]).firstOrNull
+                    : null);
+        if (p != null && !todos.any((x) => x.plu == p.plu)) todos.add(p);
       }
-      // categorias escolhidas (só as que aparecem agora, pelo horário)
-      final escolhidas = [
-        for (final id in cfg.categorias)
-          ...categorias.where((c) => c.id == id),
-      ];
-      final listasEscolhidas = await Future.wait(
-          escolhidas.map((c) => CardapioService.produtosDe(c.id)));
-      for (final p in listasEscolhidas.expand((l) => l)) {
+    }
+    // categorias escolhidas (só as que aparecem agora, pelo horário)
+    final escolhidas = [
+      for (final id in cfg.categorias) ...categorias.where((c) => c.id == id),
+    ];
+    final listasEscolhidas = await Future.wait(
+        escolhidas.map((c) => CardapioService.produtosDe(c.id)));
+    for (final p in listasEscolhidas.expand((l) => l)) {
+      if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
+    }
+    if (!cfg.somente || todos.isEmpty) {
+      final cats = categorias
+          .where(filtro)
+          .where((c) => !cfg.categorias.contains(c.id))
+          .toList()
+        ..sort(
+            (a, b) => _posicao(a, palavras).compareTo(_posicao(b, palavras)));
+      // categorias em paralelo
+      final listas =
+          await Future.wait(cats.map((c) => CardapioService.produtosDe(c.id)));
+      for (final p in listas.expand((l) => l)) {
         if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
       }
-      if (!cfg.somente || todos.isEmpty) {
-        final cats = categorias
-            .where(filtro)
-            .where((c) => !cfg.categorias.contains(c.id))
-            .toList()
-          ..sort(
-              (a, b) => _posicao(a, palavras).compareTo(_posicao(b, palavras)));
-        // categorias em paralelo
-        final listas = await Future.wait(
-            cats.map((c) => CardapioService.produtosDe(c.id)));
-        for (final p in listas.expand((l) => l)) {
-          if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
-        }
-      }
-      // preço e opções da Bratter (só dos que serão mostrados)
-      final completos =
-          await Future.wait(todos.take(14).map(Complementos.completar));
-      final comPreco = completos.where((p) => p.preco != null).toList();
-      // sem nada (ex.: sem rede): tenta de novo na próxima vez
-      if (comPreco.isEmpty) _etapas.remove(bebida);
-      // produtos agrupados (Dashboard) aparecem juntos, num card só
-      return agruparProdutos(comPreco, await GrupoProdutos.todos());
-    }();
+    }
+    // preço e opções da Bratter (só dos que serão mostrados)
+    final completos =
+        await Future.wait(todos.take(14).map(Complementos.completar));
+    final comPreco = completos.where((p) => p.preco != null).toList();
+    // sem nada (ex.: sem rede): tenta de novo na próxima vez
+    if (comPreco.isEmpty) _etapas.remove(chave);
+    // produtos agrupados (Dashboard) aparecem juntos, num card só
+    return agruparProdutos(comPreco, await GrupoProdutos.todos());
+  }();
+}
 
 Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   if (_abertas) return;
@@ -202,18 +252,23 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   final categorias = CardapioService.ultimas;
   if (carrinho.itens.isEmpty || categorias.isEmpty) return;
   final porId = {for (final c in categorias) c.id: c};
-  final (cfgBebida, cfgDoce) = await (_config ??= _carregarConfig());
+  final config = await (_config ??= _carregarConfig());
   String texto(_Config cfg, String padrao) =>
       cfg.titulo.isNotEmpty ? cfg.titulo : padrao;
 
+  // bebida / doce: pelo nome da categoria ou escolhido em qualquer sugestão
+  // (geral ou de uma categoria)
+  bool sugeridoEm(String etapa, ItemModel p) =>
+      config.entries.any((e) => e.key.endsWith(etapa) && e.value.contem(p));
+
   bool bebida(ItemModel p) {
     final c = porId[p.idCategoriaFilial];
-    return (c != null && _ehBebida(c)) || cfgBebida.contem(p);
+    return (c != null && _ehBebida(c)) || sugeridoEm('bebida', p);
   }
 
   bool doce(ItemModel p) {
     final c = porId[p.idCategoriaFilial];
-    return (c != null && _ehDoce(c)) || cfgDoce.contem(p);
+    return (c != null && _ehDoce(c)) || sugeridoEm('sobremesa', p);
   }
 
   // o próprio produto adicionado é bebida ou doce: não oferece nada
@@ -234,20 +289,24 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   }
 
   final nomePrato = adicionado?.desProduto ?? pratos.first.desProduto ?? '';
+  // sugestão própria da categoria do prato (ex.: Matinais)
+  final idCategoria = (adicionado ?? pratos.first).idCategoriaFilial;
+  final cfgBebida = _cfgEtapa(config, 'bebida', idCategoria);
+  final cfgDoce = _cfgEtapa(config, 'sobremesa', idCategoria);
   final etapas = [
     if (oferecerBebida)
       _Etapa(
         Icons.local_drink_rounded,
         texto(cfgBebida, 'Que tal uma bebida?'),
         'Pra acompanhar o seu ${capitalizar(nomePrato)}',
-        _produtosEtapa(bebida: true),
+        _produtosEtapa(bebida: true, idCategoria: idCategoria),
       ),
     if (!temDoce)
       _Etapa(
         Icons.icecream_rounded,
         texto(cfgDoce, 'Vai uma sobremesa?'),
         'Pra fechar a refeição com chave de ouro',
-        _produtosEtapa(bebida: false),
+        _produtosEtapa(bebida: false, idCategoria: idCategoria),
       ),
   ];
   if (!context.mounted) return;
