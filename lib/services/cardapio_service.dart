@@ -50,8 +50,7 @@ class CardapioService {
     return ini < fim ? (m >= ini && m < fim) : (m >= ini || m < fim);
   }
 
-  static Future<List<Map<String, dynamic>>> _categoriasDe(
-      String filial) async {
+  static Future<List<Map<String, dynamic>>> _categoriasDe(String filial) async {
     final r = await http
         .get(Uri.parse(
             '${Urls.urlApiAzure}Categorias/categoria-by-filial-all/$filial'))
@@ -146,6 +145,10 @@ class GrupoProdutos {
   /// id do produto na categoria -> rótulo da opção (ordem da Dashboard)
   final List<MapEntry<int, String>> opcoes;
 
+  /// Grupo "Pizza Meio a Meio" (com os PLUs MEIA de cada sabor): o cliente
+  /// escolhe as duas metades
+  bool get meioAMeio => nome.toLowerCase().contains('meio a meio');
+
   static Future<List<GrupoProdutos>>? _cache;
 
   /// Grupos da filial do cardápio (uma busca por sessão). Se falhar, o
@@ -166,7 +169,8 @@ class GrupoProdutos {
                 nome: (g['nome'] ?? '').toString().trim(),
                 imagem: (g['imagem'] ?? '').toString().trim(),
                 opcoes: [
-                  for (final i in ((g['itens'] as List?) ?? []).whereType<Map>())
+                  for (final i
+                      in ((g['itens'] as List?) ?? []).whereType<Map>())
                     MapEntry((i['idCategoriaProduto'] as num?)?.toInt() ?? 0,
                         (i['rotulo'] ?? '').toString().trim()),
                 ],
@@ -279,7 +283,8 @@ class Complementos {
     final r = <AcrescimoEscolhido>[];
     for (final a in doProduto) {
       final plu = a['pluAcrescimo'].toString();
-      final preco = await _preco(plu);
+      // só observação: sem preço, não consulta a Bratter
+      final preco = plu.trim().toUpperCase() == 'OBS' ? 0.0 : await _preco(plu);
       if (preco == null) continue;
       r.add(AcrescimoEscolhido(
         plu: plu,
@@ -318,6 +323,11 @@ List<Object> agruparProdutos(
     mostrados.add(grupo.id);
     r.add((grupo, opcoes));
   }
+  // pizza meio a meio é o primeiro card da categoria
+  final iMeio = r.indexWhere((x) =>
+      x is (GrupoProdutos, List<MapEntry<ItemModel, String>>) &&
+      x.$1.meioAMeio);
+  if (iMeio > 0) r.insert(0, r.removeAt(iMeio));
   return r;
 }
 

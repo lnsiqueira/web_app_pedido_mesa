@@ -54,7 +54,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get attention => 'Atenção!';
 
   @override
-  String get addSomething => 'Adicione alguma coisa no seu carrinho antes de prosseguir.';
+  String get addSomething =>
+      'Adicione alguma coisa no seu carrinho antes de prosseguir.';
 
   @override
   String get invalidCPF => 'CPF inválido.';
@@ -93,10 +94,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wantCPF => 'Deseja informar seu CPF?';
 
   @override
-  String get providingCPF => 'Informando seu CPF você acumula pontos e conseguimos\n fazer ofertas exclusivas para você!';
+  String get providingCPF =>
+      'Informando seu CPF você acumula pontos e conseguimos\n fazer ofertas exclusivas para você!';
 
   @override
-  String get benefitsUpcoming => 'Esses benefícios poderão ser usados\ncom o nosso app que está chegando!';
+  String get benefitsUpcoming =>
+      'Esses benefícios poderão ser usados\ncom o nosso app que está chegando!';
 
   @override
   String get dontWant => 'Não quero informar';

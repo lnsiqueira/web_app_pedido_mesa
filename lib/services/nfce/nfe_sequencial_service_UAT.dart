@@ -15,13 +15,12 @@ class NfeSequencialServiceUAT {
 
     try {
       // 1. Obter referência do documento
-      final query =
-          await _firestore
-              .collection('filialNfeUAT')
-              .where('filialId', isEqualTo: filialId)
-              .where('serie', isEqualTo: serie)
-              .limit(1)
-              .get();
+      final query = await _firestore
+          .collection('filialNfeUAT')
+          .where('filialId', isEqualTo: filialId)
+          .where('serie', isEqualTo: serie)
+          .limit(1)
+          .get();
 
       if (query.docs.isEmpty) {
         throw Exception('Caixa não encontrada para esta filial');
@@ -58,13 +57,12 @@ class NfeSequencialServiceUAT {
   }) async {
     try {
       // 1. Obter referência do documento
-      final query =
-          await _firestore
-              .collection('filialNfeUAT')
-              .where('filialId', isEqualTo: filialId)
-              .where('serie', isEqualTo: serie)
-              .limit(1)
-              .get();
+      final query = await _firestore
+          .collection('filialNfeUAT')
+          .where('filialId', isEqualTo: filialId)
+          .where('serie', isEqualTo: serie)
+          .limit(1)
+          .get();
 
       if (query.docs.isEmpty) {
         throw Exception('Caixa não encontrada para esta filial');
@@ -89,13 +87,12 @@ class NfeSequencialServiceUAT {
   }) async {
     try {
       // 1. Obter referência do documento
-      final query =
-          await _firestore
-              .collection('filialNfeUAT')
-              .where('filialId', isEqualTo: filialId)
-              .where('serie', isEqualTo: serie)
-              .limit(1)
-              .get();
+      final query = await _firestore
+          .collection('filialNfeUAT')
+          .where('filialId', isEqualTo: filialId)
+          .where('serie', isEqualTo: serie)
+          .limit(1)
+          .get();
 
       if (query.docs.isEmpty) {
         throw Exception('Caixa não encontrada para esta filial');

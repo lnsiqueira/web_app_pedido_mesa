@@ -35,9 +35,23 @@ class ItemModel {
   /// escolhidas); usadas para reabrir o produto e editar
   List<ItemObsModel>? obsOriginais;
 
-  /// Preço do produto + acréscimos (por unidade)
+  /// Pizza meio a meio: a 2ª metade (outra MEIA). No carrinho é um item só;
+  /// na comanda vira as duas MEIAS, cada uma com o seu preço.
+  ItemModel? outraMetade;
+
+  /// Nome mostrado no carrinho (ex.: "Pizza meio a meio · Atum / Calabresa")
+  String? titulo;
+
+  String get nomeExibicao => titulo ?? (desProduto ?? '');
+
+  /// O que vai para a comanda: o produto e, na meio a meio, a 2ª metade
+  List<ItemModel> get partes => [this, if (outraMetade != null) outraMetade!];
+
+  /// Preço do produto + acréscimos (por unidade), com a 2ª metade
   double get precoComAcrescimos =>
-      (preco ?? 0) + acrescimos.fold(0.0, (t, a) => t + a.preco);
+      (preco ?? 0) +
+      acrescimos.fold(0.0, (t, a) => t + a.preco) +
+      (outraMetade?.precoComAcrescimos ?? 0);
 
   ItemModel({
     this.id,
@@ -69,6 +83,8 @@ class ItemModel {
     this.obs,
     this.acrescimos = const [],
     this.obsOriginais,
+    this.outraMetade,
+    this.titulo,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) {
@@ -111,6 +127,8 @@ class ItemModel {
     List<ItemObsModel>? obs,
     List<AcrescimoEscolhido>? acrescimos,
     List<ItemObsModel>? obsOriginais,
+    ItemModel? outraMetade,
+    String? titulo,
   }) {
     return ItemModel(
       id: id,
@@ -132,6 +150,8 @@ class ItemModel {
       obs: obs ?? this.obs,
       acrescimos: acrescimos ?? this.acrescimos,
       obsOriginais: obsOriginais ?? this.obsOriginais,
+      outraMetade: outraMetade ?? this.outraMetade,
+      titulo: titulo ?? this.titulo,
     );
   }
 
@@ -163,9 +183,16 @@ class AcrescimoEscolhido {
   final String nome;
   final double preco;
 
+  /// Acréscimo sem preço (Dashboard: "só observação", PLU "OBS"): não é
+  /// produto, vai como observação do próprio item na comanda
+  bool get soObservacao => plu.trim().toUpperCase() == 'OBS';
+
+  /// Identifica o acréscimo (vários "só observação" têm o mesmo PLU)
+  String get chave => soObservacao ? 'OBS:$nome' : plu;
+
   /// Observação na comanda (a comanda guarda só 30 letras)
   String get observacao {
-    final t = '+ $nome'.trim();
+    final t = soObservacao ? nome.trim() : '+ $nome'.trim();
     return t.length <= 30 ? t : t.substring(0, 30);
   }
 }

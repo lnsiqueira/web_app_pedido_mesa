@@ -30,7 +30,7 @@ void registrarPedidoKds({
         'itens': [
           for (final i in itens)
             {
-              'nome': (i.produto.desProduto ?? '').trim(),
+              'nome': i.produto.nomeExibicao.trim(),
               'qtd': i.quantidade,
               'opcoes': const <String>[],
               'acrescimos': [
@@ -38,10 +38,13 @@ void registrarPedidoKds({
                 for (final o in i.produto.obs ?? const [])
                   if (o.modificador == 'C' || o.modificador == 'S') o.titulo,
               ],
-              if ((i.produto.obs ?? const [])
-                  .any((o) => o.tipo == 'texto' && o.titulo.trim().isNotEmpty))
+              // meio a meio: a observação é interna (o nome já diz os sabores)
+              if (i.produto.outraMetade == null &&
+                  (i.produto.obs ?? const []).any(
+                      (o) => o.tipo == 'texto' && o.titulo.trim().isNotEmpty))
                 'obs': i.produto.obs!
-                    .where((o) => o.tipo == 'texto' && o.titulo.trim().isNotEmpty)
+                    .where(
+                        (o) => o.tipo == 'texto' && o.titulo.trim().isNotEmpty)
                     .map((o) => o.titulo.trim())
                     .join(' · '),
             },

@@ -19,9 +19,11 @@ import 'package:uuid/uuid.dart';
 import 'package:webapp_pedido_mesa/admin/services/cardapio_admin_service.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/services/kds_service.dart';
-import 'package:webapp_pedido_mesa/services/cardapio_service.dart' show renovarTokenBratter;
+import 'package:webapp_pedido_mesa/services/cardapio_service.dart'
+    show renovarTokenBratter;
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
+import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/core/model/pedido_model.dart';
 import 'package:webapp_pedido_mesa/orderRoom/screens/home/order_home_page.dart';
@@ -117,9 +119,11 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
     final itens = carrinho.itens.map((item) {
       return {
-        "produto": item.produto.desProduto,
+        "produto": item.produto.nomeExibicao,
         "plu": item.produto.plu,
-        "preco": item.produto.preco,
+        // meio a meio: soma das duas metades
+        "preco":
+            item.produto.partes.fold<double>(0, (t, p) => t + (p.preco ?? 0)),
         "quantidade": item.quantidade,
       };
     }).toList();
@@ -168,7 +172,11 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         );
       }
 
-      List<Map<String, dynamic>> itemsJson = carrinho.itens.expand((item) {
+      // meio a meio: cada metade vira um lançamento próprio (2 MEIAS)
+      List<Map<String, dynamic>> itemsJson = carrinho.itens
+          .expand((i) => i.produto.partes
+              .map((p) => ItemCarrinho(produto: p, quantidade: i.quantidade)))
+          .expand((item) {
         List<Map<String, dynamic>> observacoesJson = [];
 
         if (item.produto.obs != null && item.produto.obs!.isNotEmpty) {
@@ -181,7 +189,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                 "PluAdd": obsItem.pluAdd ?? 0,
                 "Modificador": 'COM',
               });
-
             } else if (obsItem.modificador != null &&
                 (obsItem.modificador == 'C' || obsItem.modificador == 'S')) {
               observacoesJson.add({
@@ -194,6 +201,17 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           }
         }
 
+        // acréscimos "só observação" (sem preço) vão dentro do próprio item
+        for (final a in item.produto.acrescimos) {
+          if (a.soObservacao) {
+            observacoesJson.add({
+              "Obs": a.observacao,
+              "Preco": 0.0,
+              "PluAdd": 0,
+              "Modificador": 'COM',
+            });
+          }
+        }
 
         // mesmo formato do cardápio de mesa (tablet), que lança certo
         final preco = item.produto.preco ?? 0.0;
@@ -203,8 +221,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
             "IdProduto": int.tryParse(item.produto.plu ?? '') ?? 0,
             "Preco": preco,
             "Qtde": item.quantidade.toDouble(),
-            "Total":
-                double.parse((preco * item.quantidade).toStringAsFixed(2)),
+            "Total": double.parse((preco * item.quantidade).toStringAsFixed(2)),
             "descricao": (item.produto.desProduto ?? '').trim(),
             "id": 0,
             "dataHora": agora,
@@ -214,26 +231,27 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           },
           // acréscimo vai como produto próprio, logo abaixo (como no tablet)
           for (final a in item.produto.acrescimos)
-            {
-              "IdProduto": int.tryParse(a.plu) ?? 0,
-              "Preco": a.preco,
-              "Qtde": item.quantidade.toDouble(),
-              "Total":
-                  double.parse((a.preco * item.quantidade).toStringAsFixed(2)),
-              "descricao": a.nome,
-              "id": 0,
-              "dataHora": agora,
-              "user": 'Site QR Code',
-              "Pesavel": 'NÃO',
-              "Observacoes": [
-                {
-                  "Obs": a.observacao,
-                  "Preco": 0.0,
-                  "PluAdd": 0,
-                  "Modificador": 'COM',
-                },
-              ],
-            },
+            if (!a.soObservacao)
+              {
+                "IdProduto": int.tryParse(a.plu) ?? 0,
+                "Preco": a.preco,
+                "Qtde": item.quantidade.toDouble(),
+                "Total": double.parse(
+                    (a.preco * item.quantidade).toStringAsFixed(2)),
+                "descricao": a.nome,
+                "id": 0,
+                "dataHora": agora,
+                "user": 'Site QR Code',
+                "Pesavel": 'NÃO',
+                "Observacoes": [
+                  {
+                    "Obs": a.observacao,
+                    "Preco": 0.0,
+                    "PluAdd": 0,
+                    "Modificador": 'COM',
+                  },
+                ],
+              },
         ];
       }).toList();
 
@@ -1162,7 +1180,8 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
       Map<String, ItemModel> consolidados = {};
 
-      for (var item in carrinho.itens) {
+      for (var item in carrinho.itens.expand((i) => i.produto.partes
+          .map((p) => ItemCarrinho(produto: p, quantidade: i.quantidade)))) {
         final nome = item.produto.desProduto!.trim().toLowerCase();
         final qtd = item.quantidade;
 
@@ -1266,7 +1285,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text((item.produto.desProduto ?? '').toUpperCase()),
+                        Text(item.produto.nomeExibicao.toUpperCase()),
                         Text('Qtd: ${item.quantidade}'),
                         Text('Total: R\$ ${totalItem.toStringAsFixed(2)}'),
                       ],

@@ -55,8 +55,7 @@ Future<bool> verificarUrlOnline(
     // Espera um tempo crescente entre tentativas (com jitter aleatório)
     if (tentativaAtual < maxTentativas) {
       final espera = Duration(
-        milliseconds:
-            min(1000 * pow(2, tentativaAtual).toInt(), 10000) +
+        milliseconds: min(1000 * pow(2, tentativaAtual).toInt(), 10000) +
             random.nextInt(1000),
       );
       print(

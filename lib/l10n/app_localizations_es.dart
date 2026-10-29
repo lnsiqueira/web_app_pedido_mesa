@@ -93,10 +93,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wantCPF => '¿Quieres ingresar tu CPF?';
 
   @override
-  String get providingCPF => 'Al ingresar tu CPF, acumulas puntos y podemos\n ofrecerte ofertas exclusivas.';
+  String get providingCPF =>
+      'Al ingresar tu CPF, acumulas puntos y podemos\n ofrecerte ofertas exclusivas.';
 
   @override
-  String get benefitsUpcoming => '¡Puedes usar estos beneficios con nuestra próxima app!';
+  String get benefitsUpcoming =>
+      '¡Puedes usar estos beneficios con nuestra próxima app!';
 
   @override
   String get dontWant => 'No quiero informar';
@@ -120,7 +122,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wantPrintInvoice => '¿Quieres imprimir una factura?';
 
   @override
-  String get returnHome => 'Regreso a la pantalla de inicio debido a la inactividad';
+  String get returnHome =>
+      'Regreso a la pantalla de inicio debido a la inactividad';
 
   @override
   String get cancelingIn => 'Cancelando en';
@@ -132,7 +135,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get placeYourOrder => 'Haz tu pedido';
 
   @override
-  String get pleaseEnterOrderNumber => 'Por favor, ingrese el número de comanda';
+  String get pleaseEnterOrderNumber =>
+      'Por favor, ingrese el número de comanda';
 
   @override
   String get confirm => 'Confirmar';

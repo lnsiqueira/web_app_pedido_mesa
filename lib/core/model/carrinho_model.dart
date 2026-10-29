@@ -10,8 +10,10 @@ class CarrinhoModel extends ChangeNotifier {
 
   void adicionar(ItemModel produto) {
     // mesmo produto com acréscimos diferentes fica em linha separada
-    String chave(ItemModel p) =>
-        '${p.plu}|${p.acrescimos.map((a) => a.plu).join(',')}';
+    // (e meia de pizza com outra metade diferente também: observação)
+    String chave(ItemModel p) => '${p.partes.map((x) => x.plu).join('+')}|'
+        '${p.acrescimos.map((a) => a.chave).join(',')}|'
+        '${(p.obs ?? const []).where((o) => o.tipo == 'texto').map((o) => o.titulo).join(',')}';
     final index =
         _itens.indexWhere((item) => chave(item.produto) == chave(produto));
 

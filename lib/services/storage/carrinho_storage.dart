@@ -9,18 +9,17 @@ class CarrinhoStorage {
   // Salvar carrinho no SharedPreferences
   static Future<void> salvarCarrinho(List<ItemCarrinho> itens) async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList =
-        itens
-            .map(
-              (i) => {
-                'produto': {
-                  'desProduto': i.produto.desProduto,
-                  'preco': i.produto.preco,
-                },
-                'quantidade': i.quantidade,
-              },
-            )
-            .toList();
+    final jsonList = itens
+        .map(
+          (i) => {
+            'produto': {
+              'desProduto': i.produto.desProduto,
+              'preco': i.produto.preco,
+            },
+            'quantidade': i.quantidade,
+          },
+        )
+        .toList();
     prefs.setString(keyCarrinho, jsonEncode(jsonList));
   }
 
@@ -77,20 +76,18 @@ class CarrinhoStorage {
               return null;
             }
 
-            final preco =
-                (produtoJson['preco'] is String)
-                    ? double.tryParse(produtoJson['preco']) ?? 0.0
-                    : (produtoJson['preco'] ?? 0.0);
+            final preco = (produtoJson['preco'] is String)
+                ? double.tryParse(produtoJson['preco']) ?? 0.0
+                : (produtoJson['preco'] ?? 0.0);
 
             return ItemCarrinho(
               produto: ItemModel(
                 desProduto: produtoJson['desProduto'] ?? '',
                 preco: preco,
               ),
-              quantidade:
-                  (jsonItem['quantidade'] is int)
-                      ? jsonItem['quantidade']
-                      : int.tryParse(jsonItem['quantidade'].toString()) ?? 0,
+              quantidade: (jsonItem['quantidade'] is int)
+                  ? jsonItem['quantidade']
+                  : int.tryParse(jsonItem['quantidade'].toString()) ?? 0,
             );
           })
           .where((item) => item != null)

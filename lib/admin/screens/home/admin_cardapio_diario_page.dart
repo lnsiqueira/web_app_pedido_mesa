@@ -486,190 +486,189 @@ class _ProdutoGridCardState extends State<_ProdutoGridCard> {
   }
 }
 
-  // void _confirmarToggle(BuildContext context) {
-  //   bool ativoLocal = ativo;
-  //   int quantidadeLocal = quantidade;
+// void _confirmarToggle(BuildContext context) {
+//   bool ativoLocal = ativo;
+//   int quantidadeLocal = quantidade;
 
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setStateDialog) {
-  //           return AlertDialog(
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(16),
-  //             ),
-  //             title: Text(widget.produto['nome']),
-  //             content: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 // SWITCH ATIVO
-  //                 Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                   children: [
-  //                     Text(
-  //                       ativoLocal ? 'Ativo' : 'Inativo',
-  //                       style: TextStyle(
-  //                         color: ativoLocal ? Colors.green : Colors.red,
-  //                       ),
-  //                     ),
-  //                     Switch(
-  //                       value: ativoLocal,
-  //                       onChanged: (value) {
-  //                         setStateDialog(() => ativoLocal = value);
-  //                       },
-  //                     ),
-  //                   ],
-  //                 ),
+//   showDialog(
+//     context: context,
+//     builder: (context) {
+//       return StatefulBuilder(
+//         builder: (context, setStateDialog) {
+//           return AlertDialog(
+//             shape: RoundedRectangleBorder(
+//               borderRadius: BorderRadius.circular(16),
+//             ),
+//             title: Text(widget.produto['nome']),
+//             content: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 // SWITCH ATIVO
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     Text(
+//                       ativoLocal ? 'Ativo' : 'Inativo',
+//                       style: TextStyle(
+//                         color: ativoLocal ? Colors.green : Colors.red,
+//                       ),
+//                     ),
+//                     Switch(
+//                       value: ativoLocal,
+//                       onChanged: (value) {
+//                         setStateDialog(() => ativoLocal = value);
+//                       },
+//                     ),
+//                   ],
+//                 ),
 
-  //                 const SizedBox(height: 16),
+//                 const SizedBox(height: 16),
 
-  //                 // CONTROLE DE ESTOQUE
-  //                 Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                   children: [
-  //                     const Text(
-  //                       'Estoque',
-  //                       style: TextStyle(fontWeight: FontWeight.w600),
-  //                     ),
-  //                     Row(
-  //                       children: [
-  //                         IconButton(
-  //                           icon: const Icon(Icons.remove),
-  //                           onPressed: quantidadeLocal > 0
-  //                               ? () {
-  //                                   setStateDialog(() => quantidadeLocal--);
-  //                                 }
-  //                               : null,
-  //                         ),
-  //                         Text(
-  //                           '$quantidadeLocal',
-  //                           style: const TextStyle(
-  //                             fontSize: 18,
-  //                             fontWeight: FontWeight.bold,
-  //                           ),
-  //                         ),
-  //                         IconButton(
-  //                           icon: const Icon(Icons.add),
-  //                           onPressed: () {
-  //                             setStateDialog(() => quantidadeLocal++);
-  //                           },
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () => Navigator.pop(context),
-  //                 child: const Text('Cancelar'),
-  //               ),
-  //               ElevatedButton(
-  //                 onPressed: () async {
-  //                   Navigator.pop(context);
-  //                   setState(() => salvando = true);
+//                 // CONTROLE DE ESTOQUE
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     const Text(
+//                       'Estoque',
+//                       style: TextStyle(fontWeight: FontWeight.w600),
+//                     ),
+//                     Row(
+//                       children: [
+//                         IconButton(
+//                           icon: const Icon(Icons.remove),
+//                           onPressed: quantidadeLocal > 0
+//                               ? () {
+//                                   setStateDialog(() => quantidadeLocal--);
+//                                 }
+//                               : null,
+//                         ),
+//                         Text(
+//                           '$quantidadeLocal',
+//                           style: const TextStyle(
+//                             fontSize: 18,
+//                             fontWeight: FontWeight.bold,
+//                           ),
+//                         ),
+//                         IconButton(
+//                           icon: const Icon(Icons.add),
+//                           onPressed: () {
+//                             setStateDialog(() => quantidadeLocal++);
+//                           },
+//                         ),
+//                       ],
+//                     ),
+//                   ],
+//                 ),
+//               ],
+//             ),
+//             actions: [
+//               TextButton(
+//                 onPressed: () => Navigator.pop(context),
+//                 child: const Text('Cancelar'),
+//               ),
+//               ElevatedButton(
+//                 onPressed: () async {
+//                   Navigator.pop(context);
+//                   setState(() => salvando = true);
 
-  //                   bool okAtivo = await ativarDesativarProduto(
-  //                     idProduto: widget.produto['id'].toString(),
-  //                     ativo: ativoLocal,
-  //                   );
+//                   bool okAtivo = await ativarDesativarProduto(
+//                     idProduto: widget.produto['id'].toString(),
+//                     ativo: ativoLocal,
+//                   );
 
-  //                   bool okQuantidade = await atualizarQuantidadeProduto(
-  //                     idProduto: widget.produto['id'],
-  //                     novaQuantidade: quantidadeLocal,
-  //                   );
+//                   bool okQuantidade = await atualizarQuantidadeProduto(
+//                     idProduto: widget.produto['id'],
+//                     novaQuantidade: quantidadeLocal,
+//                   );
 
-  //                   if (okAtivo && okQuantidade) {
-  //                     setState(() {
-  //                       ativo = ativoLocal;
-  //                       quantidade = quantidadeLocal;
+//                   if (okAtivo && okQuantidade) {
+//                     setState(() {
+//                       ativo = ativoLocal;
+//                       quantidade = quantidadeLocal;
 
-  //                       widget.produto['ativo'] = ativoLocal;
-  //                       widget.produto['quantidadeDisponivel'] =
-  //                           quantidadeLocal;
-  //                     });
-  //                   }
+//                       widget.produto['ativo'] = ativoLocal;
+//                       widget.produto['quantidadeDisponivel'] =
+//                           quantidadeLocal;
+//                     });
+//                   }
 
-  //                   setState(() => salvando = false);
-  //                 },
-  //                 child: const Text('Salvar'),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
+//                   setState(() => salvando = false);
+//                 },
+//                 child: const Text('Salvar'),
+//               ),
+//             ],
+//           );
+//         },
+//       );
+//     },
+//   );
+// }
 
-  // void _confirmarToggle(BuildContext context) {
-  //   bool ativoLocal = ativo;
+// void _confirmarToggle(BuildContext context) {
+//   bool ativoLocal = ativo;
 
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setStateDialog) {
-  //           return AlertDialog(
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(16),
-  //             ),
-  //             title: Text(widget.produto['nome']),
-  //             content: Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               children: [
-  //                 Text(
-  //                   ativoLocal ? 'Ativo' : 'Inativo',
-  //                   style: TextStyle(
-  //                     color: ativoLocal ? Colors.green : Colors.red,
-  //                   ),
-  //                 ),
-  //                 Switch(
-  //                   value: ativoLocal,
-  //                   activeColor: Colors.green,
-  //                   onChanged: (value) {
-  //                     setStateDialog(() => ativoLocal = value);
-  //                   },
-  //                 ),
-  //               ],
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () => Navigator.pop(context),
-  //                 child: const Text('Cancelar'),
-  //               ),
-  //               ElevatedButton(
-  //                 onPressed: () async {
-  //                   Navigator.pop(context);
+//   showDialog(
+//     context: context,
+//     builder: (context) {
+//       return StatefulBuilder(
+//         builder: (context, setStateDialog) {
+//           return AlertDialog(
+//             shape: RoundedRectangleBorder(
+//               borderRadius: BorderRadius.circular(16),
+//             ),
+//             title: Text(widget.produto['nome']),
+//             content: Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Text(
+//                   ativoLocal ? 'Ativo' : 'Inativo',
+//                   style: TextStyle(
+//                     color: ativoLocal ? Colors.green : Colors.red,
+//                   ),
+//                 ),
+//                 Switch(
+//                   value: ativoLocal,
+//                   activeColor: Colors.green,
+//                   onChanged: (value) {
+//                     setStateDialog(() => ativoLocal = value);
+//                   },
+//                 ),
+//               ],
+//             ),
+//             actions: [
+//               TextButton(
+//                 onPressed: () => Navigator.pop(context),
+//                 child: const Text('Cancelar'),
+//               ),
+//               ElevatedButton(
+//                 onPressed: () async {
+//                   Navigator.pop(context);
 
-  //                   setState(() => salvando = true);
+//                   setState(() => salvando = true);
 
-  //                   final sucesso = await ativarDesativarProduto(
-  //                     idProduto: widget.produto['id'].toString(),
-  //                     ativo: ativoLocal,
-  //                   );
+//                   final sucesso = await ativarDesativarProduto(
+//                     idProduto: widget.produto['id'].toString(),
+//                     ativo: ativoLocal,
+//                   );
 
-  //                   if (sucesso) {
-  //                     setState(() {
-  //                       ativo = ativoLocal;
-  //                       widget.produto['ativo'] = ativoLocal;
-  //                     });
-  //                   }
+//                   if (sucesso) {
+//                     setState(() {
+//                       ativo = ativoLocal;
+//                       widget.produto['ativo'] = ativoLocal;
+//                     });
+//                   }
 
-  //                   setState(() => salvando = false);
-  //                 },
-  //                 child: const Text('Salvar'),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-
+//                   setState(() => salvando = false);
+//                 },
+//                 child: const Text('Salvar'),
+//               ),
+//             ],
+//           );
+//         },
+//       );
+//     },
+//   );
+// }
 
 // class _ProdutoGridCard extends StatelessWidget {
 //   final Map<String, dynamic> produto;

@@ -69,8 +69,8 @@ void setUrlApiBratterPorFilial(String filialId) {
   // a urlApiBratter (dos tablets) só se não for de rede interna.
   String campo(String nome) =>
       (dadosFilialFirestore[nome] ?? '').toString().trim();
-  final interna = RegExp(
-      r'//(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)');
+  final interna =
+      RegExp(r'//(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)');
   var cadastrada = campo('urlApiBratterExterna');
   if (cadastrada.isEmpty && !interna.hasMatch(campo('urlApiBratter'))) {
     cadastrada = campo('urlApiBratter');

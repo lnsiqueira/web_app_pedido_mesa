@@ -846,14 +846,22 @@ class _ItensPageState extends State<ItensPage> {
                               nome: grupo.nome.isNotEmpty
                                   ? grupo.nome
                                   : (opcoes.first.key.desProduto ?? '').trim(),
+                              // meio a meio: a partir das 2 metades mais
+                              // baratas somadas
                               preco: precos.isEmpty
                                   ? null
-                                  : precos.reduce((a, b) => a < b ? a : b),
-                              selo: '${opcoes.length} opções',
+                                  : grupo.meioAMeio && precos.length >= 2
+                                      ? ((List.of(precos)..sort())[0] +
+                                          (List.of(precos)..sort())[1])
+                                      : precos.reduce((a, b) => a < b ? a : b),
+                              selo: grupo.meioAMeio
+                                  ? '${opcoes.length} sabores'
+                                  : '${opcoes.length} opções',
                               iconeVeg: opcoes
                                   .any((o) => _selosDe([o.key]).isNotEmpty),
                               aPartirDe: precos.toSet().length > 1,
-                              onTap: () => escolherOpcaoGrupo(context, grupo, opcoes),
+                              onTap: () =>
+                                  escolherOpcaoGrupo(context, grupo, opcoes),
                             );
                           }
                           final produto = item as ItemModel;

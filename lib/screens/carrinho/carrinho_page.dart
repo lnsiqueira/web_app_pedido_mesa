@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/screens/item/meio_a_meio.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
@@ -319,23 +320,28 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         final item = carrinho.itens[index];
                         final totalItem =
                             item.quantidade * item.produto.precoComAcrescimos;
+                        // meio a meio: a observação é interna (só da comanda)
                         final observacoesSelecionadas =
-                            item.produto.obs?.where((obs) {
-                          if (obs.tipo == 'escolha') {
-                            return obs.modificador == 'C' ||
-                                obs.modificador == 'S';
-                          } else if (obs.tipo == 'texto') {
-                            return obs.modificador == 'COM';
-                          }
-                          return false;
-                        }).toList();
+                            item.produto.outraMetade != null
+                                ? null
+                                : item.produto.obs?.where((obs) {
+                                    if (obs.tipo == 'escolha') {
+                                      return obs.modificador == 'C' ||
+                                          obs.modificador == 'S';
+                                    } else if (obs.tipo == 'texto') {
+                                      return obs.modificador == 'COM';
+                                    }
+                                    return false;
+                                  }).toList();
 
                         // tocar no item reabre o produto para editar
                         return GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => abrirProdutoPopup(
-                                context, item.produto,
-                                editando: item),
+                            // meio a meio reabre a escolha dos sabores
+                            onTap: item.produto.outraMetade != null
+                                ? () => editarMeioAMeio(context, item)
+                                : () => abrirProdutoPopup(context, item.produto,
+                                    editando: item),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
@@ -360,7 +366,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            item.produto.desProduto!,
+                                            item.produto.nomeExibicao,
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -542,8 +548,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                 if (isQuartoENome) {
                                   // sugestões (bebida / sobremesa), se
                                   // ainda não ofereceu
-                                  await oferecerSugestoesAntesDeEnviar(
-                                      context);
+                                  await oferecerSugestoesAntesDeEnviar(context);
                                   if (!context.mounted) return;
                                   final mc = Provider.of<MesaComandaModel>(
                                       context,

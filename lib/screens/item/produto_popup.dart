@@ -5,6 +5,7 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart' show QtyButton;
+import 'package:webapp_pedido_mesa/screens/item/meio_a_meio.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 
@@ -25,6 +26,10 @@ Future<void> escolherOpcaoGrupo(
   List<MapEntry<ItemModel, String>> opcoes, {
   bool sugerir = true,
 }) async {
+  // pizza meio a meio: escolhe as duas metades
+  if (grupo.meioAMeio) {
+    return escolherMeioAMeio(context, grupo, opcoes, sugerir: sugerir);
+  }
   // selos para marcar as opções veganas/vegetarianas
   final selos = await Complementos.selos();
   if (!context.mounted) return;
@@ -962,8 +967,8 @@ Future<void> abrirProdutoPopup(
                                   const SizedBox(height: 10),
                                   for (final a in lista)
                                     Builder(builder: (context) {
-                                      final marcado =
-                                          escolhidos.any((e) => e.plu == a.plu);
+                                      final marcado = escolhidos
+                                          .any((e) => e.chave == a.chave);
                                       return Padding(
                                         padding:
                                             const EdgeInsets.only(bottom: 8),
@@ -987,7 +992,7 @@ Future<void> abrirProdutoPopup(
                                             onTap: () => setStateSB(() {
                                               if (marcado) {
                                                 escolhidos.removeWhere(
-                                                    (e) => e.plu == a.plu);
+                                                    (e) => e.chave == a.chave);
                                               } else {
                                                 escolhidos.add(a);
                                               }
@@ -1020,16 +1025,18 @@ Future<void> abrirProdutoPopup(
                                                       ),
                                                     ),
                                                   ),
-                                                  Text(
-                                                    '+ R\$ ${_reaisPopup(a.preco)}',
-                                                    style: TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      color: Colors
-                                                          .orange.shade800,
+                                                  // só observação: sem preço
+                                                  if (!a.soObservacao)
+                                                    Text(
+                                                      '+ R\$ ${_reaisPopup(a.preco)}',
+                                                      style: TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color: Colors
+                                                            .orange.shade800,
+                                                      ),
                                                     ),
-                                                  ),
                                                 ],
                                               ),
                                             ),
