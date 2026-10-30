@@ -384,10 +384,16 @@ class _SugestoesSheetState extends State<_SugestoesSheet> {
   Future<void> _abrir(Object item) async {
     final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
     final antes = carrinho.totalItens;
+    // quanto cada item do carrinho tinha antes: o que aumentar veio da sugestão
+    final antesPorItem = {for (final i in carrinho.itens) i: i.quantidade};
     if (item is (GrupoProdutos, List<MapEntry<ItemModel, String>>)) {
       await escolherOpcaoGrupo(context, item.$1, item.$2, sugerir: false);
     } else {
       await abrirProdutoPopup(context, item as ItemModel, sugerir: false);
+    }
+    for (final i in carrinho.itens) {
+      final a = i.quantidade - (antesPorItem[i] ?? 0);
+      if (a > 0) i.qtdSugestao += a;
     }
     if (!mounted || carrinho.totalItens == antes) return;
     setState(() => _adicionou = true);

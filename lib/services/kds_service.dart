@@ -8,6 +8,9 @@ import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 /// Registra o pedido para o KDS (tela "Pedidos das mesas" da Dashboard), no
 /// mesmo formato do cardápio de mesa do tablet (coleção `pedidos_mesa`).
 /// Só para exibição: se falhar, o pedido segue normal (já foi para a comanda).
+/// Unidades vindas da sugestão (o cliente pode ter diminuído depois).
+int _qtdSug(ItemCarrinho i) => i.qtdSugestao.clamp(0, i.quantidade).toInt();
+
 void registrarPedidoKds({
   required String comanda,
   required String mesa,
@@ -32,6 +35,11 @@ void registrarPedidoKds({
             .fold<double>(
                 0, (s, i) => s + i.produto.precoComAcrescimos * i.quantidade)
             .toStringAsFixed(2)),
+        // vendido a partir do popup de sugestões
+        'valorSugestoes': double.parse(itens
+            .fold<double>(
+                0, (s, i) => s + i.produto.precoComAcrescimos * _qtdSug(i))
+            .toStringAsFixed(2)),
         'itens': [
           for (final i in itens)
             {
@@ -40,6 +48,7 @@ void registrarPedidoKds({
               'valor': double.parse(
                   (i.produto.precoComAcrescimos * i.quantidade)
                       .toStringAsFixed(2)),
+              if (_qtdSug(i) > 0) 'qtdSugestao': _qtdSug(i),
               'opcoes': const <String>[],
               'acrescimos': [
                 for (final a in i.produto.acrescimos) a.nome,

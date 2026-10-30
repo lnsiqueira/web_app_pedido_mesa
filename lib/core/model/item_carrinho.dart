@@ -4,5 +4,8 @@ class ItemCarrinho {
   final ItemModel produto;
   int quantidade;
 
+  /// Unidades adicionadas pelo popup de sugestões (relatório da Dashboard).
+  int qtdSugestao = 0;
+
   ItemCarrinho({required this.produto, this.quantidade = 1});
 }
