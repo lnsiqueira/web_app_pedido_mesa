@@ -27,11 +27,19 @@ void registrarPedidoKds({
         'comanda': comanda,
         'origem': 'site_qrcode',
         'criadoEm': Timestamp.fromDate(agora),
+        // valor total (com acréscimos/outra metade), para o relatório
+        'total': double.parse(itens
+            .fold<double>(
+                0, (s, i) => s + i.produto.precoComAcrescimos * i.quantidade)
+            .toStringAsFixed(2)),
         'itens': [
           for (final i in itens)
             {
               'nome': i.produto.nomeExibicao.trim(),
               'qtd': i.quantidade,
+              'valor': double.parse(
+                  (i.produto.precoComAcrescimos * i.quantidade)
+                      .toStringAsFixed(2)),
               'opcoes': const <String>[],
               'acrescimos': [
                 for (final a in i.produto.acrescimos) a.nome,
