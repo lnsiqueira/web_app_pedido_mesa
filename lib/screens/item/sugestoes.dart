@@ -231,18 +231,51 @@ Future<List<Object>> _produtosEtapa(
       // categorias em paralelo
       final listas =
           await Future.wait(cats.map((c) => CardapioService.produtosDe(c.id)));
-      for (final p in listas.expand((l) => l)) {
+      // grupo de refrigerantes (em qualquer categoria de bebida) vem
+      // primeiro; depois a ordem de sempre (sucos, bebidas...)
+      final grupos = bebida ? await GrupoProdutos.todos() : <GrupoProdutos>[];
+      final gruposRefri = <ItemModel>[];
+      final demais = <ItemModel>[];
+      for (var i = 0; i < cats.length; i++) {
+        final lista = listas[i];
+        demais.addAll(lista);
+        final dela = grupos.where((g) =>
+            (_normalizar(g.nome).contains('refri') ||
+                _posicao(cats[i], const ['refri']) >= 0) &&
+            g.opcoes.any((o) => lista.any((p) => p.id == o.key)));
+        for (final g in dela) {
+          for (final o in g.opcoes) {
+            final p = lista.where((x) => x.id == o.key).firstOrNull;
+            if (p != null) gruposRefri.add(p);
+          }
+        }
+      }
+      for (final p in [...gruposRefri, ...demais]) {
         if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
       }
     }
-    // preço e opções da Bratter (só dos que serão mostrados)
-    final completos =
-        await Future.wait(todos.take(14).map(Complementos.completar));
+    // preço e opções da Bratter (só dos que serão mostrados): até 14 cards,
+    // um grupo inteiro conta como um card só
+    final todosGrupos = await GrupoProdutos.todos();
+    final mostrar = <ItemModel>[];
+    final cards = <Object>{};
+    for (final p in todos) {
+      final g = todosGrupos
+          .where((g) => g.opcoes.any((o) => o.key == p.id))
+          .firstOrNull;
+      final Object card = g ?? p.plu ?? p.id ?? p;
+      if (!cards.contains(card)) {
+        if (cards.length >= 14) continue;
+        cards.add(card);
+      }
+      mostrar.add(p);
+    }
+    final completos = await Future.wait(mostrar.map(Complementos.completar));
     final comPreco = completos.where((p) => p.preco != null).toList();
     // sem nada (ex.: sem rede): tenta de novo na próxima vez
     if (comPreco.isEmpty) _etapas.remove(chave);
     // produtos agrupados (Dashboard) aparecem juntos, num card só
-    return agruparProdutos(comPreco, await GrupoProdutos.todos());
+    return agruparProdutos(comPreco, todosGrupos);
   }();
 }
 
