@@ -192,7 +192,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                 // ❌ não existe
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text("Comanda não encontrada."),
+                                    content: Text(
+                                        "Comanda não encontrada. Digite todos os dígitos da comanda."),
                                     backgroundColor: Colors.red,
                                   ),
                                 );

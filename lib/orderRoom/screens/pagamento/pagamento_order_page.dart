@@ -271,6 +271,12 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
         "Terminal": 301,
       };
 
+      // confere de novo se a comanda existe na Bratter: se não existir, o
+      // POST responde 200 mas descarta os itens (e não pode ir pro KDS)
+      if (!await _comandaCadastrada(idComanda.toString(), encodedUrl)) {
+        throw const _ComandaInexistente();
+      }
+
       debugPrint('BODY ENVIO: ${jsonEncode(body)}');
 
       Future<http.Response> enviar() => http
@@ -333,11 +339,19 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       debugPrint('Erro ao pagar no caixa: $e');
       debugPrintStack(stackTrace: stack);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Não foi possível enviar o pedido. Tente de novo '
-              'ou chame um atendente.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e is _ComandaInexistente
+              ? 'Comanda $numeroComanda não encontrada. Digite todos os '
+                  'dígitos da comanda ou chame um atendente.'
+              : 'Não foi possível enviar o pedido. Tente de novo '
+                  'ou chame um atendente.'),
           backgroundColor: Colors.red,
         ));
+        if (e is _ComandaInexistente) {
+          // pede o número de novo no carrinho
+          numeroComanda = '';
+          Provider.of<MesaComandaModel>(context, listen: false).setComanda('');
+        }
         // envio direto: volta para o carrinho (o pedido continua lá)
         if (widget.enviarAoAbrir) Navigator.of(context).pop();
       }
@@ -345,6 +359,25 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       if (mounted) {
         setState(() => _pagando = false);
       }
+    }
+  }
+
+  /// Comanda cadastrada na Bratter: livre (00/01) ou em uso (02). Id 0 sem
+  /// status = não existe. Falha de rede conta como cadastrada (o popup já
+  /// validou), para não travar o pedido.
+  Future<bool> _comandaCadastrada(String comanda, String encodedUrl) async {
+    try {
+      final r = await http
+          .get(Uri.parse('${Urls.urlApiAzure}Proxy/ConsultaComanda/'
+              '?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}'
+              '&idComanda=$comanda'))
+          .timeout(const Duration(seconds: 20));
+      if (r.statusCode != 200) return true;
+      final status = jsonDecode(r.body)['Status']?.toString();
+      return status == '00' || status == '01' || status == '02';
+    } catch (e) {
+      debugPrint('Consulta comanda antes do envio: $e');
+      return true;
     }
   }
 
@@ -2435,3 +2468,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 //     );
 //   }
 // }
+
+class _ComandaInexistente implements Exception {
+  const _ComandaInexistente();
+}

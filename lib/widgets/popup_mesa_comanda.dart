@@ -532,13 +532,11 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
           debugPrint('BODY: ${response.body}');
           debugPrint('DATA: $data');
 
-          // aceita comanda livre (o Bratter devolve Id 0 e sem status) ou
-          // aberta (00/01/02), como o tablet; recusa bloqueada etc.
+          // aceita só comanda cadastrada: livre (00/01) ou em uso (02).
+          // Id 0 sem status = comanda que não existe na Bratter: o POST
+          // responde 200 mas descarta os itens.
           final status = data['Status']?.toString();
-          final id = int.tryParse('${data['Id'] ?? 0}') ?? 0;
-          final livre = id == 0 && status == null;
-          final valida =
-              livre || status == '00' || status == '01' || status == '02';
+          final valida = status == '00' || status == '01' || status == '02';
           if (comanda.trim().isNotEmpty && valida) {
             numeroComanda = comanda.trim();
             Navigator.pop(context, {
@@ -556,7 +554,7 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
-                        "Comanda não encontrada. Verifique o número e tente novamente.",
+                        "Comanda não encontrada. Digite todos os dígitos da comanda e tente novamente.",
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w500),
                       ),
