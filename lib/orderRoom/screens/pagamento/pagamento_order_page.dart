@@ -306,7 +306,7 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           mesa: idMesa.toString(),
           itens: Provider.of<CarrinhoModel>(context, listen: false).itens,
         );
-        final nota = await _mostrarAvaliacaoDialog();
+        await _mostrarAvaliacaoDialog();
         if (!mounted) return;
 
         final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
@@ -317,13 +317,6 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           context,
           listen: false,
         ).limpar();
-        if (nota == 5 && mounted) {
-          await abrirLink(
-            'https://www.google.com/maps/search/?api=1&query=Dona+De%C3%B4la+Higien%C3%B3polis',
-          );
-        }
-
-        if (!mounted) return;
 
         Navigator.of(context).popUntil(
           (route) => route.isFirst,
