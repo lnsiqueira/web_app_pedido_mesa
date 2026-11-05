@@ -27,6 +27,9 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
   late Animation<double> _shakeAnimation;
   bool _isLoading = false;
 
+  /// Erro mostrado acima do Confirmar.
+  String? _erro;
+
   @override
   void initState() {
     super.initState();
@@ -116,9 +119,9 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
 
                     SizedBox(height: isSmallScreen ? 16 : 24),
 
-                    // ── Display + teclado (scrollável se necessário) ──
+                    // ── Display + teclado (o teclado encolhe para caber) ──
                     Flexible(
-                      child: SingleChildScrollView(
+                      child: Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: isSmallScreen ? 20 : 28,
                         ),
@@ -134,7 +137,16 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
                         isSmallScreen ? 20 : 28,
                         isSmallScreen ? 20 : 28,
                       ),
-                      child: _buildConfirmButton(isSmallScreen),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_erro != null) ...[
+                            _buildErro(),
+                            const SizedBox(height: 10),
+                          ],
+                          _buildConfirmButton(isSmallScreen),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -208,6 +220,58 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
 
     final keyboardSpacing = isVerySmall ? 6.0 : 10.0;
 
+    Widget teclaDoIndice(int index) {
+      if (index < 9) {
+        final number = '${index + 1}';
+        return _buildKeyboardButton(
+          text: number,
+          isVerySmall: isVerySmall,
+          onTap: () {
+            setState(() {
+              widget.comandaController.text += number;
+              _erro = null;
+            });
+          },
+        );
+      }
+      // X fecha o popup (sem comanda)
+      if (index == 9) {
+        return _buildKeyboardButton(
+          icon: Icons.clear_rounded,
+          isVerySmall: isVerySmall,
+          onTap: () => Navigator.of(context).pop(),
+        );
+      }
+      if (index == 10) {
+        return _buildKeyboardButton(
+          text: '0',
+          isVerySmall: isVerySmall,
+          onTap: () {
+            setState(() {
+              widget.comandaController.text += '0';
+              _erro = null;
+            });
+          },
+        );
+      }
+      // apagar o último dígito
+      return _buildKeyboardButton(
+        icon: Icons.backspace_rounded,
+        isVerySmall: isVerySmall,
+        onTap: () {
+          if (widget.comandaController.text.isNotEmpty) {
+            setState(() {
+              widget.comandaController.text =
+                  widget.comandaController.text.substring(
+                0,
+                widget.comandaController.text.length - 1,
+              );
+            });
+          }
+        },
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -262,68 +326,35 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
 
         SizedBox(height: isVerySmall ? 10 : 16),
 
-        // TECLADO
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: 12,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: keyboardSpacing,
-            crossAxisSpacing: keyboardSpacing,
-            childAspectRatio: keyboardAspect,
-          ),
-          itemBuilder: (context, index) {
-            if (index < 9) {
-              final number = '${index + 1}';
-              return _buildKeyboardButton(
-                text: number,
-                isVerySmall: isVerySmall,
-                onTap: () {
-                  setState(() {
-                    widget.comandaController.text += number;
-                  });
-                },
-              );
-            }
-            if (index == 9) {
-              return _buildKeyboardButton(
-                icon: Icons.backspace_rounded,
-                isVerySmall: isVerySmall,
-                onTap: () {
-                  if (widget.comandaController.text.isNotEmpty) {
-                    setState(() {
-                      widget.comandaController.text =
-                          widget.comandaController.text.substring(
-                        0,
-                        widget.comandaController.text.length - 1,
-                      );
-                    });
-                  }
-                },
-              );
-            }
-            if (index == 10) {
-              return _buildKeyboardButton(
-                text: '0',
-                isVerySmall: isVerySmall,
-                onTap: () {
-                  setState(() {
-                    widget.comandaController.text += '0';
-                  });
-                },
-              );
-            }
-            return _buildKeyboardButton(
-              icon: Icons.clear_rounded,
-              isVerySmall: isVerySmall,
-              onTap: () {
-                setState(() {
-                  widget.comandaController.clear();
-                });
-              },
+        // TECLADO: mede a altura que sobrou de verdade (no Safari do iPhone
+        // a área visível é menor por causa das barras) e encolhe as teclas
+        // para as 4 linhas caberem acima do Confirmar
+        Flexible(
+          child: LayoutBuilder(builder: (context, c) {
+            final larguraTecla = (c.maxWidth - 2 * keyboardSpacing) / 3;
+            final natural = larguraTecla / keyboardAspect;
+            final cabe = (c.maxHeight - 3 * keyboardSpacing) / 4;
+            final altura = cabe < natural ? cabe.clamp(36.0, natural) : natural;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var linha = 0; linha < 4; linha++) ...[
+                  if (linha > 0) SizedBox(height: keyboardSpacing),
+                  SizedBox(
+                    height: altura,
+                    child: Row(
+                      children: [
+                        for (var col = 0; col < 3; col++) ...[
+                          if (col > 0) SizedBox(width: keyboardSpacing),
+                          Expanded(child: teclaDoIndice(linha * 3 + col)),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             );
-          },
+          }),
         ),
       ],
     );
@@ -383,6 +414,34 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
                   ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildErro() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _erro!,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.red.shade800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -500,133 +559,66 @@ class _PopupMesaComandaState extends State<PopupMesaComanda>
     );
   }
 
+  /// Mostra o erro dentro do popup (um SnackBar ficaria atrás dele).
+  void _mostrarErro(String mensagem) {
+    _triggerShakeAnimation();
+    HapticFeedback.heavyImpact();
+    setState(() {
+      _isLoading = false;
+      _erro = mensagem;
+    });
+  }
+
   Future<void> _handleConfirm() async {
-    if (widget.formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    final comanda = widget.comandaController.text.trim();
+    if (comanda.isEmpty) {
+      _mostrarErro('Digite o número da comanda.');
+      return;
+    }
 
-      final comanda = widget.comandaController.text;
+    setState(() {
+      _isLoading = true;
+      _erro = null;
+    });
 
-      var urlBratter = Urls.urlApiBratter;
-      final encodedUrl = Uri.encodeComponent(urlBratter);
-      final url =
-          '${Urls.urlApiAzure}Proxy/ConsultaComanda/?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}&idComanda=$comanda';
+    var urlBratter = Urls.urlApiBratter;
+    final encodedUrl = Uri.encodeComponent(urlBratter);
+    final url =
+        '${Urls.urlApiAzure}Proxy/ConsultaComanda/?urlBratter=$encodedUrl&tokenBratter=${GlobalKeys.tokenBratter}&idComanda=$comanda';
 
-      try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        );
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+      if (!mounted) return;
 
-        setState(() {
-          _isLoading = false;
-        });
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          debugPrint('STATUS CODE: ${response.statusCode}');
-          debugPrint('BODY: ${response.body}');
-          debugPrint('DATA: $data');
-
-          // aceita só comanda cadastrada: livre (00/01) ou em uso (02).
-          // Id 0 sem status = comanda que não existe na Bratter: o POST
-          // responde 200 mas descarta os itens.
-          final status = data['Status']?.toString();
-          final valida = status == '00' || status == '01' || status == '02';
-          if (comanda.trim().isNotEmpty && valida) {
-            numeroComanda = comanda.trim();
-            Navigator.pop(context, {
-              'comanda': comanda,
-            });
-          } else {
-            _triggerShakeAnimation();
-            HapticFeedback.heavyImpact();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.white, size: 20),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        "Comanda não encontrada. Digite todos os dígitos da comanda e tente novamente.",
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.orange.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(16),
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        } else {
-          _triggerShakeAnimation();
-          HapticFeedback.heavyImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.wifi_off, color: Colors.white, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Erro ao consultar comanda: ${response.statusCode}",
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.orange.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              margin: const EdgeInsets.all(16),
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-      } catch (e) {
-        setState(() {
-          _isLoading = false;
-        });
-        _triggerShakeAnimation();
-        HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    "Erro de conexão: $e",
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+      if (response.statusCode != 200) {
+        _mostrarErro('Não foi possível consultar a comanda '
+            '(${response.statusCode}). Tente de novo ou chame um atendente.');
+        return;
       }
+
+      final data = jsonDecode(response.body);
+      // aceita só comanda cadastrada: livre (00/01) ou em uso (02).
+      // Id 0 sem status = comanda que não existe na Bratter: o POST
+      // responde 200 mas descarta os itens.
+      final status = data['Status']?.toString();
+      final valida = status == '00' || status == '01' || status == '02';
+      if (!valida) {
+        _mostrarErro('Comanda não encontrada. Digite todos os dígitos da '
+            'comanda e tente novamente.');
+        return;
+      }
+
+      numeroComanda = comanda;
+      Navigator.pop(context, {'comanda': comanda});
+    } catch (e) {
+      if (!mounted) return;
+      _mostrarErro('Sem conexão. Verifique a internet e tente de novo.');
     }
   }
 }
