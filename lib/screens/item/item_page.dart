@@ -26,6 +26,9 @@ class ItensPage extends StatefulWidget {
 class _ItensPageState extends State<ItensPage> {
   bool isLoading = false;
 
+  /// Terminou a busca dos preços desta categoria (inclusive os que falharam)
+  bool _precosCarregados = false;
+
   /// Grupos da Dashboard: produtos agrupados aparecem num card só
   List<GrupoProdutos> _grupos = [];
 
@@ -242,6 +245,11 @@ class _ItensPageState extends State<ItensPage> {
     );
 
     if (produtosProvider.contemCategoria(widget.idCategoria) && !forceRefresh) {
+      // cache completo (se saiu da tela no meio da carga, ainda pode faltar
+      // preço: aí cada grupo espera todas as opções)
+      _precosCarregados = produtosProvider
+          .obterProdutos(widget.idCategoria)
+          .every((p) => p.preco != null);
       return;
     }
 
@@ -312,6 +320,7 @@ class _ItensPageState extends State<ItensPage> {
             List<ItemModel>.from(lista),
           );
         }
+        if (mounted) setState(() => _precosCarregados = true);
       }
     } catch (e) {
       print('Erro: $e');
@@ -838,6 +847,11 @@ class _ItensPageState extends State<ItensPage> {
                                 .map((o) => o.key.preco)
                                 .whereType<double>()
                                 .toList();
+                            // só mostra o preço e abre quando todas as
+                            // opções carregaram (ou a busca terminou)
+                            final carregado = precos.isNotEmpty &&
+                                (precos.length == opcoes.length ||
+                                    _precosCarregados);
                             final imagem = grupo.imagem.isNotEmpty
                                 ? grupo.imagem
                                 : (opcoes.first.key.imageUrl ?? '');
@@ -848,7 +862,7 @@ class _ItensPageState extends State<ItensPage> {
                                   : (opcoes.first.key.desProduto ?? '').trim(),
                               // meio a meio: a partir das 2 metades mais
                               // baratas somadas
-                              preco: precos.isEmpty
+                              preco: !carregado
                                   ? null
                                   : grupo.meioAMeio && precos.length >= 2
                                       ? ((List.of(precos)..sort())[0] +
@@ -860,8 +874,10 @@ class _ItensPageState extends State<ItensPage> {
                               iconeVeg: opcoes
                                   .any((o) => _selosDe([o.key]).isNotEmpty),
                               aPartirDe: precos.toSet().length > 1,
-                              onTap: () =>
-                                  escolherOpcaoGrupo(context, grupo, opcoes),
+                              onTap: !carregado
+                                  ? null
+                                  : () => escolherOpcaoGrupo(
+                                      context, grupo, opcoes),
                             );
                           }
                           final produto = item as ItemModel;
