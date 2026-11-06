@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/atualizacao/atualizacao_automatica.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
@@ -59,6 +60,9 @@ class _HomePageState extends State<HomePage> {
     // a comanda é pedida só no fim, ao enviar o pedido (carrinho)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _carregarCategorias();
+      // já busca os grupos de produtos (ficam em cache): ao abrir a
+      // categoria, os produtos aparecem agrupados sem esperar
+      GrupoProdutos.todos();
     });
   }
 
@@ -410,7 +414,18 @@ class _HomePageState extends State<HomePage> {
                                           decoration: TextDecoration.underline,
                                         ),
                                       ),
-                                      const TextSpan(text: ' · 2026'),
+                                      // versão publicada, discreta (confere
+                                      // se o celular já está na nova)
+                                      if (versaoDoApp.isNotEmpty)
+                                        TextSpan(
+                                          text: ' · versão $numeroDaVersao',
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            color: Colors.grey.shade400,
+                                          ),
+                                        )
+                                      else
+                                        const TextSpan(text: ' · 2026'),
                                     ]),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(

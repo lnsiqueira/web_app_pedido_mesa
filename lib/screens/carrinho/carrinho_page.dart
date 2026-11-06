@@ -7,6 +7,7 @@ import 'package:webapp_pedido_mesa/screens/item/meio_a_meio.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
+import 'package:webapp_pedido_mesa/screens/carrinho/scanner_comanda_page.dart';
 import 'package:webapp_pedido_mesa/widgets/popup_mesa_comanda.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
@@ -555,17 +556,31 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                       context,
                                       listen: false);
                                   if (mc.comanda.isEmpty) {
-                                    final r =
-                                        await showDialog<Map<String, String>?>(
-                                      context: context,
-                                      builder: (_) => PopupMesaComanda(
-                                        formKey: GlobalKey<FormState>(),
-                                        mesaController: TextEditingController(),
-                                        comandaController:
-                                            TextEditingController(),
-                                      ),
-                                    );
-                                    final comanda = r?['comanda'] ?? '';
+                                    // as duas telas já conferem a comanda
+                                    // na Bratter
+                                    final comanda = modoTeste
+                                        // TEMPORÁRIO: scanner só com &teste=1
+                                        // (em teste na Saúde)
+                                        ? await Navigator.push<String>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const ScannerComandaPage(),
+                                              ),
+                                            ) ??
+                                            ''
+                                        : (await showDialog<
+                                                Map<String, String>?>(
+                                              context: context,
+                                              builder: (_) => PopupMesaComanda(
+                                                formKey: GlobalKey<FormState>(),
+                                                mesaController:
+                                                    TextEditingController(),
+                                                comandaController:
+                                                    TextEditingController(),
+                                              ),
+                                            ))?['comanda'] ??
+                                            '';
                                     if (comanda.isEmpty || !context.mounted) {
                                       return;
                                     }

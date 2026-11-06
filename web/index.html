@@ -50,6 +50,57 @@
 </head>
 
 <body>
+  <!-- leitor de código de barras do scanner da comanda (ZXing), carregado
+       junto com a página; o id é o que o mobile_scanner procura, assim ele
+       não tenta carregar de novo de fora -->
+  <script id="mobile-scanner-barcode-reader" src="zxing/zxing.min.js"></script>
+  <!-- leitura da comanda com a câmera real (reflexo, foco). Só onde o
+       navegador tem leitor nativo (Android): pede alta resolução e foco
+       contínuo, e o ZXing passa a rodar devagar, só de reserva. No iPhone
+       (sem leitor nativo) fica tudo como antes: alta resolução deixava o
+       ZXing pesado demais e a leitura parava. -->
+  <script>
+    (function () {
+      var nativo = 'BarcodeDetector' in window;
+      if (!nativo) return;
+      var md = navigator.mediaDevices;
+      if (md && md.getUserMedia) {
+        var original = md.getUserMedia.bind(md);
+        md.getUserMedia = function (c) {
+          try {
+            if (c && c.video) {
+              var v = c.video === true ? {} : Object.assign({}, c.video);
+              if (!v.width) v.width = { ideal: 1920 };
+              if (!v.height) v.height = { ideal: 1080 };
+              v.advanced = (v.advanced || []).concat([{ focusMode: 'continuous' }]);
+              c = Object.assign({}, c, { video: v });
+            }
+          } catch (e) {}
+          return original(c).then(function (stream) {
+            try {
+              stream.getVideoTracks().forEach(function (t) {
+                var cap = t.getCapabilities ? t.getCapabilities() : {};
+                if (cap.focusMode && cap.focusMode.indexOf('continuous') >= 0) {
+                  t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
+                    .catch(function () {});
+                }
+              });
+            } catch (e) {}
+            return stream;
+          });
+        };
+      }
+      if (window.ZXing && ZXing.BrowserMultiFormatReader) {
+        var Leitor = ZXing.BrowserMultiFormatReader;
+        ZXing.BrowserMultiFormatReader = class extends Leitor {
+          constructor(hints, intervalo) {
+            // reserva: 1 tentativa por segundo (o nativo lê 4 por segundo)
+            super(hints, Math.max(intervalo || 0, 1000));
+          }
+        };
+      }
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

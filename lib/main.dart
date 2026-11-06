@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webapp_pedido_mesa/admin/screens/home/admin_home_page.dart';
+import 'package:webapp_pedido_mesa/core/atualizacao/atualizacao_automatica.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
@@ -22,6 +23,10 @@ import 'package:webapp_pedido_mesa/screens/splash/splash_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:webapp_pedido_mesa/services/nfce/model/filial_nf_model.dart';
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
+
+/// Navegador do site (a atualização automática confere se o cliente está
+/// na tela inicial antes de recarregar)
+final navegadorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +42,7 @@ Future<void> main() async {
   final filialId = params['filialId'];
   final mesa = params['mesa'];
   final admin = params['admin'];
+  modoTeste = params['teste'] == '1';
 
 // ADMIN
   if (admin != null) {
@@ -68,6 +74,14 @@ Future<void> main() async {
   await tokenApiBratter();
   globalFilialData = await getFilial();
   runApp(const MyApp());
+  // recarrega sozinho quando sai versão nova, só com o cliente na tela
+  // inicial, carrinho vazio e nenhuma janela aberta
+  AtualizacaoAutomatica.iniciar(podeRecarregar: () {
+    final nav = navegadorKey.currentState;
+    final ctx = navegadorKey.currentContext;
+    if (nav == null || ctx == null || nav.canPop()) return false;
+    return Provider.of<CarrinhoModel>(ctx, listen: false).itens.isEmpty;
+  });
 
   // runApp(const MyOrderRoom());
   return;
@@ -275,6 +289,7 @@ class MyApp extends StatelessWidget {
             final languageController = Provider.of<LanguageController>(context);
 
             return MaterialApp(
+              navigatorKey: navegadorKey,
               debugShowCheckedModeBanner: false,
               title: 'Dona Deola',
               theme: ThemeData(

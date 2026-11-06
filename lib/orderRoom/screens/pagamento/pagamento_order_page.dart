@@ -351,8 +351,8 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e is _ComandaInexistente
-              ? 'Comanda $numeroComanda não encontrada. Digite todos os '
-                  'dígitos da comanda ou chame um atendente.'
+              ? 'Comanda $numeroComanda não encontrada. Escaneie a comanda '
+                  'de novo ou chame um atendente.'
               : 'Não foi possível enviar o pedido. Tente de novo '
                   'ou chame um atendente.'),
           backgroundColor: Colors.red,

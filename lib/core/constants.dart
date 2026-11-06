@@ -17,6 +17,9 @@ String numeroMesa = '';
 String numeroComanda = '';
 bool isQuartoENome = true;
 
+/// TEMPORÁRIO: site aberto com &teste=1 (scanner da comanda em teste).
+bool modoTeste = false;
+
 class GlobalKeys {
   static const String idioma = '';
   static const String codEmpresa = '1';

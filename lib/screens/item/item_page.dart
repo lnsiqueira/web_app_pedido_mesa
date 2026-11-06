@@ -32,6 +32,10 @@ class _ItensPageState extends State<ItensPage> {
   /// Grupos da Dashboard: produtos agrupados aparecem num card só
   List<GrupoProdutos> _grupos = [];
 
+  /// Só mostra a grade depois de saber os grupos: senão os produtos aparecem
+  /// soltos e um instante depois se juntam no card do grupo
+  bool _gruposCarregados = false;
+
   /// Selos vegano/vegetariano (Dashboard), por id do produto
   Map<int, ({bool vegetariano, bool vegano})> _selos = {};
 
@@ -49,7 +53,12 @@ class _ItensPageState extends State<ItensPage> {
     super.initState();
     _carregarProdutos();
     GrupoProdutos.todos().then((g) {
-      if (mounted) setState(() => _grupos = g);
+      if (mounted) {
+        setState(() {
+          _grupos = g;
+          _gruposCarregados = true;
+        });
+      }
     });
     Complementos.selos().then((v) {
       if (mounted) setState(() => _selos = v);
@@ -810,7 +819,7 @@ class _ItensPageState extends State<ItensPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: produtos.isEmpty && isLoading
+            child: (produtos.isEmpty && isLoading) || !_gruposCarregados
                 ? const Center(
                     child: PulsingLogo(
                       assetPath: 'images/logodd_clean.png',
