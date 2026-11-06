@@ -6,23 +6,13 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
+import 'package:webapp_pedido_mesa/services/busca/busca_produtos.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 
 // Sugestões para aumentar o ticket médio, iguais às do cardápio de mesa do
 // tablet: se o cliente pediu comida e ainda não tem bebida e/ou sobremesa,
 // oferece primeiro as bebidas e depois as sobremesas. Os produtos podem ser
 // escolhidos na Dashboard (Filial/{filial}.cardapioMesaSugestoes).
-
-String _normalizar(String s) {
-  const de = 'áàâãäéèêëíìîïóòôõöúùûüç';
-  const para = 'aaaaaeeeeiiiiooooouuuuc';
-  final b = StringBuffer();
-  for (final ch in s.toLowerCase().split('')) {
-    final i = de.indexOf(ch);
-    b.write(i >= 0 ? para[i] : ch);
-  }
-  return b.toString();
-}
 
 /// Palavras de categorias de bebida, na ordem de preferência
 const _palavrasBebida = [
@@ -37,7 +27,7 @@ const _palavrasDoce = [
 ];
 
 int _posicao(Categoria c, List<String> palavras) {
-  final nome = ' ${_normalizar(c.desCategoria)} ';
+  final nome = ' ${normalizar(c.desCategoria)} ';
   return palavras.indexWhere(nome.contains);
 }
 
@@ -240,7 +230,7 @@ Future<List<Object>> _produtosEtapa(
         final lista = listas[i];
         demais.addAll(lista);
         final dela = grupos.where((g) =>
-            (_normalizar(g.nome).contains('refri') ||
+            (normalizar(g.nome).contains('refri') ||
                 _posicao(cats[i], const ['refri']) >= 0) &&
             g.opcoes.any((o) => lista.any((p) => p.id == o.key)));
         for (final g in dela) {

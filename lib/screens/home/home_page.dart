@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/atualizacao/atualizacao_automatica.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
+import 'package:webapp_pedido_mesa/services/busca/busca_produtos.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 import 'package:webapp_pedido_mesa/widgets/sobre_bakeryfood.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
@@ -149,27 +150,11 @@ class _HomePageState extends State<HomePage> {
   //     setState(() => isSearching = false);
   //   }
   // }
-  /// Minúsculas e sem acento ("Pão" -> "pao")
-  static String _normalizar(String s) {
-    const de = 'áàâãäéèêëíìîïóòôõöúùûüç';
-    const para = 'aaaaaeeeeiiiiooooouuuuc';
-    final b = StringBuffer();
-    for (final ch in s.toLowerCase().split('')) {
-      final i = de.indexOf(ch);
-      b.write(i >= 0 ? para[i] : ch);
-    }
-    return b.toString();
-  }
-
-  static bool _casa(List<String> palavras, String nome) {
-    final doNome = nome.split(RegExp(r'[^a-z0-9]+'));
-    return palavras.every((b) => doNome.any((w) => w.startsWith(b)));
-  }
-
   /// Busca no cardápio que está aparecendo (mesmas categorias e filial),
-  /// sem ligar para acentos: "pao de quei" acha "Pão de Queijo"
+  /// sem ligar para acentos, abreviações e erros de digitação: "quero um
+  /// pao com menteiga" acha "Pão na chapa c/ mant" (ver busca_produtos.dart)
   Future<void> _buscarProduto(String query) async {
-    final termo = _normalizar(query.trim());
+    final termo = normalizar(query.trim());
     if (termo.isEmpty) {
       setState(() {
         modoBusca = false;
@@ -184,15 +169,14 @@ class _HomePageState extends State<HomePage> {
     try {
       final listas = await Future.wait(
           categorias.map((c) => CardapioService.produtosDe(c.id)));
-      final palavras = termo.split(RegExp(r'\s+'));
       final vistos = <String>{};
-      final achados = [
+      final unicos = [
         for (final p in listas.expand((l) => l))
-          // cada palavra buscada é o começo de uma palavra do nome
-          if (_casa(palavras, _normalizar(p.desProduto ?? '')) &&
-              vistos.add(p.plu ?? ''))
-            p,
+          if (vistos.add(p.plu ?? '')) p,
       ];
+      // do mais parecido para o menos
+      final achados =
+          buscarProdutos(query, unicos, (ItemModel p) => p.desProduto ?? '');
       final completos =
           await Future.wait(achados.take(30).map(Complementos.completar));
       if (!mounted || _searchController.text.trim() != query.trim()) return;
