@@ -32,12 +32,14 @@ import 'package:webapp_pedido_mesa/services/nfce/nfce_service.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
+import 'package:webapp_pedido_mesa/services/storage/pedidos_enviados_storage.dart';
 // ignore: deprecated_member_use
 import 'dart:html' as html;
 
 import 'package:webapp_pedido_mesa/widgets/logo_pulsando.dart';
 
 import '../../oder_service.dart'; // para abrir no browser
+import 'pedido_enviado_view.dart';
 
 class PagamentoOrderPage extends StatefulWidget {
   const PagamentoOrderPage({super.key, this.enviarAoAbrir = false});
@@ -128,17 +130,25 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       };
     }).toList();
 
-    await _firestore.collection('Pedidos_Web').add({
+    final avaliacao = {
+      "nota": nota,
+      "tags": tags,
+      "observacao": observacao,
+    };
+    // o pedido já foi gravado (nota 0) quando foi enviado: a avaliação só
+    // atualiza o mesmo documento
+    if (_pedidoRef != null) {
+      await _pedidoRef!.update({"avaliacao": avaliacao});
+      return;
+    }
+
+    _pedidoRef = await _firestore.collection('Pedidos_Web').add({
       "codFilial": codFilial,
       // "descricaoFilial": GlobalKeys.descricaoFilial,
       "mesa": numeroMesa,
       "comanda": mesaComanda.comanda,
       "itens": itens,
-      "avaliacao": {
-        "nota": nota,
-        "tags": tags,
-        "observacao": observacao,
-      },
+      "avaliacao": avaliacao,
       "total": carrinho.totalGeral,
       "createdAt": FieldValue.serverTimestamp(),
     });
@@ -306,23 +316,30 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           mesa: idMesa.toString(),
           itens: Provider.of<CarrinhoModel>(context, listen: false).itens,
         );
-        await _mostrarAvaliacaoDialog();
-        if (!mounted) return;
-
-        final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
-
-        carrinho.limpar();
-
-        Provider.of<MesaComandaModel>(
-          context,
-          listen: false,
-        ).limpar();
-
-        Navigator.of(context).popUntil(
-          (route) => route.isFirst,
-        );
-
         debugPrint('Pedido enviado com sucesso');
+        // mostra a tela "Pedido enviado!" com o que foi pedido; a avaliação
+        // vem quando o cliente toca em Continuar
+        setState(() => _enviado = PedidoEnviado(
+              mesa: idMesa.toString(),
+              comanda: idComanda.toString(),
+              itens: [
+                for (final i in carrinho.itens)
+                  (
+                    qtd: i.quantidade,
+                    nome: i.produto.nomeExibicao.trim(),
+                    total: i.quantidade * i.produto.precoComAcrescimos,
+                  ),
+              ],
+              total: carrinho.totalGeral,
+            ));
+        // "Meus pedidos" deste celular
+        PedidosEnviadosStorage.salvar(_enviado!);
+        // já registra o pedido (sem avaliação) caso o cliente feche o site
+        try {
+          await _salvarPedidoFirebase(nota: 0, tags: [], observacao: '');
+        } catch (e) {
+          debugPrint('Erro ao registrar pedido: $e');
+        }
       } else {
         throw Exception(
           'Erro API: ${response.statusCode}',
@@ -372,6 +389,15 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
       debugPrint('Consulta comanda antes do envio: $e');
       return true;
     }
+  }
+
+  /// Depois do "Pedido enviado!": avaliação e volta ao início.
+  Future<void> _concluir() async {
+    await _mostrarAvaliacaoDialog();
+    if (!mounted) return;
+    Provider.of<CarrinhoModel>(context, listen: false).limpar();
+    Provider.of<MesaComandaModel>(context, listen: false).limpar();
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> abrirLink(String url) async {
@@ -1490,8 +1516,17 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
 
   bool _pagando = false;
 
+  /// Pedido gravado em Pedidos_Web (a avaliação atualiza o mesmo documento)
+  DocumentReference<Map<String, dynamic>>? _pedidoRef;
+
+  /// Preenchido quando a comanda recebeu o pedido: mostra "Pedido enviado!"
+  PedidoEnviado? _enviado;
+
   @override
   Widget build(BuildContext context) {
+    if (_enviado != null) {
+      return PedidoEnviadoView(pedido: _enviado!, onContinuar: _concluir);
+    }
     if (widget.enviarAoAbrir) {
       return const Scaffold(
         backgroundColor: Colors.white,

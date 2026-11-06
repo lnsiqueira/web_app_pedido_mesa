@@ -9,12 +9,9 @@ import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 import 'package:webapp_pedido_mesa/widgets/sobre_bakeryfood.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
-import 'package:webapp_pedido_mesa/core/controllers/language_controller.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
-import 'package:webapp_pedido_mesa/l10n/app_localizations.dart';
-import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
 import 'package:webapp_pedido_mesa/core/model/mesa_comanda_model.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/carrinho_page.dart';
 import 'package:webapp_pedido_mesa/screens/home/categorias_grid.dart';
@@ -22,7 +19,8 @@ import 'package:webapp_pedido_mesa/screens/home/grid_buscar_itens.dart';
 import 'package:webapp_pedido_mesa/screens/home/search_bar_widget.dart';
 import 'package:webapp_pedido_mesa/screens/item/item_page.dart';
 import 'package:webapp_pedido_mesa/screens/item/popup_produto.dart';
-import 'package:webapp_pedido_mesa/services/storage/carrinho_storage.dart';
+import 'package:webapp_pedido_mesa/widgets/botao_chamar_garcom.dart';
+import 'package:webapp_pedido_mesa/widgets/meus_pedidos.dart';
 import 'package:webapp_pedido_mesa/widgets/botao_pagamento_flutuante.dart';
 import 'package:webapp_pedido_mesa/widgets/conexao_wrapper.dart';
 import 'package:http/http.dart' as http;
@@ -278,7 +276,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final languageController = Provider.of<LanguageController>(context);
     // final screenWidth = MediaQuery.of(context).size.width;
     // // final itemWidth = screenWidth / 3 - 24;
     // final mesa = context.watch<MesaComandaModel>().mesa;
@@ -303,63 +300,65 @@ class _HomePageState extends State<HomePage> {
                         // LOGO
                         Image.asset('images/logodd_clean.png', height: 40),
 
-                        // FLAGS + CARRINHO
-                        Row(
-                          children: [
-                            _buildFlag(
-                                'images/br.png', 'pt', languageController),
-                            const SizedBox(width: 6),
-                            _buildFlag(
-                                'images/en.png', 'en', languageController),
-                            const SizedBox(width: 6),
-                            _buildFlag(
-                                'images/es.png', 'es', languageController),
-                            const SizedBox(width: 8),
-                            MeusPedidosWidget(),
+                        const SizedBox(width: 8),
+                        // CHAMAR GARÇOM + MEUS PEDIDOS + CARRINHO (encolhe em
+                        // tela estreita em vez de estourar)
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              children: [
+                                const BotaoChamarGarcom(),
+                                const SizedBox(width: 6),
+                                const MeusPedidosWidget(),
 
-                            // const SizedBox(width: 4),
-                            // // Carrinho com badge
-                            Consumer<CarrinhoModel>(
-                              builder: (context, carrinho, _) => Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.shopping_cart_outlined,
-                                      color: Colors.black54,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const CarrinhoPage(),
+                                // const SizedBox(width: 4),
+                                // // Carrinho com badge
+                                Consumer<CarrinhoModel>(
+                                  builder: (context, carrinho, _) => Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.shopping_cart_outlined,
+                                          color: Colors.black54,
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  if (carrinho.totalItens > 0)
-                                    Positioned(
-                                      right: 4,
-                                      top: 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          carrinho.totalItens.toString(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const CarrinhoPage(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      if (carrinho.totalItens > 0)
+                                        Positioned(
+                                          right: 4,
+                                          top: 4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              carrinho.totalItens.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
@@ -449,250 +448,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFlag(String path, String lang, LanguageController controller) {
-    return InkWell(
-      onTap: () {
-        controller.changeLanguage(lang);
-      },
-      child: Image.asset(path, width: 24),
-    );
-  }
-}
-
-class MeusPedidosWidget extends StatefulWidget {
-  const MeusPedidosWidget({super.key});
-
-  @override
-  State<MeusPedidosWidget> createState() => _MeusPedidosWidgetState();
-}
-
-class _MeusPedidosWidgetState extends State<MeusPedidosWidget> {
-  String _statusPagamento = 'Pendente';
-
-  Future<List<ItemCarrinho>> _buscarPedidosSalvos() async {
-    return await CarrinhoStorage.recuperarCarrinho();
-  }
-
-  Future<void> _consultaPagamento(int idInvoice) async {
-    final url = Uri.parse('${Urls.urlApiPagtoAzure}Pix/consultar');
-
-    try {
-      final body = jsonEncode({
-        "idFilial": codFilial,
-        "idInvoicePix": idInvoice.toString(),
-        "ambiente": GlobalKeys.ambienteNfe,
-      });
-
-      final response = await http
-          .post(url, headers: {"Content-Type": "application/json"}, body: body)
-          .timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        if (jsonResponse['statusPagamento'] == 'credited' ||
-            jsonResponse['statusPagamento'] == 'paid') {
-          _statusPagamento = 'Pago';
-        } else {
-          _statusPagamento = 'Pendente';
-        }
-      } else {
-        debugPrint('Erro ao consultar pagamento: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Erro ao consultar pagamento: $e');
-    }
-  }
-
-  Future<void> _mostrarPedidos(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: PulsingLogo(
-            assetPath: 'images/logodd_clean.png',
-            width: 150,
-            duration: const Duration(seconds: 1),
-          ),
-        ),
-      ),
-    );
-
-    final pedidos = await _buscarPedidosSalvos();
-    await _consultaPagamento(GlobalKeys.idInvoice);
-
-    if (!mounted) return;
-
-    Navigator.of(context).pop(); // Fecha o loading
-
-    if (pedidos.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Nenhum pedido encontrado')));
-      return;
-    }
-
-    // // Calcula o valor total dos pedidos
-    double totalPedido = pedidos.fold(
-      0.0,
-      (soma, item) => soma + (item.quantidade * item.produto.preco!),
-    );
-
-    // Mostra o dialog com os pedidos
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Meus Pedidos\n'
-            'Total: R\$ ${totalPedido.toStringAsFixed(2)}\n'
-            'ID Invoice: ${GlobalKeys.idInvoice}',
-            style: const TextStyle(fontSize: 16),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 200,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: pedidos.length,
-                    itemBuilder: (context, index) {
-                      final item = pedidos[index];
-                      final totalItem = item.quantidade * item.produto.preco!;
-                      return ListTile(
-                        title: Text(item.produto.desProduto!),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Qtd: ${item.quantidade}'),
-                            Text('Total: R\$ ${totalItem.toStringAsFixed(2)}'),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Status do Pagamento:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      _statusPagamento,
-                      style: TextStyle(
-                        color: _statusPagamento == 'Pago'
-                            ? Colors.green
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    // _statusPagamento == 'Pendente'
-                    //     ? GlobalKeys.pagtoPIX
-                    //         ? ElevatedButton.icon(
-                    //           icon: const Icon(Icons.copy),
-                    //           label: const Text('COPIA E COLA PIX'),
-                    //           onPressed: () {
-                    //             Clipboard.setData(
-                    //               ClipboardData(text: GlobalKeys.brCode),
-                    //             );
-                    //             ScaffoldMessenger.of(context).showSnackBar(
-                    //               const SnackBar(
-                    //                 content: Text('Código PIX copiado!'),
-                    //               ),
-                    //             );
-                    //           },
-                    //           style: ElevatedButton.styleFrom(
-                    //             padding: const EdgeInsets.symmetric(
-                    //               horizontal: 24,
-                    //               vertical: 12,
-                    //             ),
-                    //           ),
-                    //         )
-                    //         : SizedBox()
-                    //     : SizedBox(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _mostrarPedidos(context),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 7,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.orange.shade100,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: Colors.orange.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.receipt_long_rounded,
-                size: 15,
-                color: Colors.orange.shade700,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              AppLocalizations.of(context)!.myOrders,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-                letterSpacing: -0.1,
-              ),
-            ),
           ],
         ),
       ),

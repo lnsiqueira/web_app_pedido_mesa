@@ -852,7 +852,7 @@ Future<void> abrirProdutoPopup(
                           if (obs.any((o) => o.tipo == 'escolha')) ...[
                             const SizedBox(height: 30),
                             const Text(
-                              'PERSONALIZE SEU PEDIDO',
+                              'COMO VOCÊ PREFERE?',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
