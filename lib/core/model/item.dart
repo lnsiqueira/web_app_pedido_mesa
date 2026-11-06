@@ -177,8 +177,12 @@ class AcrescimoEscolhido {
     required this.plu,
     required this.nome,
     required this.preco,
+    this.id,
   });
 
+  /// id do acréscimo na Dashboard (dois acréscimos podem ter o mesmo PLU,
+  /// ex.: "Leite de aveia" e "Leite zero lactose")
+  final int? id;
   final String plu;
   final String nome;
   final double preco;
@@ -187,8 +191,10 @@ class AcrescimoEscolhido {
   /// produto, vai como observação do próprio item na comanda
   bool get soObservacao => plu.trim().toUpperCase() == 'OBS';
 
-  /// Identifica o acréscimo (vários "só observação" têm o mesmo PLU)
-  String get chave => soObservacao ? 'OBS:$nome' : plu;
+  /// Identifica o acréscimo: pelo id da Dashboard (vários podem ter o mesmo
+  /// PLU); sem id, pelo PLU (e nome, nos "só observação")
+  String get chave =>
+      id != null ? 'ID:$id' : (soObservacao ? 'OBS:$nome' : plu);
 
   /// Observação na comanda (a comanda guarda só 30 letras)
   String get observacao {

@@ -1117,6 +1117,8 @@ Future<void> abrirProdutoPopup(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(0, 54),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 side: BorderSide(
                                   color: Colors.grey.shade300,
                                 ),
@@ -1124,12 +1126,18 @@ Future<void> abrirProdutoPopup(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Text(
-                                'Cancelar',
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                              // nunca quebra a linha: encolhe se faltar espaço
+                              child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Cancelar',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1190,28 +1198,25 @@ Future<void> abrirProdutoPopup(
                                 backgroundColor: Colors.orange.shade800,
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(0, 54),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // const Icon(
-                                  //   Icons.add_rounded,
-                                  //   size: 18,
-                                  //   color: Colors.white,
-                                  // ),
-                                  // const SizedBox(width: 8),
-                                  Text(
-                                    '${editando != null ? 'Salvar' : 'Adicionar'} · R\$ ${total.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                              // nunca quebra a linha: encolhe se faltar espaço
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '${editando != null ? 'Salvar' : 'Adicionar'} · R\$ ${total.toStringAsFixed(2)}',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),

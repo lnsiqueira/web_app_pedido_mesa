@@ -287,6 +287,7 @@ class Complementos {
       final preco = plu.trim().toUpperCase() == 'OBS' ? 0.0 : await _preco(plu);
       if (preco == null) continue;
       r.add(AcrescimoEscolhido(
+        id: (a['id'] as num?)?.toInt(),
         plu: plu,
         nome: (a['nome'] ?? '').toString().trim(),
         preco: preco,
