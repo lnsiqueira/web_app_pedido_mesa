@@ -211,16 +211,16 @@ class _PagamentoOrderPageState extends State<PagamentoOrderPage> {
           }
         }
 
-        // acréscimos "só observação" (sem preço) vão dentro do próprio item
+        // todo acréscimo vai como observação do próprio item ("só
+        // observação": o nome; com preço: "+ nome", além do lançamento do PLU
+        // logo abaixo), como no tablet
         for (final a in item.produto.acrescimos) {
-          if (a.soObservacao) {
-            observacoesJson.add({
-              "Obs": a.observacao,
-              "Preco": 0.0,
-              "PluAdd": 0,
-              "Modificador": 'COM',
-            });
-          }
+          observacoesJson.add({
+            "Obs": a.observacao,
+            "Preco": 0.0,
+            "PluAdd": 0,
+            "Modificador": 'COM',
+          });
         }
 
         // mesmo formato do cardápio de mesa (tablet), que lança certo

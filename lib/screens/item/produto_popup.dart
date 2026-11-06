@@ -42,76 +42,75 @@ Future<void> escolherOpcaoGrupo(
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              textoFrase(grupo.nome),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text('Escolha uma opção',
-                style: TextStyle(color: Colors.grey.shade600)),
-            const SizedBox(height: 12),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final o in opcoes)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Material(
-                        color: const Color(0xFFFFF4E8),
-                        borderRadius: BorderRadius.circular(14),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: o.key.preco == null
-                              ? null
-                              : () => Navigator.pop(ctx, o.key),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(textoFrase(o.value),
-                                      style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                                if ((selos[o.key.id]?.vegano ?? false) ||
-                                    (selos[o.key.id]?.vegetariano ?? false))
-                                  const Padding(
-                                    padding: EdgeInsets.only(right: 8),
-                                    child: Icon(Icons.eco_rounded,
-                                        size: 18, color: Color(0xFF2E7D32)),
-                                  ),
-                                Text(
-                                  o.key.preco == null
-                                      ? '...'
-                                      : 'R\$ ${_reaisPopup(o.key.preco!)}',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFFE8710A)),
-                                ),
-                                const SizedBox(width: 6),
-                                const Icon(Icons.chevron_right_rounded,
-                                    color: Color(0xFFE8710A)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // alça
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(99),
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 8, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        textoFrase(grupo.nome),
+                        style: const TextStyle(
+                            fontSize: 21, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text('${opcoes.length} opções · escolha uma',
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  tooltip: 'Fechar',
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              itemCount: opcoes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) {
+                final o = opcoes[i];
+                return _OpcaoDoGrupo(
+                  nome: textoFrase(o.value),
+                  preco: o.key.preco,
+                  imagem: o.key.imageUrl ?? '',
+                  selo: (selos[o.key.id]?.vegano ?? false)
+                      ? 'Vegano'
+                      : (selos[o.key.id]?.vegetariano ?? false)
+                          ? 'Vegetariano'
+                          : null,
+                  onTap: o.key.preco == null
+                      ? null
+                      : () => Navigator.pop(ctx, o.key),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -1239,4 +1238,118 @@ Future<void> abrirProdutoPopup(
       carrinhoAtual.totalItens > itensAntes) {
     await oferecerSugestoesAposAdicionar(context, produto);
   }
+}
+
+/// Linha de uma opção do grupo: foto, nome (com o selo vegano/vegetariano
+/// sempre embaixo do nome) e preço alinhado à direita.
+class _OpcaoDoGrupo extends StatelessWidget {
+  const _OpcaoDoGrupo({
+    required this.nome,
+    required this.preco,
+    required this.imagem,
+    required this.selo,
+    required this.onTap,
+  });
+
+  final String nome;
+  final double? preco;
+  final String imagem;
+  final String? selo;
+  final VoidCallback? onTap;
+
+  static const _laranja = Color(0xFFE8710A);
+  static const _verde = Color(0xFF2E7D32);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: imagem.isNotEmpty
+                      ? Image.network(
+                          imagem,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const _SemFoto(),
+                        )
+                      : const _SemFoto(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nome,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (selo != null) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const Icon(Icons.eco_rounded,
+                              size: 14, color: _verde),
+                          const SizedBox(width: 4),
+                          Text(
+                            selo!,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: _verde,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                preco == null ? '...' : 'R\$ ${_reaisPopup(preco!)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _laranja,
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SemFoto extends StatelessWidget {
+  const _SemFoto();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: const Color(0xFFFFF4E8),
+        child: const Icon(Icons.restaurant_rounded,
+            color: Color(0xFFE8A86B), size: 24),
+      );
 }

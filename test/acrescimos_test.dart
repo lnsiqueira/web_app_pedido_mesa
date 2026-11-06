@@ -35,4 +35,18 @@ void main() {
     expect(carrinho.itens.length, 2);
     expect(carrinho.itens.first.quantidade, 2);
   });
+
+  test('observação do acréscimo no item: "+ nome", até 30 letras', () {
+    expect(aveia.observacao, '+ Leite de aveia');
+    const longo = AcrescimoEscolhido(
+        id: 1,
+        plu: '221',
+        nome: 'Leite zero lactose sem açúcar extra',
+        preco: 1);
+    expect(longo.observacao.length, 30);
+    expect(longo.observacao, startsWith('+ Leite zero lactose'));
+    // só observação continua só com o nome
+    const so = AcrescimoEscolhido(plu: 'OBS', nome: 'Bem passado', preco: 0);
+    expect(so.observacao, 'Bem passado');
+  });
 }

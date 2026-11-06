@@ -341,7 +341,7 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
   Rect _janela(Size tela) {
     final largura = (tela.width * 0.84).clamp(0.0, 440.0);
     // tela baixa: janela menor e mais alta, para a instrução caber
-    final baixa = tela.height < 700;
+    final baixa = tela.height < 620;
     final altura =
         (largura * 0.46).clamp(0.0, tela.height * (baixa ? 0.24 : 0.3));
     return Rect.fromCenter(
