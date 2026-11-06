@@ -26,6 +26,16 @@ const _palavrasDoce = [
   'confeitaria', //
 ];
 
+/// Palavras de categorias de salgados/lanches: acompanham quem pediu só
+/// bebida (café -> pão de queijo), no pedido falado
+const _palavrasSalgado = [
+  'salgado', 'pao', 'paes', 'lanche', 'matina', 'cafe da manha', 'torrada',
+  'tapioca', 'sanduiche', 'misto', 'padaria', 'quiche', 'folhado', //
+];
+
+bool _ehSalgado(Categoria c) =>
+    !_ehBebida(c) && !_ehDoce(c) && _posicao(c, _palavrasSalgado) >= 0;
+
 int _posicao(Categoria c, List<String> palavras) {
   final nome = ' ${normalizar(c.desCategoria)} ';
   return palavras.indexWhere(nome.contains);
@@ -138,6 +148,11 @@ Future<void> oferecerSugestoesAntesDeEnviar(BuildContext context) async {
   await _oferecer(context);
 }
 
+/// Depois do pedido falado: oferece o que combina com o que foi pedido
+/// (bebida para o prato, sobremesa e, se pediu só bebida, um salgado)
+Future<void> oferecerSugestoesAposVoz(BuildContext context) =>
+    _oferecer(context, acompanharBebida: true);
+
 /// Logo depois de adicionar um prato (não bebida/doce)
 Future<void> oferecerSugestoesAposAdicionar(
         BuildContext context, ItemModel adicionado) =>
@@ -154,6 +169,26 @@ class _Etapa {
 
 Future<Map<String, _Config>>? _config;
 final _etapas = <String, Future<List<Object>>>{};
+Future<List<Object>>? _acompanhamentos;
+
+/// Salgados para acompanhar a bebida (mesmo formato das outras etapas)
+Future<List<Object>> _produtosAcompanhamento() =>
+    _acompanhamentos ??= () async {
+      final cats = CardapioService.ultimas.where(_ehSalgado).toList()
+        ..sort((a, b) => _posicao(a, _palavrasSalgado)
+            .compareTo(_posicao(b, _palavrasSalgado)));
+      final listas =
+          await Future.wait(cats.map((c) => CardapioService.produtosDe(c.id)));
+      final todos = <ItemModel>[];
+      for (final p in listas.expand((l) => l)) {
+        if (todos.length >= 14) break;
+        if (!todos.any((x) => x.plu == p.plu)) todos.add(p);
+      }
+      final completos = await Future.wait(todos.map(Complementos.completar));
+      final comPreco = completos.where((p) => p.preco != null).toList();
+      if (comPreco.isEmpty) _acompanhamentos = null;
+      return agruparProdutos(comPreco, await GrupoProdutos.todos());
+    }();
 
 /// Config da etapa: a própria da categoria do prato (se definida) ou a geral
 _Config _cfgEtapa(Map<String, _Config> config, String etapa, int? idCategoria) {
@@ -269,7 +304,8 @@ Future<List<Object>> _produtosEtapa(
   }();
 }
 
-Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
+Future<void> _oferecer(BuildContext context,
+    {ItemModel? adicionado, bool acompanharBebida = false}) async {
   if (_abertas) return;
   final carrinho = Provider.of<CarrinhoModel>(context, listen: false);
   final categorias = CardapioService.ultimas;
@@ -304,20 +340,37 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   // todo salgado adicionado oferece bebida (mesmo já tendo uma); no
   // "enviar pedido" só oferece o que falta
   final oferecerBebida = adicionado != null || !temBebida;
-  if (pratos.isEmpty || (!oferecerBebida && temDoce)) return;
+  // pedido falado só de bebida: oferece um salgado para acompanhar
+  final oferecerSalgado = acompanharBebida &&
+      pratos.isEmpty &&
+      temBebida &&
+      CardapioService.ultimas.any(_ehSalgado);
+  if (!oferecerSalgado && (pratos.isEmpty || (!oferecerBebida && temDoce))) {
+    return;
+  }
 
   String capitalizar(String s) {
     final t = s.trim().toLowerCase();
     return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
   }
 
-  final nomePrato = adicionado?.desProduto ?? pratos.first.desProduto ?? '';
+  final principal = adicionado ?? pratos.firstOrNull;
+  final nomePrato = principal?.desProduto ??
+      itens.where(bebida).firstOrNull?.desProduto ??
+      '';
   // sugestão própria da categoria do prato (ex.: Matinais)
-  final idCategoria = (adicionado ?? pratos.first).idCategoriaFilial;
+  final idCategoria = principal?.idCategoriaFilial;
   final cfgBebida = _cfgEtapa(config, 'bebida', idCategoria);
   final cfgDoce = _cfgEtapa(config, 'sobremesa', idCategoria);
   final etapas = [
-    if (oferecerBebida)
+    if (oferecerSalgado)
+      _Etapa(
+        Icons.bakery_dining_rounded,
+        'Que tal algo pra acompanhar?',
+        'Combina com o seu ${capitalizar(nomePrato)}',
+        _produtosAcompanhamento(),
+      ),
+    if (oferecerBebida && principal != null)
       _Etapa(
         Icons.local_drink_rounded,
         texto(cfgBebida, 'Que tal uma bebida?'),
@@ -332,7 +385,13 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
         _produtosEtapa(bebida: false, idCategoria: idCategoria),
       ),
   ];
-  if (!context.mounted) return;
+  // etapa sem nada para sugerir (ex.: filial sem sobremesas) não aparece
+  final listas = await Future.wait(etapas.map((e) => e.produtos));
+  final comProdutos = [
+    for (var i = 0; i < etapas.length; i++)
+      if (listas[i].isNotEmpty) etapas[i],
+  ];
+  if (comProdutos.isEmpty || !context.mounted) return;
 
   sugestoesOferecidas = true;
   _abertas = true;
@@ -343,7 +402,7 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _SugestoesSheet(etapas: etapas),
+      builder: (_) => _SugestoesSheet(etapas: comProdutos),
     );
   } finally {
     _abertas = false;

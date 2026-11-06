@@ -130,6 +130,7 @@ Future<void> abrirProdutoPopup(
   ItemModel produto, {
   ItemCarrinho? editando,
   bool sugerir = true,
+  int quantidadeInicial = 1,
 }) async {
   // editando item do carrinho: parte das opções originais e marca o que
   // já tinha sido escolhido
@@ -156,7 +157,7 @@ Future<void> abrirProdutoPopup(
         TextEditingController(text: textoUsado ? '' : textoAnterior);
     textoUsado = true;
   }
-  int quantidade = editando?.quantidade ?? 1;
+  int quantidade = editando?.quantidade ?? quantidadeInicial;
   final acrescimosFuture = Complementos.doProduto(produto.id);
   final escolhidos = <AcrescimoEscolhido>[...?editando?.produto.acrescimos];
   final mapaSelos = await Complementos.selos();

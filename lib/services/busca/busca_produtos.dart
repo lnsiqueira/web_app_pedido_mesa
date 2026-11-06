@@ -76,8 +76,7 @@ final Map<String, Set<String>> _sinonimos = () {
 
 /// Palavras de um texto, já normalizadas ("C/" vira "com", "S/" vira "sem")
 List<String> palavrasDe(String texto) => normalizar(texto)
-    .replaceAllMapped(
-        RegExp(r'(^|[^a-z0-9])([cs])/'),
+    .replaceAllMapped(RegExp(r'(^|[^a-z0-9])([cs])/'),
         (m) => '${m[1]} ${m[2] == 'c' ? 'com' : 'sem'} ')
     .split(RegExp(r'[^a-z0-9]+'))
     .where((p) => p.isNotEmpty)
@@ -144,6 +143,11 @@ double _pontosPalavra(String q, String w, {required bool ultima}) {
 
 /// Melhor pontuação de uma palavra buscada (ou dos sinônimos dela) no nome
 double _melhor(String q, List<String> nome, {required bool ultima}) {
+  // plural falado ("expressos", "sucos"): vale o singular
+  if (q.length > 4 && q.endsWith('s') && !_sinonimos.containsKey(q)) {
+    final singular = _melhor(q.substring(0, q.length - 1), nome, ultima: false);
+    if (singular >= 2.5) return singular;
+  }
   var melhor = 0.0;
   for (final w in nome) {
     melhor = _max(melhor, _pontosPalavra(q, w, ultima: ultima));
@@ -177,10 +181,9 @@ Set<String>? _sinonimoParecido(String q) {
 
 double _max(double a, double b) => a > b ? a : b;
 
-/// Busca [consulta] em [itens] pelo [nome] de cada um e devolve os que
-/// combinam, do mais parecido para o menos (empate: nome mais curto e depois
-/// a ordem do cardápio).
-List<T> buscarProdutos<T>(
+/// Produtos que combinam com [consulta], do mais parecido para o menos
+/// (empate: nome mais curto e depois a ordem do cardápio), com os pontos
+List<({T item, double pontos})> _ranquear<T>(
     String consulta, Iterable<T> itens, String Function(T) nome) {
   final todas = palavrasDe(consulta);
   if (todas.isEmpty) return [];
@@ -227,5 +230,123 @@ List<T> buscarProdutos<T>(
       final t = a.tamanho.compareTo(b.tamanho);
       return t != 0 ? t : a.ordem.compareTo(b.ordem);
     });
-  return [for (final a in bons) a.item];
+  return [for (final a in bons) (item: a.item, pontos: a.pontos)];
+}
+
+/// Busca [consulta] em [itens] pelo [nome] de cada um e devolve os que
+/// combinam, do mais parecido para o menos.
+List<T> buscarProdutos<T>(
+        String consulta, Iterable<T> itens, String Function(T) nome) =>
+    [for (final a in _ranquear(consulta, itens, nome)) a.item];
+
+// ---------------------------------------------------------------------------
+// Pedido falado: "quero um pão com manteiga e dois cafés" vira duas linhas
+// (1× pão com manteiga, 2× café), cada uma com os produtos mais parecidos.
+
+/// Uma parte do pedido: o que o cliente pediu, quantas e as opções do
+/// cardápio (a primeira é a mais provável; vazia = não achou)
+class LinhaPedido<T> {
+  const LinhaPedido(this.texto, this.quantidade, this.opcoes,
+      {this.ambigua = false});
+
+  final String texto;
+  final int quantidade;
+  final List<T> opcoes;
+
+  /// O cliente foi genérico ("um café") e há mais de um produto que serve
+  /// (expresso, com leite, latte…): ele escolhe em vez de ir o primeiro
+  final bool ambigua;
+}
+
+/// Palavras do nome que o pedido não disse ("CAFE EXPRESSO" para "um café"
+/// sobra "expresso"); zero = o pedido descreve o produto inteiro
+int _palavrasNaoDitas(String consulta, String nome) {
+  final ditas = [
+    for (final p in palavrasDe(consulta))
+      if (!_ignoradas.contains(p)) p
+  ];
+  return palavrasDe(nome)
+      .where((w) => !_ignoradas.contains(w) && !RegExp(r'^\d').hasMatch(w))
+      .where((w) => !ditas.any((q) => _melhor(q, [w], ultima: false) > 0))
+      .length;
+}
+
+/// Mais de um produto serve e o pedido não diz qual: o melhor não foi
+/// descrito por inteiro e o segundo está quase empatado com ele
+bool _ambigua<T>(String consulta, List<({T item, double pontos})> r,
+    String Function(T) nome) {
+  if (r.length < 2) return false;
+  if (_palavrasNaoDitas(consulta, nome(r.first.item)) == 0) return false;
+  return r[1].pontos >= r.first.pontos * 0.85;
+}
+
+const _numerosFalados = {
+  'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'tres': 3, 'quatro': 4,
+  'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, //
+};
+
+/// Quantidade no começo da parte ("dois cafes", "2 pao", "3x suco") e o
+/// resto do texto
+(int, String) _quantidade(String parte) {
+  final palavras = parte.split(' ').where((p) => p.isNotEmpty).toList();
+  for (var i = 0; i < palavras.length; i++) {
+    final p = palavras[i];
+    final n = _numerosFalados[p] ??
+        int.tryParse(RegExp(r'^(\d{1,2})x?$').firstMatch(p)?.group(1) ?? '');
+    if (n != null && n > 0 && n <= 20) {
+      return (
+        n,
+        [...palavras.sublist(0, i), ...palavras.sublist(i + 1)].join(' ')
+      );
+    }
+    // a quantidade vem antes do produto: parou de procurar ao achar palavra
+    // que não é "vazia" ("quero", "me ve"...)
+    if (!_ignoradas.contains(p)) break;
+  }
+  return (1, parte);
+}
+
+/// Separa a frase em itens (vírgula, "e", "mais", "também") com a quantidade
+/// de cada um e os produtos que combinam. Junta de volta partes que são um
+/// produto só ("misto de queijo e presunto").
+List<LinhaPedido<T>> interpretarPedido<T>(
+    String frase, Iterable<T> itens, String Function(T) nome,
+    {int maxOpcoes = 6}) {
+  final lista = itens.toList();
+  final partes = normalizar(frase)
+      .split(RegExp(r'\s*(?:[,;.!?]|\be\b|\bmais\b|\btambem\b|\bjunto\b)\s*'))
+      .map((p) => p.trim())
+      .where((p) => p.isNotEmpty)
+      .map(_quantidade)
+      .where((q) => palavrasDe(q.$2).any((p) => !_ignoradas.contains(p)))
+      .toList();
+
+  final linhas = <(int, String, List<({T item, double pontos})>)>[];
+  for (final (qtd, texto) in partes) {
+    final r = _ranquear(texto, lista, nome);
+    if (linhas.isNotEmpty && qtd == 1) {
+      // "queijo e presunto": se juntando com a parte anterior o mesmo
+      // produto fica ainda mais parecido, é um item só
+      final (qtdAnt, textoAnt, rAnt) = linhas.last;
+      if (rAnt.isNotEmpty) {
+        final junto = _ranquear('$textoAnt $texto', lista, nome);
+        if (junto.isNotEmpty &&
+            identical(junto.first.item, rAnt.first.item) &&
+            junto.first.pontos > rAnt.first.pontos &&
+            (r.isEmpty ||
+                identical(r.first.item, junto.first.item) ||
+                junto.first.pontos >=
+                    rAnt.first.pontos + r.first.pontos * 0.75)) {
+          linhas.last = (qtdAnt, '$textoAnt e $texto', junto);
+          continue;
+        }
+      }
+    }
+    linhas.add((qtd, texto, r));
+  }
+  return [
+    for (final (qtd, texto, r) in linhas)
+      LinhaPedido(texto, qtd, [for (final a in r.take(maxOpcoes)) a.item],
+          ambigua: _ambigua(texto, r, nome)),
+  ];
 }

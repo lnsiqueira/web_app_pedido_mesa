@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:webapp_pedido_mesa/core/atualizacao/atualizacao_automatica.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
+import 'package:webapp_pedido_mesa/screens/voz/pedido_voz_sheet.dart';
 import 'package:webapp_pedido_mesa/services/busca/busca_produtos.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 import 'package:webapp_pedido_mesa/widgets/sobre_bakeryfood.dart';
@@ -429,6 +430,29 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const BotaoPagamentoFlutuante(),
+
+            // pedido falado: fica acima da barra do carrinho quando ela aparece
+            if (comanda != null && pedidoPorVozDisponivel)
+              Consumer<CarrinhoModel>(
+                builder: (context, carrinho, _) => AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  right: 16,
+                  bottom: carrinho.totalItens > 0 ? 100 : 24,
+                  child: FloatingActionButton.extended(
+                    heroTag: 'pedido_voz',
+                    onPressed: () => abrirPedidoPorVoz(context),
+                    backgroundColor: Colors.orange.shade800,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    icon: const Icon(Icons.mic_rounded),
+                    label: const Text(
+                      'Pedir falando',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ),
 
             /// 🔴 LOADING OVERLAY (SEMPRE POR CIMA)
             if (isLoading || isSearching)
