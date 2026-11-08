@@ -17,6 +17,9 @@ class _CameraFalsa extends MobileScannerPlatform
     with MockPlatformInterfaceMixin {
   final codigos = StreamController<BarcodeCapture?>.broadcast();
 
+  /// Simula câmera que não abre
+  bool falhar = false;
+
   void ler(String codigo) =>
       codigos.add(BarcodeCapture(barcodes: [Barcode(rawValue: codigo)]));
 
@@ -29,12 +32,15 @@ class _CameraFalsa extends MobileScannerPlatform
   @override
   Widget buildCameraView() => const ColoredBox(color: Colors.blueGrey);
   @override
-  Future<MobileScannerViewAttributes> start(StartOptions startOptions) async =>
-      const MobileScannerViewAttributes(
-        currentTorchMode: TorchState.unavailable,
-        numberOfCameras: 1,
-        size: Size(1280, 720),
-      );
+  Future<MobileScannerViewAttributes> start(StartOptions startOptions) async {
+    if (falhar) throw Exception('sem câmera');
+    return const MobileScannerViewAttributes(
+      currentTorchMode: TorchState.unavailable,
+      numberOfCameras: 1,
+      size: Size(1280, 720),
+    );
+  }
+
   @override
   Future<void> stop() async {}
   @override
@@ -227,4 +233,19 @@ void main() {
       expect(find.text('Digite sua comanda'), findsOneWidget);
     });
   }
+
+  testWidgets('câmera não abre: oferece digitar na hora', (tester) async {
+    camera.falhar = true;
+    await _abrir(tester, (_) async => ConsultaComanda.valida);
+    // sem esperar os 6 s
+    expect(find.textContaining('Digitar o número'), findsOneWidget);
+  });
+
+  testWidgets('câmera normal: digitar só depois de 6 s', (tester) async {
+    await _abrir(tester, (_) async => ConsultaComanda.valida);
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.textContaining('Digitar o número'), findsNothing);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.textContaining('Digitar o número'), findsOneWidget);
+  });
 }

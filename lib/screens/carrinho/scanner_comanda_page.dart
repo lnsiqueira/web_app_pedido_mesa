@@ -18,7 +18,7 @@ const _leiturasIguais = 2;
 const _tempoParaAbrir = Duration(seconds: 12);
 
 /// Sem ler nesse tempo, aparece a opção de digitar o número
-const _tempoParaDigitar = Duration(seconds: 8);
+const _tempoParaDigitar = Duration(seconds: 6);
 
 /// Lê a comanda pelo código de barras com a câmera do celular (o cliente não
 /// digita mais o número). Confere a comanda na Bratter e devolve o número
@@ -77,7 +77,7 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
   /// com "Tentar de novo" em vez de ficar preto
   DateTime _abriuEm = DateTime.now();
 
-  /// Segundos com a tela aberta (8 s sem ler: oferece digitar)
+  /// Segundos com a tela aberta (6 s sem ler: oferece digitar)
   int _segundosAberta = 0;
   bool _travou = false;
   Timer? _relogio;
@@ -99,7 +99,10 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
           DateTime.now().difference(_abriuEm) > _tempoParaAbrir;
       if (travou != _travou) setState(() => _travou = travou);
       _segundosAberta++;
-      if (!_mostrarDigitar && _segundosAberta >= _tempoParaDigitar.inSeconds) {
+      // câmera não abriu (erro, sem permissão ou travou): digitar na hora
+      final semCamera = estado.error != null || _semImagem;
+      if (!_mostrarDigitar &&
+          (semCamera || _segundosAberta >= _tempoParaDigitar.inSeconds)) {
         setState(() => _mostrarDigitar = true);
       }
     });
@@ -139,7 +142,12 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
       await _camera.start();
     } catch (e) {
       debugPrint('Câmera: $e');
-      if (mounted) setState(() => _erroAoLigar = '$e');
+      if (mounted) {
+        setState(() {
+          _erroAoLigar = '$e';
+          _mostrarDigitar = true; // câmera falhou: digitar na hora
+        });
+      }
     }
   }
 
