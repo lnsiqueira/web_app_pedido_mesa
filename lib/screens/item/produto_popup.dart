@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
@@ -157,6 +158,46 @@ Future<void> abrirProdutoPopup(
         TextEditingController(text: textoUsado ? '' : textoAnterior);
     textoUsado = true;
   }
+  // observação: ao tocar, rola até o campo, acima do teclado do celular
+  ScrollController? listaObs;
+  final obsKeys = {for (final i in textControllers.keys) i: GlobalKey()};
+  final obsFocus = {for (final i in textControllers.keys) i: FocusNode()};
+  obsFocus.forEach((i, f) {
+    f.addListener(() {
+      if (!f.hasFocus) return;
+      // o teclado demora a abrir (e o espaço extra no fim da lista só entra
+      // depois dele): confere em alguns momentos e rola só se o campo ainda
+      // estiver escondido. O popup não muda de tamanho: só a lista rola o
+      // necessário para o campo ficar logo acima do teclado.
+      for (final ms in const [300, 650, 1000]) {
+        Future.delayed(Duration(milliseconds: ms), () {
+          final ctx = obsKeys[i]!.currentContext;
+          final lista = listaObs;
+          if (!f.hasFocus ||
+              ctx == null ||
+              !ctx.mounted ||
+              lista == null ||
+              !lista.hasClients) {
+            return;
+          }
+          final box = ctx.findRenderObject();
+          if (box is! RenderBox) return;
+          final tela = MediaQuery.of(ctx);
+          if (tela.viewInsets.bottom <= 0) return; // teclado ainda fechado
+          final baseCampo = box.localToGlobal(Offset(0, box.size.height)).dy;
+          final limite = tela.size.height - tela.viewInsets.bottom - 12;
+          final falta = baseCampo - limite;
+          if (falta <= 0) return;
+          final p = lista.position;
+          lista.animateTo(
+            (p.pixels + falta).clamp(0.0, p.maxScrollExtent),
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
+        });
+      }
+    });
+  });
   int quantidade = editando?.quantidade ?? 1;
   final acrescimosFuture = Complementos.doProduto(produto.id);
   final escolhidos = <AcrescimoEscolhido>[...?editando?.produto.acrescimos];
@@ -494,6 +535,7 @@ Future<void> abrirProdutoPopup(
               //     ],
               //   ),
               // );
+              listaObs = scrollController;
               return Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFFF7F7F7),
@@ -1079,9 +1121,15 @@ Future<void> abrirProdutoPopup(
                                   }
 
                                   return TextField(
+                                    key: obsKeys[i],
+                                    focusNode: obsFocus[i],
                                     controller: textControllers[i],
                                     maxLines: 3,
                                     minLines: 1,
+                                    // enter do teclado fecha o teclado em vez
+                                    // de pular linha
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => obsFocus[i]!.unfocus(),
                                     decoration: const InputDecoration(
                                       hintText: 'Ex: sem cebola, bem passado…',
                                       border: InputBorder.none,
@@ -1097,6 +1145,10 @@ Future<void> abrirProdutoPopup(
                           ),
 
                           const SizedBox(height: 24),
+                          // teclado do celular aberto: espaço para a
+                          // observação poder subir acima dele
+                          SizedBox(
+                              height: MediaQuery.of(context).viewInsets.bottom),
                         ],
                       ),
                     ),
@@ -1233,6 +1285,12 @@ Future<void> abrirProdutoPopup(
       );
     },
   );
+  // depois da animação de fechar (os campos ainda usam os FocusNodes)
+  Future.delayed(const Duration(seconds: 1), () {
+    for (final f in obsFocus.values) {
+      f.dispose();
+    }
+  });
 
   if (sugerir &&
       editando == null &&
