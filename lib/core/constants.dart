@@ -17,7 +17,6 @@ String numeroMesa = '';
 String numeroComanda = '';
 bool isQuartoENome = true;
 
-
 class GlobalKeys {
   static const String idioma = '';
   static const String codEmpresa = '1';

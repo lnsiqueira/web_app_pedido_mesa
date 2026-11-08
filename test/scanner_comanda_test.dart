@@ -99,8 +99,7 @@ void main() {
       expect(find.text('Chamar garçom'), findsOneWidget);
       // título no topo, instrução no meio e Chamar garçom embaixo
       final titulo = tester.getRect(find.text('Escaneie sua comanda'));
-      final instrucao =
-          tester.getRect(find.textContaining('Segure parado'));
+      final instrucao = tester.getRect(find.textContaining('Segure parado'));
       final garcom = tester.getRect(find.text('Chamar garçom'));
       expect(titulo.bottom, lessThan(80));
       expect(instrucao.top, greaterThan(titulo.bottom));
@@ -158,4 +157,74 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(resultado, [null]);
   });
+
+  testWidgets('sem ler em 10 s aparece digitar; teclado confere a comanda',
+      (tester) async {
+    final consultadas = <String>[];
+    final resultado = await _abrir(tester, (c) async {
+      consultadas.add(c);
+      return ConsultaComanda.valida;
+    });
+    expect(find.textContaining('Digitar o número'), findsNothing);
+    await tester.pump(const Duration(seconds: 11));
+    await tester.tap(find.textContaining('Digitar o número'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // teclado no lugar da câmera, com 5 casas e o aviso legal
+    expect(find.text('Digite sua comanda'), findsOneWidget);
+    expect(find.text('Escaneie sua comanda'), findsNothing);
+    expect(find.textContaining('Usar outra pode ser considerado fraude'),
+        findsOneWidget);
+
+    Future<void> digitar(String s) async {
+      for (final d in s.split('')) {
+        await tester.ensureVisible(find.text(d).last);
+        await tester.tap(find.text(d).last);
+        await tester.pump();
+      }
+    }
+
+    // vazio não confirma
+    await tester.tap(find.text('Confirmar comanda'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(consultadas, isEmpty);
+
+    // sem limite de 5 dígitos; o ⌫ apaga o último
+    await digitar('0015678');
+    await tester.ensureVisible(find.byIcon(Icons.backspace_outlined));
+    await tester.tap(find.byIcon(Icons.backspace_outlined));
+    await tester.pump();
+    expect(find.text('001567'), findsOneWidget); // visor
+    await tester.tap(find.text('Confirmar comanda'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // vai para a Bratter o número inteiro, sem os zeros da frente
+    expect(consultadas, ['1567']);
+    expect(resultado, ['1567']);
+  });
+
+  for (final tela in const [Size(320, 568), Size(390, 760)]) {
+    testWidgets('teclado da comanda cabe em $tela', (tester) async {
+      await _abrir(tester, (_) async => ConsultaComanda.naoEncontrada,
+          tela: tela);
+      await tester.pump(const Duration(seconds: 11));
+      await tester.tap(find.textContaining('Digitar o número'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.takeException(), isNull);
+      final confirmar = tester.getRect(find.text('Confirmar comanda'));
+      expect(confirmar.bottom, lessThanOrEqualTo(tela.height));
+      // comanda inexistente: avisa e continua no teclado
+      for (final d in '02536'.split('')) {
+        await tester.ensureVisible(find.text(d).last);
+        await tester.tap(find.text(d).last);
+        await tester.pump();
+      }
+      await tester.tap(find.text('Confirmar comanda'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+          find.textContaining('Comanda 2536 não encontrada'), findsOneWidget);
+      expect(find.text('Digite sua comanda'), findsOneWidget);
+    });
+  }
 }

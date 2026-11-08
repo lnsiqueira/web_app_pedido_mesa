@@ -387,8 +387,8 @@ class _HomePageState extends State<HomePage> {
                                 ? GridBuscaWidget(
                                     produtos: resultadosBusca,
                                     isLoading: isSearching,
-                                    onTap: (produto) =>
-                                        abrirProdutoPopup(context, produto),
+                                    onTap: (produto) => abrirUmaVez(() =>
+                                        abrirProdutoPopup(context, produto)),
                                   )
                                 : GridCategoriasWidget(
                                     categorias: categorias,

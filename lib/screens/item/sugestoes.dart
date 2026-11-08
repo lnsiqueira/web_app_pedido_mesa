@@ -342,7 +342,14 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
         _produtosEtapa(bebida: false, idCategoria: idCategoria),
       ),
   ];
-  if (!context.mounted) return;
+  // etapa sem nada para sugerir nem aparece (e sem nenhuma, nada abre)
+  final listas = await Future.wait(
+      etapas.map((e) => e.produtos.catchError((Object _) => <Object>[])));
+  final comItens = [
+    for (var i = 0; i < etapas.length; i++)
+      if (listas[i].isNotEmpty) etapas[i],
+  ];
+  if (comItens.isEmpty || !context.mounted) return;
 
   sugestoesOferecidas = true;
   _abertas = true;
@@ -353,7 +360,7 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _SugestoesSheet(etapas: etapas),
+      builder: (_) => _SugestoesSheet(etapas: comItens),
     );
   } finally {
     _abertas = false;

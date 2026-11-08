@@ -9,6 +9,8 @@ import 'package:webapp_pedido_mesa/screens/item/meio_a_meio.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 
+export 'abrir_uma_vez.dart';
+
 /// Nome no detalhe/opções: só a primeira letra maiúscula ("PAO DE QUEIJO"
 /// -> "Pao de queijo"). Nos cards da grade o nome vai todo em maiúsculas.
 String textoFrase(String s) {

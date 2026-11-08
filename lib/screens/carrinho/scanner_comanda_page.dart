@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/screens/carrinho/detector_nativo.dart';
+import 'package:webapp_pedido_mesa/screens/carrinho/teclado_comanda.dart';
 import 'package:webapp_pedido_mesa/services/comanda_service.dart';
 import 'package:webapp_pedido_mesa/widgets/botao_chamar_garcom.dart';
 
@@ -15,6 +16,9 @@ const _leiturasIguais = 2;
 
 /// Se a câmera não abrir nesse tempo, mostra o aviso com "Tentar de novo"
 const _tempoParaAbrir = Duration(seconds: 12);
+
+/// Sem ler nesse tempo, aparece a opção de digitar o número
+const _tempoParaDigitar = Duration(seconds: 8);
 
 /// Lê a comanda pelo código de barras com a câmera do celular (o cliente não
 /// digita mais o número). Confere a comanda na Bratter e devolve o número
@@ -62,9 +66,19 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
 
   bool _concluido = false;
 
+  /// Depois de alguns segundos sem ler, aparece "Digitar o número"
+  bool _mostrarDigitar = false;
+
+  /// Teclado no lugar da câmera
+  bool _digitando = false;
+  String _digitos = '';
+
   /// Quando pediu para abrir a câmera; se não abrir a tempo, mostra o aviso
   /// com "Tentar de novo" em vez de ficar preto
   DateTime _abriuEm = DateTime.now();
+
+  /// Segundos com a tela aberta (8 s sem ler: oferece digitar)
+  int _segundosAberta = 0;
   bool _travou = false;
   Timer? _relogio;
 
@@ -84,11 +98,17 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
           estado.error == null &&
           DateTime.now().difference(_abriuEm) > _tempoParaAbrir;
       if (travou != _travou) setState(() => _travou = travou);
+      _segundosAberta++;
+      if (!_mostrarDigitar && _segundosAberta >= _tempoParaDigitar.inSeconds) {
+        setState(() => _mostrarDigitar = true);
+      }
     });
     // leitor nativo do navegador (Android), junto com o ZXing do plugin
     if (temDetectorNativo) {
       _nativo = Timer.periodic(const Duration(milliseconds: 250), (_) async {
-        if (_lendoNativo || _concluido || _verificando != null) return;
+        if (_lendoNativo || _concluido || _verificando != null || _digitando) {
+          return;
+        }
         _lendoNativo = true;
         try {
           final codigo = await lerComDetectorNativo();
@@ -144,7 +164,7 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
 
   /// Leitura do ZXing (plugin) ou do leitor nativo do navegador.
   void _registrarLeitura(String codigo) {
-    if (_concluido || _verificando != null) return;
+    if (_concluido || _verificando != null || _digitando) return;
     if (codigo == _ultimoLido) {
       _vezesSeguidas++;
     } else {
@@ -190,8 +210,65 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
     });
   }
 
+  /// Troca a câmera pelo teclado (desliga a câmera)
+  Future<void> _abrirTeclado() async {
+    setState(() {
+      _digitando = true;
+      _digitos = '';
+      _erro = null;
+    });
+    try {
+      await _camera.stop();
+    } catch (_) {}
+  }
+
+  /// Volta do teclado para a câmera
+  Future<void> _voltarParaCamera() async {
+    setState(() {
+      _digitando = false;
+      _erro = null;
+    });
+    await _tentarDeNovo();
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_digitando) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: TecladoComanda(
+          digitos: _digitos,
+          verificando: _verificando,
+          erro: _erro,
+          onDigito: (d) => setState(() {
+            _digitos += d;
+            _erro = null;
+          }),
+          onApagar: () => setState(() {
+            if (_digitos.isNotEmpty) {
+              _digitos = _digitos.substring(0, _digitos.length - 1);
+            }
+            _erro = null;
+          }),
+          onLimpar: () => setState(() {
+            _digitos = '';
+            _erro = null;
+          }),
+          onConfirmar: () {
+            // vai para a Bratter o número digitado, sem os zeros da frente
+            final numero = numeroDaComanda(_digitos);
+            if (numero.isEmpty) {
+              setState(() => _erro = 'Digite o número da comanda.');
+              return;
+            }
+            _conferir(numero);
+          },
+          onVoltarCamera: _voltarParaCamera,
+          onFechar: () => Navigator.pop(context),
+          rodape: const BotaoChamarGarcom(),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       body: LayoutBuilder(builder: (context, c) {
@@ -323,6 +400,31 @@ class _ScannerComandaPageState extends State<ScannerComandaPage>
                           cor: Colors.white,
                           fundo: Colors.red.shade700,
                         ),
+                      // câmera não leu em alguns segundos: dá para digitar
+                      if (_mostrarDigitar) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton.icon(
+                            onPressed: _abrirTeclado,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.black.withOpacity(0.45),
+                              side: BorderSide(
+                                  color: Colors.white.withOpacity(0.5)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                            ),
+                            icon: const Icon(Icons.dialpad_rounded),
+                            label: const Text(
+                              'Não está lendo? Digitar o número',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       const BotaoChamarGarcom(),
                     ],

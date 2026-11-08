@@ -340,9 +340,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                             behavior: HitTestBehavior.opaque,
                             // meio a meio reabre a escolha dos sabores
                             onTap: item.produto.outraMetade != null
-                                ? () => editarMeioAMeio(context, item)
-                                : () => abrirProdutoPopup(context, item.produto,
-                                    editando: item),
+                                ? () => abrirUmaVez(
+                                    () => editarMeioAMeio(context, item))
+                                : () => abrirUmaVez(() => abrirProdutoPopup(
+                                    context, item.produto,
+                                    editando: item)),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),

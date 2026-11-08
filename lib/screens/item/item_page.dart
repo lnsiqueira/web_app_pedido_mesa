@@ -885,8 +885,10 @@ class _ItensPageState extends State<ItensPage> {
                               aPartirDe: precos.toSet().length > 1,
                               onTap: !carregado
                                   ? null
-                                  : () => escolherOpcaoGrupo(
-                                      context, grupo, opcoes),
+                                  // um por vez (toque repetido não abre
+                                  // um em cima do outro)
+                                  : () => abrirUmaVez(() => escolherOpcaoGrupo(
+                                      context, grupo, opcoes)),
                             );
                           }
                           final produto = item as ItemModel;
@@ -897,7 +899,8 @@ class _ItensPageState extends State<ItensPage> {
                             selosVeg: _selosDe([produto]),
                             onTap: produto.preco == null
                                 ? null
-                                : () => abrirProdutoPopup(context, produto),
+                                : () => abrirUmaVez(
+                                    () => abrirProdutoPopup(context, produto)),
                           );
                         },
                       ),
