@@ -385,13 +385,14 @@ Future<void> _oferecer(BuildContext context,
         _produtosEtapa(bebida: false, idCategoria: idCategoria),
       ),
   ];
-  // etapa sem nada para sugerir (ex.: filial sem sobremesas) não aparece
-  final listas = await Future.wait(etapas.map((e) => e.produtos));
-  final comProdutos = [
+  // etapa sem nada para sugerir nem aparece (e sem nenhuma, nada abre)
+  final listas = await Future.wait(
+      etapas.map((e) => e.produtos.catchError((Object _) => <Object>[])));
+  final comItens = [
     for (var i = 0; i < etapas.length; i++)
       if (listas[i].isNotEmpty) etapas[i],
   ];
-  if (comProdutos.isEmpty || !context.mounted) return;
+  if (comItens.isEmpty || !context.mounted) return;
 
   sugestoesOferecidas = true;
   _abertas = true;
@@ -402,7 +403,7 @@ Future<void> _oferecer(BuildContext context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _SugestoesSheet(etapas: comProdutos),
+      builder: (_) => _SugestoesSheet(etapas: comItens),
     );
   } finally {
     _abertas = false;

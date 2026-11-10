@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:webapp_pedido_mesa/core/constants.dart';
 import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/core/model/item_carrinho.dart';
@@ -8,6 +9,8 @@ import 'package:webapp_pedido_mesa/screens/item/item_page.dart' show QtyButton;
 import 'package:webapp_pedido_mesa/screens/item/meio_a_meio.dart';
 import 'package:webapp_pedido_mesa/screens/item/sugestoes.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
+
+export 'abrir_uma_vez.dart';
 
 /// Nome no detalhe/opções: só a primeira letra maiúscula ("PAO DE QUEIJO"
 /// -> "Pao de queijo"). Nos cards da grade o nome vai todo em maiúsculas.
@@ -42,76 +45,75 @@ Future<void> escolherOpcaoGrupo(
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              textoFrase(grupo.nome),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text('Escolha uma opção',
-                style: TextStyle(color: Colors.grey.shade600)),
-            const SizedBox(height: 12),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final o in opcoes)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Material(
-                        color: const Color(0xFFFFF4E8),
-                        borderRadius: BorderRadius.circular(14),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: o.key.preco == null
-                              ? null
-                              : () => Navigator.pop(ctx, o.key),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(textoFrase(o.value),
-                                      style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                                if ((selos[o.key.id]?.vegano ?? false) ||
-                                    (selos[o.key.id]?.vegetariano ?? false))
-                                  const Padding(
-                                    padding: EdgeInsets.only(right: 8),
-                                    child: Icon(Icons.eco_rounded,
-                                        size: 18, color: Color(0xFF2E7D32)),
-                                  ),
-                                Text(
-                                  o.key.preco == null
-                                      ? '...'
-                                      : 'R\$ ${_reaisPopup(o.key.preco!)}',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFFE8710A)),
-                                ),
-                                const SizedBox(width: 6),
-                                const Icon(Icons.chevron_right_rounded,
-                                    color: Color(0xFFE8710A)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // alça
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(99),
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 8, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        textoFrase(grupo.nome),
+                        style: const TextStyle(
+                            fontSize: 21, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text('${opcoes.length} opções · escolha uma',
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  tooltip: 'Fechar',
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              itemCount: opcoes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) {
+                final o = opcoes[i];
+                return _OpcaoDoGrupo(
+                  nome: textoFrase(o.value),
+                  preco: o.key.preco,
+                  imagem: o.key.imageUrl ?? '',
+                  selo: (selos[o.key.id]?.vegano ?? false)
+                      ? 'Vegano'
+                      : (selos[o.key.id]?.vegetariano ?? false)
+                          ? 'Vegetariano'
+                          : null,
+                  onTap: o.key.preco == null
+                      ? null
+                      : () => Navigator.pop(ctx, o.key),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -157,6 +159,46 @@ Future<void> abrirProdutoPopup(
         TextEditingController(text: textoUsado ? '' : textoAnterior);
     textoUsado = true;
   }
+  // observação: ao tocar, rola até o campo, acima do teclado do celular
+  ScrollController? listaObs;
+  final obsKeys = {for (final i in textControllers.keys) i: GlobalKey()};
+  final obsFocus = {for (final i in textControllers.keys) i: FocusNode()};
+  obsFocus.forEach((i, f) {
+    f.addListener(() {
+      if (!f.hasFocus) return;
+      // o teclado demora a abrir (e o espaço extra no fim da lista só entra
+      // depois dele): confere em alguns momentos e rola só se o campo ainda
+      // estiver escondido. O popup não muda de tamanho: só a lista rola o
+      // necessário para o campo ficar logo acima do teclado.
+      for (final ms in const [300, 650, 1000]) {
+        Future.delayed(Duration(milliseconds: ms), () {
+          final ctx = obsKeys[i]!.currentContext;
+          final lista = listaObs;
+          if (!f.hasFocus ||
+              ctx == null ||
+              !ctx.mounted ||
+              lista == null ||
+              !lista.hasClients) {
+            return;
+          }
+          final box = ctx.findRenderObject();
+          if (box is! RenderBox) return;
+          final tela = MediaQuery.of(ctx);
+          if (tela.viewInsets.bottom <= 0) return; // teclado ainda fechado
+          final baseCampo = box.localToGlobal(Offset(0, box.size.height)).dy;
+          final limite = tela.size.height - tela.viewInsets.bottom - 12;
+          final falta = baseCampo - limite;
+          if (falta <= 0) return;
+          final p = lista.position;
+          lista.animateTo(
+            (p.pixels + falta).clamp(0.0, p.maxScrollExtent),
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
+        });
+      }
+    });
+  });
   int quantidade = editando?.quantidade ?? quantidadeInicial;
   final acrescimosFuture = Complementos.doProduto(produto.id);
   final escolhidos = <AcrescimoEscolhido>[...?editando?.produto.acrescimos];
@@ -494,6 +536,7 @@ Future<void> abrirProdutoPopup(
               //     ],
               //   ),
               // );
+              listaObs = scrollController;
               return Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFFF7F7F7),
@@ -1079,9 +1122,15 @@ Future<void> abrirProdutoPopup(
                                   }
 
                                   return TextField(
+                                    key: obsKeys[i],
+                                    focusNode: obsFocus[i],
                                     controller: textControllers[i],
                                     maxLines: 3,
                                     minLines: 1,
+                                    // enter do teclado fecha o teclado em vez
+                                    // de pular linha
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => obsFocus[i]!.unfocus(),
                                     decoration: const InputDecoration(
                                       hintText: 'Ex: sem cebola, bem passado…',
                                       border: InputBorder.none,
@@ -1097,6 +1146,10 @@ Future<void> abrirProdutoPopup(
                           ),
 
                           const SizedBox(height: 24),
+                          // teclado do celular aberto: espaço para a
+                          // observação poder subir acima dele
+                          SizedBox(
+                              height: MediaQuery.of(context).viewInsets.bottom),
                         ],
                       ),
                     ),
@@ -1118,6 +1171,8 @@ Future<void> abrirProdutoPopup(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(0, 54),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 side: BorderSide(
                                   color: Colors.grey.shade300,
                                 ),
@@ -1125,12 +1180,18 @@ Future<void> abrirProdutoPopup(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Text(
-                                'Cancelar',
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                              // nunca quebra a linha: encolhe se faltar espaço
+                              child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Cancelar',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1191,28 +1252,25 @@ Future<void> abrirProdutoPopup(
                                 backgroundColor: Colors.orange.shade800,
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(0, 54),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // const Icon(
-                                  //   Icons.add_rounded,
-                                  //   size: 18,
-                                  //   color: Colors.white,
-                                  // ),
-                                  // const SizedBox(width: 8),
-                                  Text(
-                                    '${editando != null ? 'Salvar' : 'Adicionar'} · R\$ ${total.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                              // nunca quebra a linha: encolhe se faltar espaço
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '${editando != null ? 'Salvar' : 'Adicionar'} · R\$ ${total.toStringAsFixed(2)}',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
@@ -1228,6 +1286,12 @@ Future<void> abrirProdutoPopup(
       );
     },
   );
+  // depois da animação de fechar (os campos ainda usam os FocusNodes)
+  Future.delayed(const Duration(seconds: 1), () {
+    for (final f in obsFocus.values) {
+      f.dispose();
+    }
+  });
 
   if (sugerir &&
       editando == null &&
@@ -1235,4 +1299,118 @@ Future<void> abrirProdutoPopup(
       carrinhoAtual.totalItens > itensAntes) {
     await oferecerSugestoesAposAdicionar(context, produto);
   }
+}
+
+/// Linha de uma opção do grupo: foto, nome (com o selo vegano/vegetariano
+/// sempre embaixo do nome) e preço alinhado à direita.
+class _OpcaoDoGrupo extends StatelessWidget {
+  const _OpcaoDoGrupo({
+    required this.nome,
+    required this.preco,
+    required this.imagem,
+    required this.selo,
+    required this.onTap,
+  });
+
+  final String nome;
+  final double? preco;
+  final String imagem;
+  final String? selo;
+  final VoidCallback? onTap;
+
+  static const _laranja = Color(0xFFE8710A);
+  static const _verde = Color(0xFF2E7D32);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: imagem.isNotEmpty
+                      ? Image.network(
+                          imagem,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const _SemFoto(),
+                        )
+                      : const _SemFoto(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nome,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (selo != null) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          const Icon(Icons.eco_rounded,
+                              size: 14, color: _verde),
+                          const SizedBox(width: 4),
+                          Text(
+                            selo!,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: _verde,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                preco == null ? '...' : 'R\$ ${_reaisPopup(preco!)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _laranja,
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SemFoto extends StatelessWidget {
+  const _SemFoto();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: const Color(0xFFFFF4E8),
+        child: const Icon(Icons.restaurant_rounded,
+            color: Color(0xFFE8A86B), size: 24),
+      );
 }

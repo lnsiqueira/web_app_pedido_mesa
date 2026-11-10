@@ -42,7 +42,6 @@ Future<void> main() async {
   final filialId = params['filialId'];
   final mesa = params['mesa'];
   final admin = params['admin'];
-  modoTeste = params['teste'] == '1';
 
 // ADMIN
   if (admin != null) {
