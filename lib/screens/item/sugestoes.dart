@@ -6,6 +6,7 @@ import 'package:webapp_pedido_mesa/core/model/carrinho_model.dart';
 import 'package:webapp_pedido_mesa/core/model/categorias.dart';
 import 'package:webapp_pedido_mesa/core/model/item.dart';
 import 'package:webapp_pedido_mesa/screens/item/produto_popup.dart';
+import 'package:webapp_pedido_mesa/screens/item/sugestoes_config.dart';
 import 'package:webapp_pedido_mesa/services/cardapio_service.dart';
 
 // Sugestões para aumentar o ticket médio, iguais às do cardápio de mesa do
@@ -44,73 +45,7 @@ int _posicao(Categoria c, List<String> palavras) {
 bool _ehBebida(Categoria c) => _posicao(c, _palavrasBebida) >= 0;
 bool _ehDoce(Categoria c) => _posicao(c, _palavrasDoce) >= 0;
 
-/// Produtos escolhidos na Dashboard para uma etapa (bebida / sobremesa)
-class _Config {
-  const _Config(
-      {this.ids = const [],
-      this.plus = const [],
-      this.fora = const [],
-      this.categorias = const [],
-      this.titulo = '',
-      this.somente = false});
-
-  /// Produto fora do cardápio (cadastrado só na sugestão, com nome e foto
-  /// próprios); null = produto do cardápio. Mesma posição de [plus].
-  final List<ItemModel?> fora;
-
-  /// Configurada na Dashboard (produtos, categorias ou texto)
-  bool get definida =>
-      plus.isNotEmpty || categorias.isNotEmpty || titulo.isNotEmpty;
-
-  /// categorias inteiras escolhidas na Dashboard (ids), na ordem
-  final List<int> categorias;
-
-  /// texto do popup definido na Dashboard (vazio = padrão)
-  final String titulo;
-
-  final List<int> ids;
-  final List<String> plus;
-
-  /// true: mostra só os escolhidos; false: escolhidos primeiro
-  final bool somente;
-
-  bool contem(ItemModel p) =>
-      (p.id != null && ids.contains(p.id)) ||
-      plus.contains(p.plu) ||
-      categorias.contains(p.idCategoriaFilial);
-
-  static _Config ler(dynamic m) {
-    if (m is! Map) return const _Config();
-    final produtos = ((m['produtos'] as List?) ?? [])
-        .whereType<Map>()
-        .where((p) => (p['plu']?.toString() ?? '').isNotEmpty)
-        .toList();
-    return _Config(
-      ids: [for (final p in produtos) (p['id'] as num?)?.toInt() ?? 0],
-      plus: [for (final p in produtos) p['plu']?.toString() ?? ''],
-      fora: [
-        for (final p in produtos)
-          p['fora'] == true
-              ? ItemModel(
-                  plu: p['plu'].toString(),
-                  desProduto: p['nome']?.toString().trim() ?? '',
-                  imageUrl: p['imagem']?.toString().trim() ?? '',
-                )
-              : null,
-      ],
-      categorias: [
-        for (final c in ((m['categorias'] as List?) ?? []).whereType<Map>())
-          if ((c['id'] as num?) != null) (c['id'] as num).toInt(),
-      ],
-      titulo: m['titulo']?.toString().trim() ?? '',
-      somente: m['somente'] == true,
-    );
-  }
-}
-
-/// Chaves: 'bebida'/'sobremesa' (geral) e 'idCategoria/bebida' etc.
-/// (sugestão própria de uma categoria, campo porCategoria).
-Future<Map<String, _Config>> _carregarConfig() async {
+Future<Map<String, SugestaoConfig>> _carregarConfig() async {
   try {
     final dados = codFilialCardapio == codFilial
         ? dadosFilialFirestore
@@ -121,18 +56,7 @@ Future<Map<String, _Config>> _carregarConfig() async {
                     .timeout(const Duration(seconds: 3)))
                 .data() ??
             {};
-    final s = dados['cardapioMesaSugestoes'];
-    if (s is! Map) return const {};
-    final porCategoria = s['porCategoria'];
-    return {
-      'bebida': _Config.ler(s['bebida']),
-      'sobremesa': _Config.ler(s['sobremesa']),
-      if (porCategoria is Map)
-        for (final e in porCategoria.entries)
-          if (e.value is Map)
-            for (final etapa in const ['bebida', 'sobremesa'])
-              '${e.key}/$etapa': _Config.ler(e.value[etapa]),
-    };
+    return lerConfigSugestoes(dados);
   } catch (_) {
     return const {};
   }
@@ -162,38 +86,40 @@ class _Etapa {
   final Future<List<Object>> produtos;
 }
 
-Future<Map<String, _Config>>? _config;
+Future<Map<String, SugestaoConfig>>? _config;
 final _etapas = <String, Future<List<Object>>>{};
-
-/// Config da etapa: a própria da categoria do prato (se definida) ou a geral
-_Config _cfgEtapa(Map<String, _Config> config, String etapa, int? idCategoria) {
-  final propria = config['$idCategoria/$etapa'];
-  if (propria != null && propria.definida) return propria;
-  return config[etapa] ?? const _Config();
-}
 
 /// Carrega as sugestões em segundo plano assim que o cardápio abre: na hora
 /// de mostrar, bebidas e sobremesas já estão prontas (sem espera).
 void preCarregarSugestoes() {
-  _produtosEtapa(bebida: true);
-  _produtosEtapa(bebida: false);
+  _produtosEtapa('bebida');
+  _produtosEtapa('sobremesa');
 }
 
-/// Produtos de uma etapa (bebida / sobremesa), com preço; não dependem do
-/// carrinho, então ficam guardados para a sessão.
-Future<List<Object>> _produtosEtapa(
-    {required bool bebida, int? idCategoria}) async {
+/// Produtos de uma etapa (bebida / sobremesa / criada na Dashboard), com
+/// preço; não dependem do carrinho, então ficam guardados para a sessão.
+Future<List<Object>> _produtosEtapa(String etapa, {int? idCategoria}) async {
   final config = await (_config ??= _carregarConfig());
-  final etapa = bebida ? 'bebida' : 'sobremesa';
+  final bebida = etapa == 'bebida';
+  final sobremesa = etapa == 'sobremesa';
   // categoria sem sugestão própria usa a lista da geral
   final chave = config['$idCategoria/$etapa']?.definida == true
       ? '$idCategoria/$etapa'
       : etapa;
   return _etapas[chave] ??= () async {
     final categorias = CardapioService.ultimas;
-    final cfg = _cfgEtapa(config, etapa, idCategoria);
-    final palavras = bebida ? _palavrasBebida : _palavrasDoce;
-    final filtro = bebida ? _ehBebida : _ehDoce;
+    final cfg = cfgEtapaSugestao(config, etapa, idCategoria);
+    // criada na Dashboard: só os produtos/categorias escolhidos
+    final palavras = bebida
+        ? _palavrasBebida
+        : sobremesa
+            ? _palavrasDoce
+            : const <String>[];
+    final bool Function(Categoria) filtro = bebida
+        ? _ehBebida
+        : sobremesa
+            ? _ehDoce
+            : (_) => false;
     final todos = <ItemModel>[];
     // escolhidos na Dashboard: podem estar em qualquer categoria
     if (cfg.ids.isNotEmpty || cfg.plus.isNotEmpty) {
@@ -286,7 +212,7 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   if (carrinho.itens.isEmpty || categorias.isEmpty) return;
   final porId = {for (final c in categorias) c.id: c};
   final config = await (_config ??= _carregarConfig());
-  String texto(_Config cfg, String padrao) =>
+  String texto(SugestaoConfig cfg, String padrao) =>
       cfg.titulo.isNotEmpty ? cfg.titulo : padrao;
 
   // bebida / doce: pelo nome da categoria ou escolhido em qualquer sugestão
@@ -304,17 +230,27 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
     return (c != null && _ehDoce(c)) || sugeridoEm('sobremesa', p);
   }
 
-  // o próprio produto adicionado é bebida ou doce: não oferece nada
-  if (adicionado != null && (bebida(adicionado) || doce(adicionado))) return;
+  // escolhido numa sugestão criada na Dashboard (ex.: Salgados)
+  bool extra(ItemModel p) => config.entries
+      .any((e) => ehChaveExtraSugestao(e.key) && e.value.contem(p));
+
+  // o próprio produto adicionado é bebida, doce ou de outra sugestão: não
+  // oferece nada
+  if (adicionado != null &&
+      (bebida(adicionado) || doce(adicionado) || extra(adicionado))) {
+    return;
+  }
 
   final itens = carrinho.itens.map((i) => i.produto).toList();
   final temBebida = itens.any(bebida);
   final temDoce = itens.any((p) => !bebida(p) && doce(p));
-  final pratos = itens.where((p) => !bebida(p) && !doce(p)).toList();
+  // item de outra sugestão também não é prato
+  final pratos =
+      itens.where((p) => !bebida(p) && !doce(p) && !extra(p)).toList();
   // todo salgado adicionado oferece bebida (mesmo já tendo uma); no
   // "enviar pedido" só oferece o que falta
   final oferecerBebida = adicionado != null || !temBebida;
-  if (pratos.isEmpty || (!oferecerBebida && temDoce)) return;
+  if (pratos.isEmpty) return;
 
   String capitalizar(String s) {
     final t = s.trim().toLowerCase();
@@ -324,23 +260,48 @@ Future<void> _oferecer(BuildContext context, {ItemModel? adicionado}) async {
   final nomePrato = adicionado?.desProduto ?? pratos.first.desProduto ?? '';
   // sugestão própria da categoria do prato (ex.: Matinais)
   final idCategoria = (adicionado ?? pratos.first).idCategoriaFilial;
-  final cfgBebida = _cfgEtapa(config, 'bebida', idCategoria);
-  final cfgDoce = _cfgEtapa(config, 'sobremesa', idCategoria);
-  final etapas = [
-    if (oferecerBebida)
-      _Etapa(
+  final cfgBebida = cfgEtapaSugestao(config, 'bebida', idCategoria);
+  final cfgDoce = cfgEtapaSugestao(config, 'sobremesa', idCategoria);
+  // sugestões criadas na Dashboard: só com algo escolhido; ao adicionar um
+  // prato sempre oferece, no "enviar pedido" só se ainda não tem no carrinho
+  final extras = [
+    for (final e in sugestoesExtras)
+      if (cfgEtapaSugestao(config, e.$1, idCategoria) case final k
+          when !k.desativada &&
+              k.temEscolhidos &&
+              (adicionado != null || !itens.any(k.contem)))
+        (e, k),
+  ];
+  final etapasPorChave = <String, _Etapa>{
+    if (oferecerBebida && !cfgBebida.desativada)
+      'bebida': _Etapa(
         Icons.local_drink_rounded,
         texto(cfgBebida, 'Que tal uma bebida?'),
         'Pra acompanhar o seu ${capitalizar(nomePrato)}',
-        _produtosEtapa(bebida: true, idCategoria: idCategoria),
+        _produtosEtapa('bebida', idCategoria: idCategoria),
       ),
-    if (!temDoce)
-      _Etapa(
+    // igual ao tablet: ao adicionar um prato sempre oferece; no "enviar
+    // pedido" só se ainda não tem doce
+    if ((adicionado != null || !temDoce) && !cfgDoce.desativada)
+      'sobremesa': _Etapa(
         Icons.icecream_rounded,
         texto(cfgDoce, 'Vai uma sobremesa?'),
         'Pra fechar a refeição com chave de ouro',
-        _produtosEtapa(bebida: false, idCategoria: idCategoria),
+        _produtosEtapa('sobremesa', idCategoria: idCategoria),
       ),
+    for (final (e, k) in extras)
+      e.$1: _Etapa(
+        Icons.star_rounded,
+        texto(k, 'Que tal ${e.$2}?'),
+        'Pra acompanhar o seu ${capitalizar(nomePrato)}',
+        _produtosEtapa(e.$1, idCategoria: idCategoria),
+      ),
+  };
+  // ordem da Dashboard: a da categoria do prato, senão a geral
+  final etapas = [
+    for (final chave in ordemFinalSugestoes(
+        sugestoesOrdens['$idCategoria'] ?? sugestoesOrdens['']))
+      if (etapasPorChave[chave] case final e?) e,
   ];
   // etapa sem nada para sugerir nem aparece (e sem nenhuma, nada abre)
   final listas = await Future.wait(
