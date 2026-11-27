@@ -161,9 +161,76 @@ class _HomePageState extends State<HomePage> {
     return b.toString();
   }
 
-  static bool _casa(List<String> palavras, String nome) {
-    final doNome = nome.split(RegExp(r'[^a-z0-9]+'));
-    return palavras.every((b) => doNome.any((w) => w.startsWith(b)));
+  /// Palavras de ligação que não precisam estar no nome ("pao de queijo"
+  /// acha "Pão Queijo")
+  static const _ligacao = {
+    'de', 'da', 'do', 'das', 'dos', 'na', 'no', 'nas', 'nos', 'em', //
+    'com', 'e', 'a', 'o', 'as', 'os', 'ao', 'c', 'p', 'pra', 'para',
+  };
+
+  /// Distância de edição (troca, falta ou sobra de uma letra conta 1)
+  static int _distancia(String a, String b) {
+    var ant = List<int>.generate(b.length + 1, (i) => i);
+    for (var i = 1; i <= a.length; i++) {
+      final atual = List<int>.filled(b.length + 1, 0)..[0] = i;
+      for (var j = 1; j <= b.length; j++) {
+        final custo = a[i - 1] == b[j - 1] ? 0 : 1;
+        atual[j] = [ant[j] + 1, atual[j - 1] + 1, ant[j - 1] + custo]
+            .reduce((x, y) => x < y ? x : y);
+      }
+      ant = atual;
+    }
+    return ant[b.length];
+  }
+
+  /// Quanto a palavra buscada combina com a palavra do nome:
+  /// 3 = começo exato, 2 = quase (1 letra errada; 2 em palavras longas),
+  /// 0 = não combina
+  static int _nota(String busca, String palavra) {
+    if (palavra.startsWith(busca)) return 3;
+    // "paes", "limoes" -> "pao", "limao"
+    if (busca.length > 3 && (busca.endsWith('aes') || busca.endsWith('oes'))) {
+      if (palavra.startsWith('${busca.substring(0, busca.length - 3)}ao')) {
+        return 3;
+      }
+    }
+    // plural / singular: "paes", "sucos"
+    if (busca.length > 3 &&
+        busca.endsWith('s') &&
+        palavra.startsWith(busca.substring(0, busca.length - 1))) {
+      return 3;
+    }
+    if (busca.length < 4) return 0;
+    final tolera = busca.length >= 7 ? 2 : 1;
+    // compara com o começo da palavra (o cliente pode não ter terminado)
+    for (final n in {busca.length - 1, busca.length, busca.length + 1}) {
+      if (n <= 0 || n > palavra.length) continue;
+      if (_distancia(busca, palavra.substring(0, n)) <= tolera) return 2;
+    }
+    return 0;
+  }
+
+  /// Nota do produto para a busca (0 = não aparece). Toda palavra buscada
+  /// (menos as de ligação) precisa combinar com alguma palavra do nome.
+  static int _pontuar(List<String> palavras, String nome) {
+    final doNome =
+        nome.split(RegExp(r'[^a-z0-9]+')).where((w) => w.isNotEmpty).toList();
+    var total = 0;
+    for (final b in palavras) {
+      var melhor = 0;
+      for (final w in doNome) {
+        final n = _nota(b, w);
+        if (n > melhor) melhor = n;
+        if (melhor == 3) break;
+      }
+      if (melhor == 0) return 0;
+      total += melhor;
+    }
+    // nome que começa com o que foi digitado vem antes
+    if (doNome.isNotEmpty && doNome.first.startsWith(palavras.first)) {
+      total += 2;
+    }
+    return total;
   }
 
   /// Busca no cardápio que está aparecendo (mesmas categorias e filial),
@@ -184,15 +251,25 @@ class _HomePageState extends State<HomePage> {
     try {
       final listas = await Future.wait(
           categorias.map((c) => CardapioService.produtosDe(c.id)));
-      final palavras = termo.split(RegExp(r'\s+'));
+      final todas = termo
+          .split(RegExp(r'[^a-z0-9]+'))
+          .where((w) => w.isNotEmpty)
+          .toList();
+      // só palavras de ligação ("de"): usa elas mesmo
+      final semLigacao = todas.where((w) => !_ligacao.contains(w)).toList();
+      final palavras = semLigacao.isEmpty ? todas : semLigacao;
       final vistos = <String>{};
-      final achados = [
-        for (final p in listas.expand((l) => l))
-          // cada palavra buscada é o começo de uma palavra do nome
-          if (_casa(palavras, _normalizar(p.desProduto ?? '')) &&
-              vistos.add(p.plu ?? ''))
-            p,
-      ];
+      final pontuados = <(ItemModel, int, int)>[];
+      for (final p in listas.expand((l) => l)) {
+        final nota = _pontuar(palavras, _normalizar(p.desProduto ?? ''));
+        if (nota > 0 && vistos.add(p.plu ?? '')) {
+          pontuados.add((p, nota, pontuados.length));
+        }
+      }
+      // melhores primeiro (a ordem do cardápio desempata)
+      pontuados.sort(
+          (a, b) => a.$2 != b.$2 ? b.$2.compareTo(a.$2) : a.$3.compareTo(b.$3));
+      final achados = [for (final e in pontuados) e.$1];
       final completos =
           await Future.wait(achados.take(30).map(Complementos.completar));
       if (!mounted || _searchController.text.trim() != query.trim()) return;
